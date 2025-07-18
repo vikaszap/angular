@@ -1,0 +1,21 @@
+.suffix_downarrow{
+    position: absolute;
+    right: 1px;
+    top: 1px;
+    bottom: 1px;
+    padding: 12px;
+    background: url(../../../../../../assets/chevron-down.svg) no-repeat center center;
+    background-size: 16px;
+    border-left: 1px solid var(--dimgrey);
+    background-color: var(--grey);
+}
+.combo_input input {
+    padding-right: 25px !important;
+}
+@media (max-width: 1400px) {
+  .combo_input input {
+     font-size: 10.5px !important;
+     height: 27px !important;
+     line-height: 27px !important;
+}
+}

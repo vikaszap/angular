@@ -1,0 +1,19 @@
+ <ng-container [formGroup]="form">
+<div class="position-relative combo_input" [id]="'comborArrow'+res.fieldid">
+<input
+  #comboRef
+  [id]="'comboGrid' + res.fieldid" 
+  class="form-control comboGridValidation easyui-combogrid autocomplete_off"
+  name="{{ 'ordertext' + res.fieldid }}"
+  [formControlName]="res.fieldid"
+  (focus)='initialLoad(res.fieldid, res)'
+  width="auto"
+  autocomplete="off"
+  [tabindex]="(!onllineaftersubmitordereditflag  || res.ruleoverride ==0  || disableFields) ? '-1' : '0'"
+  [ngClass]="{ 'validation': (form['controls'][res.fieldid]?.touched && form['controls'][res.fieldid]?.errors?.required) || res?.stock_not_available_err }" 
+  [ngStyle]="res.ruleoverride == 0 || disableFields ? {'pointer-events': 'none','background-color': '#e9ecef'} : ''"
+/>
+<span class="suffix_downarrow" [ngStyle]="res.ruleoverride == 0 || disableFields ? {'pointer-events': 'none'} : ''"  (click)="initialLoad(res.fieldid, res, 'arrow')">
+</span>
+</div>
+  </ng-container>
