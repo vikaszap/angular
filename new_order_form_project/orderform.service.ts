@@ -68,11 +68,11 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
     return this.http.get(nodeurl + 'products/productgroup/listall/' + customerid + '/' + mode  ,head)
     //return this.http.get(nodeurl + 'products/list/all/' + customerid + '/' + mode  ,head)
   }
- 
+
   getPricegrouplist(productid:any) {
     return this.http.get(baseurl + 'product/pricegrouplist/by/product/' + productid)
   }
- 
+
   getallist(){
     var head = { headers: { skipLoading: ""}}
     if(this.jobPageFlag){
@@ -111,14 +111,14 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
   getfieldlist(recipeid:any,level:any){
     return this.http.get(nodeurl + 'products/fields/list/' + recipeid + '/' + level)
   }
-  getlocationbasedlist(jobid){  
+  getlocationbasedlist(jobid){
     var head = { headers: { skipLoading: "" }}
     if(this.jobPageFlag){
       head =  { headers: { skipLoading: "true"}}
     }
     return this.http.get(nodeurl + 'orderitems/locationview/' + jobid,head)
   }
-  getlocationsubbasedlist(jobid,subdataid){  
+  getlocationsubbasedlist(jobid,subdataid){
     return this.http.post(nodeurl + 'orderitems/locationview/orderitem/' + jobid,subdataid)
   }
   updateholdorderitem(readystatus){
@@ -139,7 +139,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
   let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
   return this.http.post(baseurl + 'product/softfurnishing/materialadd', materaldata, { headers: { skipLoading: flag }})
 }
-  copyproduct(copy_data){  
+  copyproduct(copy_data){
     return this.http.post(baseurl + 'job/orderitem/copy',copy_data);
   }
   getoverridevatvalue(data:any=''){
@@ -161,7 +161,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
     let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
     return this.http.post(nodeurl + 'pricefields/getall',data, { headers: { skipLoading: flag }})
   }
- 
+
   getPricefieldsForGlobaledit(data:any){
     let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
     return this.http.post(nodeurl + 'pricefields/globaledit',data, { headers: { skipLoading: flag }})
@@ -174,7 +174,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
     let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
     return this.http.post(nodeurl + 'job/get/organisation/taxlabel',data, { headers: { skipLoading: flag }})
   }
-  getorderlistdata(jobid,pivotid){  
+  getorderlistdata(jobid,pivotid){
     var head = { headers: { skipLoading: "" }}
     if(this.jobPageFlag){
       let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
@@ -222,7 +222,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
       ).toPromise();
       return response;
   }
-  cancelFilterRequests() {  
+  cancelFilterRequests() {
     this.unsubscribeFilter$.next();
     this.unsubscribeFilter$.complete();
     this.unsubscribeFilter$ = new Subject<void>();
@@ -231,6 +231,14 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
     let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
     return this.http.post(nodeurl + 'orderitems/calculate/option/price',netprice, { headers: { skipLoading: flag }})
   }
+  /**
+   * Retrieves the default data for an order form.
+   * The data returned from this function is used to populate the following HTML input elements in orderformpopup.component.html:
+   *
+   * - Product Status: The ng-multiselect-dropdown component with [formControlName]="prostatusselectarray"
+   * - Recipe Name: The select element with [(ngModel)]="receipe"
+   * - Dynamic Form Fields: Various input and select elements within the *ngFor loop with [formControlName]="prop.fieldid"
+   */
   /**
    * Retrieves the default data for an order form.
    * The data returned from this function is used to populate the following HTML input elements in orderformpopup.component.html:
@@ -271,7 +279,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
       // ).toPromise();
       // return response;
   }
-  cancelruleRequests() {  
+  cancelruleRequests() {
     this.unsubscribeRule$.next();
     this.unsubscribeRule$.complete();
     this.unsubscribeRule$ = new Subject<void>();
@@ -305,7 +313,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
     return this.http.get(baseurl + 'appSetup/fractionlist/' + productid + '/' + data +'/' + dataset, { headers: { skipLoading: flag }})
   }
   /////online portal price calculation
- 
+
   onlinegetoverridevatvalue(data:any='',jobid?:any){
     let flag:any = this.orderformeditflag == 'true' ? '' : 'true'
     if(jobid){
@@ -369,7 +377,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
       return this.http.get(baseurl + 'getproduct/'+ jobid + '/'+ onlineportal, { headers: { skipLoading: 'true' }})
     }else{
       return this.http.get(baseurl + 'getproduct/'+ jobid, { headers: { skipLoading: 'true' }})
-    }   
+    }
   }
   getorderitemcolumnlist(jobid:any,productid:any,recipeid:any,pivotId:any){
     if(pivotId) {
@@ -406,7 +414,7 @@ constructor(public orderauth:JobService,private http: HttpClient) { }
   getmovetobuttonview(data:any){
     return this.http.post(baseurl + `productgroup/jobmovetobuttongroup`,data)
   }
-  
+
   getproductmanuallist(productid:any){
     return this.http.get(nodeurl + 'products/getproductmanulslist/' + productid)
   }
