@@ -7,6 +7,7 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { OrderformComponent } from './orderform/orderform.component';
 import { ApiService } from './services/api.service';
+import { AppRoutingModule } from './app-routing.module';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { ApiService } from './services/api.service';
     BrowserModule,
     ReactiveFormsModule,
     HttpClientModule,
-    RouterModule
+    RouterModule,
+    AppRoutingModule
   ],
   providers: [ApiService],  // Added ApiService to providers
   bootstrap: [AppComponent]

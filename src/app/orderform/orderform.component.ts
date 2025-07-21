@@ -51,6 +51,7 @@ export class OrderformComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.form = this.fb.group({});
     this.route.queryParams.subscribe(params => {
       this.wordpressSiteUrl = params['site'] || '';
       this.productId = +(params['product_id'] || 0);
