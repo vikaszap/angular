@@ -1,0 +1,56 @@
+<form *ngIf="form" [formGroup]="form" (ngSubmit)="addToCart()">
+  <div *ngFor="let field of fields" class="mb-3">
+    <label>{{ field.fieldname }} <span *ngIf="field.mandatory" class="text-danger">*</span></label>
+
+    <!-- Dropdown -->
+    <select
+      *ngIf="field.optionsvalue?.length"
+      class="form-control"
+      [formControlName]="field.fieldid"
+      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
+    >
+      <option value="">Select</option>
+      <option *ngFor="let opt of field.optionsvalue" [value]="opt.optionid">
+        {{ opt.optionname }}
+      </option>
+    </select>
+
+    <!-- Text input -->
+    <input
+      *ngIf="!field.optionsvalue?.length && [8, 10, 14, 29, 34].includes(field.fieldtypeid)"
+      type="text"
+      class="form-control"
+      [formControlName]="field.fieldid"
+      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
+    />
+
+    <!-- Textarea -->
+    <textarea
+      *ngIf="!field.optionsvalue?.length && field.fieldtypeid === 18"
+      class="form-control"
+      [formControlName]="field.fieldid"
+      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
+    ></textarea>
+
+    <!-- Fallback -->
+    <input
+      *ngIf="!field.optionsvalue?.length && ![8, 10, 14, 18, 29, 34].includes(field.fieldtypeid)"
+      type="text"
+      class="form-control"
+      [formControlName]="field.fieldid"
+      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
+    />
+
+    <div *ngIf="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched" class="text-danger">
+      This field is required
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-2" [disabled]="form.invalid || isLoading">
+    {{ isLoading ? 'Adding...' : 'Add to Cart' }}
+  </button>
+
+  <div *ngIf="errorMessage" class="alert alert-danger mt-2">
+    {{ errorMessage }}
+  </div>
+</form>
