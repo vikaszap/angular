@@ -109,8 +109,8 @@ export class OrderformComponent implements OnInit {
       this.api_name
     ).subscribe({
       next: (response: any) => {
-        if (response && response.data) {
-          this.fields = response.data;
+        if (response && response[0] && response[0].data) {
+          this.fields = response[0].data;
           this.buildForm();
         } else {
           this.errorMessage = 'No data received from API';
