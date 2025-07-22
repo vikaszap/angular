@@ -49,8 +49,8 @@
   <button type="submit" class="btn btn-primary mt-2" [disabled]="form.invalid || isLoading">
     {{ isLoading ? 'Adding...' : 'Add to Cart' }}
   </button>
-
-  <div *ngIf="errorMessage" class="alert alert-danger mt-2">
-    {{ errorMessage }}
-  </div>
 </form>
+
+<div *ngIf="errorMessage" class="alert alert-danger mt-2">
+  {{ errorMessage }}
+</div>
