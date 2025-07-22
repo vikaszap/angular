@@ -62,4 +62,14 @@ export class ApiService {
         return this.http.get(url, { headers, params });
     }
   }
+
+  calculatePrice(payload: any, api_url: string, api_key: string, api_name: string): Observable<any> {
+    const passData = 'orderitems/calculate/option/price/';
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
+
+  getSubComponents(payload: any, api_url: string, api_key: string, api_name: string): Observable<any> {
+    const passData = 'products/fields/list/0';
+    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+  }
 }
