@@ -6,6 +6,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SafeHtmlPipe } from '../safe-html.pipe';
 
@@ -14,7 +15,13 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
   templateUrl: './orderform.component.html',
   styleUrls: ['./orderform.component.css'],
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule, SafeHtmlPipe],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    CommonModule,
+    SafeHtmlPipe,
+    RouterModule,
+  ],
 })
 export class OrderformComponent implements OnInit {
   product_details_arr: any = {};
@@ -241,5 +248,38 @@ export class OrderformComponent implements OnInit {
     this.apiService.addToCart(this.orderForm.value).subscribe(response => {
       // Handle response
     });
+  }
+
+  // Add the missing properties and methods here
+  isBlinds = true; // or false based on your logic
+  objectKeys = Object.keys;
+
+  isSelectedFrame(product_img: any): boolean {
+    // Implement your logic here
+    return true;
+  }
+
+  getFrameImageUrl(product_img: any): string {
+    // Implement your logic here
+    return product_img.image_url;
+  }
+
+  getFreeSampleData(related_product: any = null): string {
+    const sample_data = {
+      // populate with data
+    };
+    return JSON.stringify(sample_data);
+  }
+
+  getRelatedProductLink(related_product: any): string[] {
+    return ['/product', related_product.slug];
+  }
+
+  getRelatedProductImageUrl(related_product: any): string {
+    return related_product.image_url;
+  }
+
+  getRelatedProductName(related_product: any): string {
+    return related_product.name;
   }
 }
