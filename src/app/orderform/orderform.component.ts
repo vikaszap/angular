@@ -77,12 +77,10 @@ export class OrderformComponent implements OnInit {
     });
   }
 
+  parameters_data: any[] = [];
+
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
-      // Now you can access the query parameters like this:
-      const site = params['site'];
-      const product_id = params['product_id'];
-      // ... and so on for the other parameters.
       this.fetchInitialData(params);
     });
   }
@@ -90,12 +88,13 @@ export class OrderformComponent implements OnInit {
   fetchInitialData(params: any): void {
     this.apiService.getProductData(params).subscribe((data: any) => {
       if (data && data.status) {
-        const responseData = data.data;
-        
-        responseData.forEach(field => {
-          if (this.orderForm.get(field.labelnamecode)) {
-            this.orderForm.get(field.labelnamecode)?.patchValue(field.value);
-          }
+
+        const responseData = data.data[0];
+        this.parameters_data = responseData.data;
+
+        this.parameters_data.forEach(field => {
+          this.orderForm.addControl(field.labelnamecode, this.fb.control(field.value || ''));
+
         });
       }
     });
@@ -192,7 +191,7 @@ export class OrderformComponent implements OnInit {
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<select class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+      field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
       field_args.optionsvalue.forEach((option: any) => {
         field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
       });
@@ -207,14 +206,14 @@ export class OrderformComponent implements OnInit {
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
       field_html += `</div>`;
     }
     return field_html;
   }
 
   blindmatrix_render_hidden_field(field_args: any): any {
-    return `<input type="hidden" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+    return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
   }
 
   freesample(button: any): void {

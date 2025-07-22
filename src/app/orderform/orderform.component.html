@@ -65,7 +65,7 @@
                 </span>
               </div>
             </div>
-            <div *ngFor="let field of parameters_arr">
+            <div *ngFor="let field of parameters_data">
               <div [innerHTML]="get_blindmatrix_v4_parameters_HTML(field.fieldtypeid, field) | safeHtml"></div>
             </div>
             <div class="price_wrapper" style="display:none;">
