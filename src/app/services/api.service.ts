@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
+  private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php'; // Replace with your actual API URL
+
   constructor(private http: HttpClient) {}
 
   callApi(
@@ -63,9 +65,36 @@ export class ApiService {
     }
   }
 
-  calculatePrice(payload: any, api_url: string, api_key: string, api_name: string): Observable<any> {
-    const passData = 'orderitems/calculate/option/price/';
-    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  getProductData(productSlug: string): Observable<any> {
+    const params = {
+      action: 'get_product_data',
+      product_slug: productSlug
+    };
+    return this.http.get(this.apiUrl, { params });
+  }
+
+  calculatePrice(formData: any): Observable<any> {
+    const params = {
+      action: 'price_calculation',
+      form_data: JSON.stringify(formData)
+    };
+    return this.http.post(this.apiUrl, {}, { params });
+  }
+
+  addToCart(formData: any): Observable<any> {
+    const params = {
+      action: 'add_to_cart',
+      form_data: JSON.stringify(formData)
+    };
+    return this.http.post(this.apiUrl, {}, { params });
+  }
+
+  addFreeSample(sampleData: any): Observable<any> {
+    const params = {
+      action: 'add_freesample',
+      ...sampleData
+    };
+    return this.http.post(this.apiUrl, {}, { params });
   }
 
   getSubComponents(payload: any, api_url: string, api_key: string, api_name: string): Observable<any> {
