@@ -66,9 +66,9 @@ export class ApiService {
   }
 
   getProductData(params: any): Observable<any> {
-    const { api_url, api_key, api_name, ...payload } = params;
-    const passData = 'products/view';
-    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+    const { api_url, api_key, api_name, recipeid, ...payload } = params;
+    const passData = `products/fields/withdefault/list/${recipeid}/1/0`;
+    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
 
   calculatePrice(formData: any): Observable<any> {
