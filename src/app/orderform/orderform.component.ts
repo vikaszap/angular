@@ -77,12 +77,10 @@ export class OrderformComponent implements OnInit {
     });
   }
 
+  parameters_data: any[] = [];
+
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
-      // Now you can access the query parameters like this:
-      const site = params['site'];
-      const product_id = params['product_id'];
-      // ... and so on for the other parameters.
       this.fetchInitialData(params);
     });
   }
@@ -90,58 +88,11 @@ export class OrderformComponent implements OnInit {
   fetchInitialData(params: any): void {
     this.apiService.getProductData(params).subscribe((data: any) => {
       if (data && data.status) {
-        const responseData = data.data;
-        this.product_details_arr = responseData.product_details_arr;
-        this.product_specs = responseData.product_specs;
-        this.product_description = responseData.product_description;
-        this.background_color_image_url =
-          responseData.background_color_image_url;
-        this.unit_type_data = responseData.unit_type_data;
-        this.parameters_arr = responseData.parameters_arr;
-        this.inchfraction_array = responseData.inchfraction_array;
-        this.color_arr = responseData.color_arr;
-        this.product_minimum_price = responseData.product_minimum_price;
-        this.min_width = responseData.min_width;
-        this.max_width = responseData.max_width;
-        this.min_drop = responseData.min_drop;
-        this.max_drop = responseData.max_drop;
-        this.ecomsampleprice = responseData.ecomsampleprice;
-        this.ecomFreeSample = responseData.ecomFreeSample;
-        this.delivery_duration = responseData.delivery_duration;
-        this.visualizertagline = responseData.visualizertagline;
-        this.productname = responseData.productname;
-        this.product_list_page_link = responseData.product_list_page_link;
-        this.fabricname = responseData.fabricname;
-        this.hide_frame = responseData.hide_frame;
-        this.mainframe = responseData.mainframe;
-        this.product_img_array = responseData.product_img_array;
-        this.product_deafultimage = responseData.product_deafultimage;
-        this.fabric_linked_color_data = responseData.fabric_linked_color_data;
-        this.related_products_list_data =
-          responseData.related_products_list_data;
-        this.productlisting_frame_url = responseData.productlisting_frame_url;
-        this.sample_img_frame_url = responseData.sample_img_frame_url;
-        this.v4_product_visualizer_page =
-          responseData.v4_product_visualizer_page;
-        this.fieldscategoryname = responseData.fieldscategoryname;
-        this.productslug = responseData.productslug;
-        this.fabricid = responseData.fabricid;
-        this.colorid = responseData.colorid;
-        this.matmapid = responseData.matmapid;
-        this.pricegroup_id = responseData.pricegroup_id;
-        this.supplier_id = responseData.supplier_id;
+        const responseData = data.data[0];
+        this.parameters_data = responseData.data;
 
-        // Populate the form with the data from the API
-        this.orderForm.patchValue({
-          width: responseData.widthdefault,
-          // You can add more fields here as needed
-        });
-
-        // Loop through parameters_arr and set form values
-        this.parameters_arr.forEach(field => {
-          if (this.orderForm.get(field.labelnamecode)) {
-            this.orderForm.get(field.labelnamecode)?.patchValue(field.value);
-          }
+        this.parameters_data.forEach(field => {
+          this.orderForm.addControl(field.labelnamecode, this.fb.control(field.value || ''));
         });
       }
     });
@@ -238,7 +189,7 @@ export class OrderformComponent implements OnInit {
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<select class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+      field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
       field_args.optionsvalue.forEach((option: any) => {
         field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
       });
@@ -253,14 +204,14 @@ export class OrderformComponent implements OnInit {
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
       field_html += `</div>`;
     }
     return field_html;
   }
 
   blindmatrix_render_hidden_field(field_args: any): any {
-    return `<input type="hidden" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+    return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
   }
 
   freesample(button: any): void {
