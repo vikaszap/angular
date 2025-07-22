@@ -1,56 +1,116 @@
-<form *ngIf="form" [formGroup]="form" (ngSubmit)="addToCart()">
-  <div *ngFor="let field of fields" class="mb-3">
-    <label>{{ field.fieldname }} <span *ngIf="field.mandatory" class="text-danger">*</span></label>
-
-    <!-- Dropdown -->
-    <select
-      *ngIf="field.optionsvalue?.length"
-      class="form-control"
-      [formControlName]="field.fieldid"
-      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
-    >
-      <option value="">Select</option>
-      <option *ngFor="let opt of field.optionsvalue" [value]="opt.optionid">
-        {{ opt.optionname }}
-      </option>
-    </select>
-
-    <!-- Text input -->
-    <input
-      *ngIf="!field.optionsvalue?.length && [8, 10, 14, 29, 34].includes(field.fieldtypeid)"
-      type="text"
-      class="form-control"
-      [formControlName]="field.fieldid"
-      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
-    />
-
-    <!-- Textarea -->
-    <textarea
-      *ngIf="!field.optionsvalue?.length && field.fieldtypeid === 18"
-      class="form-control"
-      [formControlName]="field.fieldid"
-      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
-    ></textarea>
-
-    <!-- Fallback -->
-    <input
-      *ngIf="!field.optionsvalue?.length && ![8, 10, 14, 18, 29, 34].includes(field.fieldtypeid)"
-      type="text"
-      class="form-control"
-      [formControlName]="field.fieldid"
-      [class.is-invalid]="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched"
-    />
-
-    <div *ngIf="form.get(field.fieldid)?.invalid && form.get(field.fieldid)?.touched" class="text-danger">
-      This field is required
+<div class="w-100 blinds container p-sm-0" style="max-width: 1250px;">
+  <div class="productaname py-3">
+    <a href="#" class="lowercase fw-bold mb-1">
+      <i class="fa-solid fa-angle-left"></i> <span>Back to {{ productName }}</span>
+    </a>
+    <h1 class="product-title product_title entry-title prodescprotitle">
+      <span class="setcolorname fw-bolder fst-italic">{{ productName }} - {{ fabric }}</span>
+    </h1>
+  </div>
+  <div id="configurator-root" class="product_visualizer_wrapper">
+    <div class="d-md-flex gap-2 flex-nowrap">
+      <div class="col-md-6 col-sm-12 position-relative overflow-visible" style="box-shadow: 1px 0 5px #ccc; border-radius:10px">
+        <div class="position-sticky sticky-top z-0">
+          <div class="product_preview">
+            <div id="main-img" class="configuratorpreviewimage">
+              <img decoding="async" class="configurator-main-headertype" [src]="previewImage" style="border-radius: 10px;" alt="blinds image">
+              <p class="preview-desc blinds"> Diagram is for illustration only. </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="product-wrapper col-md-6 col-sm-12">
+        <div class="product-from-price position-relative">
+          <div class=" d-flex justify-content-between position-absolute w-100 cusoffsec" style="top: -30px; ">
+            <p class="bm-spec-tagline-minprice">Transform Your Windows With {{ productName }}</p>
+            <p class="price product-page-price mb-0 proprice">
+              <span class="bm-spec-tagline-minprice" style='color:var(--color-primary);'> From </span>
+              <span class="bm-min-product-price">{{ productDetails.minimum_price | currency }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="product-info ">
+          <div class='blindmatrix-v4-error-messages-wrapper'>
+            <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+              {{ errorMessage }}
+            </div>
+          </div>
+          <h3 class="text-center fs-5 fw-bolder">Please enter your measurements</h3>
+          <!-- unit select section -->
+          <div class="blinds-measurement">
+            <div colspan="2" class="value">
+              <span class="form-control-wrap ">
+                <span class="d-flex radio">
+                  <span class="list-item" *ngFor="let unit of unitData">
+                    <label class='align-middle'>
+                      <input class="blindmatrix_v4_parameters_data align-middle" name="unit" [value]="unit.id" type="radio" (change)="form.get('unittype').setValue(unit.id)">
+                      <span class="list-item-label fw-bolder">{{ unit.name }}</span>
+                    </label>
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+          <!-- parameters listing section -->
+          <form [formGroup]="form" (ngSubmit)="addToCart()">
+            <div *ngFor="let field of fields" class="blindmatrix-v4-parameter-wrapper d-flex justify-content-between align-items-center my-2 py-2">
+              <label class="fw-bolder w-34">{{ field.fieldname }} <span *ngIf="field.mandatory" class="required blindmatrix-v4-required-field">*</span></label>
+              <div [ngSwitch]="field.fieldtypeid" class="w-75">
+                <input *ngSwitchCase="6" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
+                <input *ngSwitchCase="11" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
+                <input *ngSwitchCase="12" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
+                <input *ngSwitchCase="18" type="text" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
+                <select *ngSwitchCase="3" class="form-control blindmatrix-v4-select2 w-75 m-0 rounded-3" [formControlName]="field.fieldid" (change)="onFieldChange(field, $event.target.value)">
+                  <option *ngFor="let option of field.optionsvalue" [value]="option.optionid">{{ option.optionname }}</option>
+                </select>
+                <!-- Add more cases for other field types as needed -->
+              </div>
+            </div>
+            <div class="price_wrapper">
+                <div class="price_text">Your Price</div>
+                <div class="showprice_wrapper">{{ calculatedPrice | currency }}</div>
+            </div>
+            <div class="woocommerce-variation-add-to-cart variations_button">
+                <div class="quantity buttons_added">
+                    <input type="button" value="-" class="minus button is-form">
+                    <input type="number" id="qty" class="input-text qty text" step="1" min="1" max="" formControlName="qty" value="1" title="Qty" size="4" placeholder="" inputmode="numeric">
+                    <input type="button" value="+" class="plus button is-form">
+                </div>
+                <button type="submit" name="submit-btn" value="Submit" class="rounded-pill blindmatrix-v4-add_to_cart_button button font-1"><i class="fa-solid fa-cart-shopping"></i> Add to cart</button>
+            </div>
+            <div class='d-flex justify-content-between quote-section-wrapper py-2'>
+                <div class="accordion col-8" id="accordionExample">
+                    <div class="accordion-item Show-order-item-accordion m-0">
+                        <h2 class="accordion-header mb-0">
+                            <button class="accordion-button Show_order_details collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                Show Order Details
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                            <div class="accordion-body p-2">
+                                <div id="allparametervalue" style="font-size: 14px;" class="text-dark">
+                                    <table class="blindmatrix-v4-show-order-details-contents border-0">
+                                        <tbody>
+                                            <tr *ngFor="let field of fields">
+                                                <td>{{ field.fieldname }}</td>
+                                                <td>{{ form.get(field.fieldid).value }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <button type="button" name="quote-btn" value="quote" class="rounded-pill blindmatrix-v4-get_a_quote button primary-background-color m-0">
+                        <i class="fas fa-envelope me-2"></i>Submit an Enquiry
+                    </button>
+                </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
-
-  <button type="submit" class="btn btn-primary mt-2" [disabled]="form.invalid || isLoading">
-    {{ isLoading ? 'Adding...' : 'Add to Cart' }}
-  </button>
-</form>
-
-<div *ngIf="errorMessage" class="alert alert-danger mt-2">
-  {{ errorMessage }}
 </div>

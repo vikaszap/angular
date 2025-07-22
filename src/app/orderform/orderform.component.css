@@ -1,0 +1,40 @@
+.product_visualizer_wrapper {
+  margin-top: 30px;
+}
+
+.product-wrapper {
+  padding-left: 30px;
+}
+
+.product-from-price {
+  margin-bottom: 20px;
+}
+
+.blinds-measurement {
+  margin-bottom: 20px;
+}
+
+.price_wrapper {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.quote-section-wrapper {
+  margin-top: 20px;
+}
+
+.blindmatrix-v4-get_a_quote {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.blindmatrix-v4-add_to_cart_button {
+    background-color: var(--color-secondary);
+    color: white;
+}
+
+.required {
+    color: red;
+}
