@@ -43,7 +43,7 @@
                 <span class="d-flex radio">
                   <span class="list-item" *ngFor="let unit of unitData">
                     <label class='align-middle'>
-                      <input class="blindmatrix_v4_parameters_data align-middle" name="unit" [value]="unit.id" type="radio" (change)="form.get('unittype').setValue(unit.id)">
+                      <input class="blindmatrix_v4_parameters_data align-middle" name="unit" [value]="unit.id" type="radio" (change)="form.get('unittype')!.setValue(unit.id)">
                       <span class="list-item-label fw-bolder">{{ unit.name }}</span>
                     </label>
                   </span>
@@ -57,10 +57,10 @@
               <label class="fw-bolder w-34">{{ field.fieldname }} <span *ngIf="field.mandatory" class="required blindmatrix-v4-required-field">*</span></label>
               <div [ngSwitch]="field.fieldtypeid" class="w-75">
                 <input *ngSwitchCase="6" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
-                <input *ngSwitchCase="11" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
-                <input *ngSwitchCase="12" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
+                <input *ngSwitchCase="11" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid" (change)="onFieldChange(field, ($event.target as HTMLInputElement).value)">
+                <input *ngSwitchCase="12" type="number" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid" (change)="onFieldChange(field, ($event.target as HTMLInputElement).value)">
                 <input *ngSwitchCase="18" type="text" class="form-control blindmatrix-v4-input m-0 w-75 rounded-3" [formControlName]="field.fieldid">
-                <select *ngSwitchCase="3" class="form-control blindmatrix-v4-select2 w-75 m-0 rounded-3" [formControlName]="field.fieldid" (change)="onFieldChange(field, $event.target.value)">
+                <select *ngSwitchCase="3" class="form-control blindmatrix-v4-select2 w-75 m-0 rounded-3" [formControlName]="field.fieldid" (change)="onFieldChange(field, ($event.target as HTMLSelectElement).value)">
                   <option *ngFor="let option of field.optionsvalue" [value]="option.optionid">{{ option.optionname }}</option>
                 </select>
                 <!-- Add more cases for other field types as needed -->
@@ -93,7 +93,7 @@
                                         <tbody>
                                             <tr *ngFor="let field of fields">
                                                 <td>{{ field.fieldname }}</td>
-                                                <td>{{ form.get(field.fieldid).value }}</td>
+                                                <td>{{ form.get(field.fieldid)!.value }}</td>
                                             </tr>
                                         </tbody>
                                     </table>
