@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SafeHtmlPipe } from '../safe-html.pipe';
 
@@ -62,7 +62,11 @@ export class OrderformComponent implements OnInit {
   supplier_id: any = 0;
   orderForm: FormGroup;
 
-  constructor(private apiService: ApiService, private fb: FormBuilder) {
+  constructor(
+    private apiService: ApiService,
+    private fb: FormBuilder,
+    private route: ActivatedRoute
+  ) {
     this.orderForm = this.fb.group({
       unit: ['mm'],
       width: [''],
@@ -74,48 +78,72 @@ export class OrderformComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.fetchInitialData();
+    this.route.queryParams.subscribe(params => {
+      // Now you can access the query parameters like this:
+      const site = params['site'];
+      const product_id = params['product_id'];
+      // ... and so on for the other parameters.
+      this.fetchInitialData(params);
+    });
   }
 
-  fetchInitialData(): void {
-    // Replace with actual product slug
-    this.apiService.getProductData('your_product_slug').subscribe((data: any) => {
-      this.product_details_arr = data.product_details_arr;
-      this.product_specs = data.product_specs;
-      this.product_description = data.product_description;
-      this.background_color_image_url = data.background_color_image_url;
-      this.unit_type_data = data.unit_type_data;
-      this.parameters_arr = data.parameters_arr;
-      this.inchfraction_array = data.inchfraction_array;
-      this.color_arr = data.color_arr;
-      this.product_minimum_price = data.product_minimum_price;
-      this.min_width = data.min_width;
-      this.max_width = data.max_width;
-      this.min_drop = data.min_drop;
-      this.max_drop = data.max_drop;
-      this.ecomsampleprice = data.ecomsampleprice;
-      this.ecomFreeSample = data.ecomFreeSample;
-      this.delivery_duration = data.delivery_duration;
-      this.visualizertagline = data.visualizertagline;
-      this.productname = data.productname;
-      this.product_list_page_link = data.product_list_page_link;
-      this.fabricname = data.fabricname;
-      this.hide_frame = data.hide_frame;
-      this.mainframe = data.mainframe;
-      this.product_img_array = data.product_img_array;
-      this.product_deafultimage = data.product_deafultimage;
-      this.fabric_linked_color_data = data.fabric_linked_color_data;
-      this.related_products_list_data = data.related_products_list_data;
-      this.productlisting_frame_url = data.productlisting_frame_url;
-      this.sample_img_frame_url = data.sample_img_frame_url;
-      this.v4_product_visualizer_page = data.v4_product_visualizer_page;
-      this.fieldscategoryname = data.fieldscategoryname;
-      this.productslug = data.productslug;
-      this.fabricid = data.fabricid;
-      this.colorid = data.colorid;
-      this.matmapid = data.matmapid;
-      this.pricegroup_id = data.pricegroup_id;
-      this.supplier_id = data.supplier_id;
+  fetchInitialData(params: any): void {
+    this.apiService.getProductData(params).subscribe((data: any) => {
+      if (data && data.status) {
+        const responseData = data.data;
+        this.product_details_arr = responseData.product_details_arr;
+        this.product_specs = responseData.product_specs;
+        this.product_description = responseData.product_description;
+        this.background_color_image_url =
+          responseData.background_color_image_url;
+        this.unit_type_data = responseData.unit_type_data;
+        this.parameters_arr = responseData.parameters_arr;
+        this.inchfraction_array = responseData.inchfraction_array;
+        this.color_arr = responseData.color_arr;
+        this.product_minimum_price = responseData.product_minimum_price;
+        this.min_width = responseData.min_width;
+        this.max_width = responseData.max_width;
+        this.min_drop = responseData.min_drop;
+        this.max_drop = responseData.max_drop;
+        this.ecomsampleprice = responseData.ecomsampleprice;
+        this.ecomFreeSample = responseData.ecomFreeSample;
+        this.delivery_duration = responseData.delivery_duration;
+        this.visualizertagline = responseData.visualizertagline;
+        this.productname = responseData.productname;
+        this.product_list_page_link = responseData.product_list_page_link;
+        this.fabricname = responseData.fabricname;
+        this.hide_frame = responseData.hide_frame;
+        this.mainframe = responseData.mainframe;
+        this.product_img_array = responseData.product_img_array;
+        this.product_deafultimage = responseData.product_deafultimage;
+        this.fabric_linked_color_data = responseData.fabric_linked_color_data;
+        this.related_products_list_data =
+          responseData.related_products_list_data;
+        this.productlisting_frame_url = responseData.productlisting_frame_url;
+        this.sample_img_frame_url = responseData.sample_img_frame_url;
+        this.v4_product_visualizer_page =
+          responseData.v4_product_visualizer_page;
+        this.fieldscategoryname = responseData.fieldscategoryname;
+        this.productslug = responseData.productslug;
+        this.fabricid = responseData.fabricid;
+        this.colorid = responseData.colorid;
+        this.matmapid = responseData.matmapid;
+        this.pricegroup_id = responseData.pricegroup_id;
+        this.supplier_id = responseData.supplier_id;
+
+        // Populate the form with the data from the API
+        this.orderForm.patchValue({
+          width: responseData.widthdefault,
+          // You can add more fields here as needed
+        });
+
+        // Loop through parameters_arr and set form values
+        this.parameters_arr.forEach(field => {
+          if (this.orderForm.get(field.labelnamecode)) {
+            this.orderForm.get(field.labelnamecode)?.patchValue(field.value);
+          }
+        });
+      }
     });
   }
 
