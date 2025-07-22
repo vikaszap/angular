@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Orderform } from './orderform';
+import { OrderformComponent } from './orderform.component';
 
-describe('Orderform', () => {
-  let component: Orderform;
-  let fixture: ComponentFixture<Orderform>;
+describe('OrderformComponent', () => {
+  let component: OrderformComponent;
+  let fixture: ComponentFixture<OrderformComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Orderform]
+      imports: [OrderformComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Orderform);
+    fixture = TestBed.createComponent(OrderformComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -11,15 +11,15 @@ import { AppRoutingModule } from './app-routing.module';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    OrderformComponent
+    AppComponent
   ],
   imports: [
     BrowserModule,
     ReactiveFormsModule,
     HttpClientModule,
     RouterModule,
-    AppRoutingModule
+    AppRoutingModule,
+    OrderformComponent
   ],
   providers: [ApiService],  // Added ApiService to providers
   bootstrap: [AppComponent]
