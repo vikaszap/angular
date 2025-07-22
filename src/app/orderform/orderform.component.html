@@ -78,7 +78,7 @@
                 <input type="number" id="qty" class="input-text qty text" step="1" min="1" max="" formControlName="qty" title="Qty" size="4" placeholder="" inputmode="numeric">
                 <input type="button" value="+" class="plus button is-form">
               </div>
-              <button type="submit" name="submit-btn" value="Submit" class="rounded-pill blindmatrix-v4-add_to_cart_button button font-1">
+              <button type="submit" name="submit-btn" value="Submit" class="rounded-pill blindmatrix-v4-add_to_cart_button button font-1" [disabled]="!orderForm.valid">
                 <i class="fa-solid fa-cart-shopping"></i> Add to cart
               </button>
             </div>

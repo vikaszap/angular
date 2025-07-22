@@ -73,6 +73,7 @@ export class OrderformComponent implements OnInit {
       widthfraction: [''],
       drop: [''],
       dropfraction: [''],
+      qty: [1],
       // Add other form controls here
     });
   }
@@ -88,13 +89,11 @@ export class OrderformComponent implements OnInit {
   fetchInitialData(params: any): void {
     this.apiService.getProductData(params).subscribe((data: any) => {
       if (data && data.status) {
-
         const responseData = data.data[0];
         this.parameters_data = responseData.data;
 
         this.parameters_data.forEach(field => {
           this.orderForm.addControl(field.labelnamecode, this.fb.control(field.value || ''));
-
         });
       }
     });
