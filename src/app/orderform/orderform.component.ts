@@ -205,14 +205,14 @@ export class OrderformComponent implements OnInit {
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" [value]="${field_args.value || ''}">`;
       field_html += `</div>`;
     }
     return field_html;
   }
 
   blindmatrix_render_hidden_field(field_args: any): any {
-    return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+    return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" [value]="${field_args.value || ''}">`;
   }
 
   freesample(button: any): void {
