@@ -7,13 +7,14 @@ import {
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.service';
+import { SafeHtmlPipe } from '../safe-html.pipe';
 
 @Component({
   selector: 'app-orderform',
   templateUrl: './orderform.component.html',
   styleUrls: ['./orderform.component.css'],
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, CommonModule],
+  imports: [ReactiveFormsModule, FormsModule, CommonModule, SafeHtmlPipe],
 })
 export class OrderformComponent implements OnInit {
   product_details_arr: any = {};
@@ -115,11 +116,116 @@ export class OrderformComponent implements OnInit {
     field_type_id: any,
     field_args: any
   ): any {
-    // This function will be implemented later
+    const field_type_name = this.get_field_type_name(field_type_id);
+    if (!field_type_name) {
+      return '';
+    }
+
+    switch (field_type_name) {
+      case 'list':
+        return this.blindmatrix_render_list_field(field_args);
+      case 'number':
+        return this.blindmatrix_render_number_field(field_args);
+      case 'hidden':
+        return this.blindmatrix_render_hidden_field(field_args);
+      // Add other cases here
+      default:
+        return '';
+    }
+  }
+
+  get_field_type_name(chosen_field_type_id: any): string {
+    const field_types: { [key: string]: string } = {
+      '3': 'list',
+      '5': 'fabric_and_color',
+      '6': 'number',
+      '7': 'x_footage',
+      '8': 'width',
+      '9': 'y_footage',
+      '10': 'height',
+      '11': 'width',
+      '12': 'drop',
+      '13': 'pricegroup',
+      '14': 'qty',
+      '17': 'supplier',
+      '18': 'text',
+      '31': 'x_square_yard',
+      '32': 'y_square_yard',
+      '34': 'unit_type',
+      '21': 'shutter_materials', //shutter_materials
+      '25': 'accessories_list',
+      '20': 'color',
+    };
+
+    if (!chosen_field_type_id) {
+      return '';
+    }
+
+    let field_type_name = field_types[chosen_field_type_id] || '';
+
+    if (!field_type_name) {
+      return '';
+    }
+
+    switch (chosen_field_type_id) {
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      case '10':
+      case '11':
+      case '12':
+      case '31':
+      case '32':
+        field_type_name = 'number';
+        break;
+      case '13':
+      case '14':
+      case '17':
+      case '34':
+      case '20':
+        field_type_name = 'hidden';
+        break;
+      case '21':
+        field_type_name = 'list';
+        break;
+    }
+
+    return field_type_name;
   }
 
   blindmatrix_v4_render_colors_HTML(color_field_args: any): any {
     // This function will be implemented later
+  }
+
+  blindmatrix_render_list_field(field_args: any): any {
+    let field_html = '';
+    if (field_args.showfieldonjob == '1') {
+      field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
+      field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+      field_html += `<select class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+      field_args.optionsvalue.forEach((option: any) => {
+        field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
+      });
+      field_html += `</select>`;
+      field_html += `</div>`;
+    }
+    return field_html;
+  }
+
+  blindmatrix_render_number_field(field_args: any): any {
+    let field_html = '';
+    if (field_args.showfieldonjob == '1') {
+      field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
+      field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+      field_html += `</div>`;
+    }
+    return field_html;
+  }
+
+  blindmatrix_render_hidden_field(field_args: any): any {
+    return `<input type="hidden" name="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
   }
 
   freesample(button: any): void {
