@@ -2,14 +2,26 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+interface ApiCommonParams {
+  api_url: string;
+  api_key: string;
+  api_name: string;
+  recipeid?: string;
+  productid?: string;
+  [key: string]: any;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php'; // Replace with your actual API URL
+  private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php'; // Default API URL
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Generic API call method supporting GET, POST, PUT
+   */
   callApi(
     method: string,
     passData: string,
@@ -23,7 +35,7 @@ export class ApiService {
     let url = '';
 
     if (appointment) {
-      url = `${api_url}/api/public/api/`; 
+      url = `${api_url}/api/public/api/`;
     } else if (node) {
       url = `https://curtainmatrix.co.uk/devsource/nodeapi/`;
     } else {
@@ -31,7 +43,7 @@ export class ApiService {
     }
 
     url += passData;
-console.log(url);
+
     const headers = new HttpHeaders({
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -65,39 +77,130 @@ console.log(url);
     }
   }
 
-  getProductData(params: any): Observable<any> {
+  /**
+   * Get product data with default fields
+   */
+  getProductData(params: ApiCommonParams): Observable<any> {
     const { api_url, api_key, api_name, recipeid, ...payload } = params;
+    if (!recipeid) {
+      throw new Error('recipeid is required');
+    }
     const passData = `products/fields/withdefault/list/${recipeid}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
 
+  /**
+   * Calculate price by sending form data as JSON body
+   */
   calculatePrice(formData: any): Observable<any> {
-    const params = {
+    const payload = {
       action: 'price_calculation',
       form_data: JSON.stringify(formData)
     };
-    return this.http.post(this.apiUrl, {}, { params });
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    return this.http.post(this.apiUrl, payload, { headers });
   }
 
+  /**
+   * Add item to cart by sending form data as JSON body
+   */
   addToCart(formData: any): Observable<any> {
-    const params = {
+    const payload = {
       action: 'add_to_cart',
       form_data: JSON.stringify(formData)
     };
-    return this.http.post(this.apiUrl, {}, { params });
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    return this.http.post(this.apiUrl, payload, { headers });
   }
 
+  /**
+   * Add free sample by sending sample data as JSON body
+   */
   addFreeSample(sampleData: any): Observable<any> {
-    const params = {
+    const payload = {
       action: 'add_freesample',
       ...sampleData
     };
-    return this.http.post(this.apiUrl, {}, { params });
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    return this.http.post(this.apiUrl, payload, { headers });
   }
 
-  getOptionlist(params: any, level: number = 0, fieldtype: number = 3, fabriccolor: number = 0, fieldid: number): Observable<any> {
-      const { api_url, api_key, api_name, recipeid, ...payload } = params;
-      const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
-    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
+  /**
+   * Get option list with POST request and JSON payload
+   */
+  getOptionlist(
+    params: ApiCommonParams,
+    level: number = 0,
+    fieldtype: number = 3,
+    fabriccolor: number = 0,
+    fieldid: number,
+    filter: any
+  ): Observable<any> {
+    const { api_url, api_key, api_name, recipeid, ...rest } = params;
+
+    if (!recipeid) {
+      throw new Error('recipeid is required');
+    }
+
+    const payload = {
+      filterids: fieldtype === 3 ? filter : null,
+      productionformulalist: [],
+      productid: rest.productid || null,
+    };
+
+    const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
+
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
+
+  /**
+   * Filter based list with POST request and JSON payload
+   */
+  filterbasedlist(
+    params: ApiCommonParams,
+    level: string = "",
+    fieldtype: number,
+    fabriccolor: string = "",
+    fieldid: string = ""
+  ): Observable<any> {
+    const { api_url, api_key, api_name } = params;
+
+    const payload = {
+      changedfieldtypeid: "",
+      colorid: "",
+      coloriddual: "",
+      customertype: "4",
+      drop: null,
+      fabricid: "",
+      fabriciddual: "",
+      fieldtypeid: fieldtype,
+      lineitemselectedvalues: [],
+      numFraction: null,
+      orderItemId: "",
+      orderitemselectedvalues: "",
+      pricegroup: "",
+      pricegroupdual: "",
+      productid: params.productid,
+      selectedfieldids: "",
+      selectedvalues: "",
+      subcolorid: "",
+      subfabricid: "",
+      supplier: "",
+      unittype: 2,
+      width: null,
+      level: level,
+      fabriccolor: fabriccolor,
+      fieldid: fieldid
+    };
+
+    const passData = `products/fields/filterbasedongeneraldata`;
+
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }

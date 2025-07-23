@@ -87,28 +87,40 @@ export class OrderformComponent implements OnInit {
     
     });
   }
+fetchInitialData(params: any): void {
+  this.apiService.getProductData(params).subscribe((data: any) => {
+    if (data) {
+      const responseData = data[0].data;
+      this.parameters_data = responseData;
 
-  fetchInitialData(params: any): void {
-    this.apiService.getProductData(params).subscribe((data: any) => {
-  
-      if (data) {
-        const responseData = data[0].data;
-        this.parameters_data = responseData;
-          this.parameters_data.forEach(field => {
-            if(field.fieldtypeid == 3){
-              this.apiService. getOptionlist(params,0,3,0,field.fieldid).subscribe((data: any) => {
-                    const optionresponseData = data[0].data;
-                   this.option_data[field.fieldid] = optionresponseData;
-              });
-            }
-          });
-      }
-    });
-  }
+      this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
+        
+        const filterresponseData = filterData[0].data;
+        console.log(filterData);
+        this.parameters_data.forEach((field) => {
+          if (field.fieldtypeid == 3) {
+            this.apiService.getOptionlist(
+              params,
+              0,
+              3,
+              0,
+              field.fieldid,
+              filterresponseData.optionarray[field.fieldid]
+            ).subscribe((optionData: any) => {
+              const optionresponseData = optionData[0].data;
+              this.option_data[field.fieldid] = optionresponseData;
+            });
+          }
+        });
+      });
+    }
+  });
+}
 
   get_blindmatrix_v4_parameters_HTML(
     field_type_id: any,
-    field_args: any
+    field_args: any,
+    option_data:any,
   ): any {
     const field_type_name = this.get_field_type_name(field_type_id);
     if (!field_type_name) {
@@ -117,7 +129,7 @@ export class OrderformComponent implements OnInit {
 
     switch (field_type_name) {
       case 'list':
-        return this.blindmatrix_render_list_field(field_args);
+        return this.blindmatrix_render_list_field(field_args,option_data);
       case 'number':
         return this.blindmatrix_render_number_field(field_args);
       case 'hidden':
@@ -192,13 +204,13 @@ export class OrderformComponent implements OnInit {
     // This function will be implemented later
   }
 
-  blindmatrix_render_list_field(field_args: any): any {
+  blindmatrix_render_list_field(field_args: any, option_data: any): any {
     let field_html = '';
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
       field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
-      field_args.optionsvalue.forEach((option: any) => {
+      option_data.forEach((option: any) => {
         field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
       });
       field_html += `</select>`;
