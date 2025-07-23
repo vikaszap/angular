@@ -95,7 +95,7 @@ console.log(url);
     return this.http.post(this.apiUrl, {}, { params });
   }
 
-  getSubComponents(params: any, level: number = 0, fieldtype: number = 3, fabriccolor: number = 0, fieldid: number): Observable<any> {
+  getOptionlist(params: any, level: number = 0, fieldtype: number = 3, fabriccolor: number = 0, fieldid: number): Observable<any> {
       const { api_url, api_key, api_name, recipeid, ...payload } = params;
       const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);

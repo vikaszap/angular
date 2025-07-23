@@ -79,7 +79,7 @@ export class OrderformComponent implements OnInit {
   }
 
   parameters_data: any[] = [];
-  sub_data: any[] = [];
+  option_data: any[] = [];
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -96,9 +96,9 @@ export class OrderformComponent implements OnInit {
         this.parameters_data = responseData;
           this.parameters_data.forEach(field => {
             if(field.fieldtypeid == 3){
-              this.apiService. getSubComponents(params,0,3,0,field.fieldid).subscribe((data: any) => {
-                    const subresponseData = data[0].data;
-                   this.sub_data[field.fieldid] = subresponseData;
+              this.apiService. getOptionlist(params,0,3,0,field.fieldid).subscribe((data: any) => {
+                    const optionresponseData = data[0].data;
+                   this.option_data[field.fieldid] = optionresponseData;
               });
             }
           });
