@@ -31,7 +31,7 @@ export class ApiService {
     }
 
     url += passData;
-
+console.log(url);
     const headers = new HttpHeaders({
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -95,8 +95,9 @@ export class ApiService {
     return this.http.post(this.apiUrl, {}, { params });
   }
 
-  getSubComponents(payload: any, api_url: string, api_key: string, api_name: string): Observable<any> {
-    const passData = 'products/fields/list/0';
-    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+  getSubComponents(params: any, level: number = 0, fieldtype: number = 3, fabriccolor: number = 0, fieldid: number): Observable<any> {
+      const { api_url, api_key, api_name, recipeid, ...payload } = params;
+      const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
+    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
 }

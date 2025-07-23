@@ -79,22 +79,29 @@ export class OrderformComponent implements OnInit {
   }
 
   parameters_data: any[] = [];
+  sub_data: any[] = [];
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       this.fetchInitialData(params);
+    
     });
   }
 
   fetchInitialData(params: any): void {
     this.apiService.getProductData(params).subscribe((data: any) => {
-      if (data && data.status) {
-        const responseData = data.data[0];
-        this.parameters_data = responseData.data;
-
-        this.parameters_data.forEach(field => {
-          this.orderForm.addControl(field.labelnamecode, this.fb.control(field.value || ''));
-        });
+  
+      if (data) {
+        const responseData = data[0].data;
+        this.parameters_data = responseData;
+          this.parameters_data.forEach(field => {
+            if(field.fieldtypeid == 3){
+              this.apiService. getSubComponents(params,0,3,0,field.fieldid).subscribe((data: any) => {
+                    const subresponseData = data[0].data;
+                   this.sub_data[field.fieldid] = subresponseData;
+              });
+            }
+          });
       }
     });
   }
