@@ -94,24 +94,28 @@ fetchInitialData(params: any): void {
       this.parameters_data = responseData;
 
       this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
-        
+ 
         const filterresponseData = filterData[0].data;
-        console.log(filterData);
+         
+      
         this.parameters_data.forEach((field) => {
-          if (field.fieldtypeid == 3) {
-            this.apiService.getOptionlist(
-              params,
-              0,
-              3,
-              0,
-              field.fieldid,
-              filterresponseData.optionarray[field.fieldid]
-            ).subscribe((optionData: any) => {
-              const optionresponseData = optionData[0].data;
-              this.option_data[field.fieldid] = optionresponseData;
-            });
+        if( filterresponseData.optionarray[field.fieldid] != undefined){
+            if (field.fieldtypeid == 3) {
+              this.apiService.getOptionlist(
+                params,
+                0,
+                3,
+                0,
+                field.fieldid,
+                filterresponseData.optionarray[field.fieldid]
+              ).subscribe((optionData: any) => {
+                const optionresponseData = optionData[0].data[0].optionsvalue;
+                this.option_data[field.fieldid] = optionresponseData;
+              });
+            }
           }
         });
+       
       });
     }
   });
@@ -120,7 +124,7 @@ fetchInitialData(params: any): void {
   get_blindmatrix_v4_parameters_HTML(
     field_type_id: any,
     field_args: any,
-    option_data:any,
+    option_data:any ="",
   ): any {
     const field_type_name = this.get_field_type_name(field_type_id);
     if (!field_type_name) {
@@ -196,7 +200,6 @@ fetchInitialData(params: any): void {
         field_type_name = 'list';
         break;
     }
-
     return field_type_name;
   }
 
@@ -210,6 +213,7 @@ fetchInitialData(params: any): void {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
       field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
       field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+       field_html += `<option value="">Select Option</option>`;
       option_data.forEach((option: any) => {
         field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
       });

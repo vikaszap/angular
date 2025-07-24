@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Console } from 'console';
 
 interface ApiCommonParams {
   api_url: string;
@@ -142,7 +143,7 @@ export class ApiService {
     fieldid: number,
     filter: any
   ): Observable<any> {
-    const { api_url, api_key, api_name, recipeid, ...rest } = params;
+    const { api_url, api_key, api_name, recipeid,product_id, ...rest } = params;
 
     if (!recipeid) {
       throw new Error('recipeid is required');
@@ -151,11 +152,11 @@ export class ApiService {
     const payload = {
       filterids: fieldtype === 3 ? filter : null,
       productionformulalist: [],
-      productid: rest.productid || null,
+      productid: product_id || null,
     };
-
+    console.log(payload);
     const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
-
+     console.log(passData);
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
@@ -169,8 +170,7 @@ export class ApiService {
     fabriccolor: string = "",
     fieldid: string = ""
   ): Observable<any> {
-    const { api_url, api_key, api_name } = params;
-
+    const { api_url, api_key, api_name,product_id } = params;
     const payload = {
       changedfieldtypeid: "",
       colorid: "",
@@ -186,7 +186,7 @@ export class ApiService {
       orderitemselectedvalues: "",
       pricegroup: "",
       pricegroupdual: "",
-      productid: params.productid,
+      productid: product_id,
       selectedfieldids: "",
       selectedvalues: "",
       subcolorid: "",
@@ -198,7 +198,7 @@ export class ApiService {
       fabriccolor: fabriccolor,
       fieldid: fieldid
     };
-
+    
     const passData = `products/fields/filterbasedongeneraldata`;
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
