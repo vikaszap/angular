@@ -92,7 +92,7 @@ fetchInitialData(params: any): void {
     if (data) {
       const responseData = data[0].data;
       this.parameters_data = responseData;
-
+      console.log(responseData);
       this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
  
         const filterresponseData = filterData[0].data;
@@ -124,7 +124,7 @@ fetchInitialData(params: any): void {
   get_blindmatrix_v4_parameters_HTML(
     field_type_id: any,
     field_args: any,
-    option_data:any ="",
+    option_data:any = [],
   ): any {
     const field_type_name = this.get_field_type_name(field_type_id);
     if (!field_type_name) {
@@ -145,6 +145,7 @@ fetchInitialData(params: any): void {
   }
 
   get_field_type_name(chosen_field_type_id: any): string {
+  
     const field_types: { [key: string]: string } = {
       '3': 'list',
       '5': 'fabric_and_color',
@@ -172,7 +173,7 @@ fetchInitialData(params: any): void {
     }
 
     let field_type_name = field_types[chosen_field_type_id] || '';
-
+   
     if (!field_type_name) {
       return '';
     }
@@ -200,6 +201,7 @@ fetchInitialData(params: any): void {
         field_type_name = 'list';
         break;
     }
+  console.log(field_type_name);
     return field_type_name;
   }
 
@@ -224,6 +226,7 @@ fetchInitialData(params: any): void {
   }
 
   blindmatrix_render_number_field(field_args: any): any {
+    
     let field_html = '';
     if (field_args.showfieldonjob == '1') {
       field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
