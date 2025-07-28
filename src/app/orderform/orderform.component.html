@@ -65,9 +65,51 @@
                 </span>
               </div>
             </div>
-            <div *ngFor="let field of parameters_data">
-              <div 
-                [innerHTML]="get_blindmatrix_v4_parameters_HTML(field.fieldtypeid, field, option_data[field.fieldid] || field.optionsvalue) | safeHtml">
+            <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
+              <div *ngIf="field.showfieldonjob == '1'">
+                <div *ngSwitchCase="'unit_type'">
+                  <!-- No specific implementation for unit_type, so it will fall through to the 'list' case -->
+                </div>
+                <div *ngSwitchCase="'list'">
+                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
+                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
+                    <select class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
+                      <option value="">Select Option</option>
+                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
+                    </select>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'number'">
+                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">
+                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
+                    <input type="number" class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                  </div>
+                </div>
+                <div *ngSwitchCase="'width_with_fraction'">
+                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-width">
+                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
+                    <div class="d-flex align-items-center">
+                      <input type="number" class="blindmatrix-v4-parameter-input" formControlName="width" id="width" [min]="min_width" [max]="max_width">
+                      <select class="blindmatrix-v4-parameter-fraction" formControlName="widthfraction" id="widthfraction">
+                        <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'drop_with_fraction'">
+                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-drop">
+                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
+                    <div class="d-flex align-items-center">
+                      <input type="number" class="blindmatrix-v4-parameter-input" formControlName="drop" id="drop" [min]="min_drop" [max]="max_drop">
+                      <select class="blindmatrix-v4-parameter-fraction" formControlName="dropfraction" id="dropfraction">
+                        <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'hidden'">
+                  <input type="hidden" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                </div>
               </div>
             </div>
             <div class="price_wrapper" style="display:none;">
