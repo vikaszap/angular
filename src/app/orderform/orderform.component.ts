@@ -224,7 +224,7 @@ blindmatrix_render_list_field(field_args: any, option_data: any): any {
   if (field_args.showfieldonjob == '1') {
     field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
     field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" (change)='onFieldChange($event, ${JSON.stringify(field_args)})'>`;
     field_html += `<option value="">Select Option</option>`;
     option_data.forEach((option: any) => {
       field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
@@ -249,6 +249,24 @@ blindmatrix_render_number_field(field_args: any): any {
 blindmatrix_render_hidden_field(field_args: any): any {
   return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
 }
+
+onFieldChange(event: any, field_args: any): void {
+  const selectedValue = event.target.value;
+  switch (field_args.fieldtypeid) {
+    case 34:
+      this.handleUnitTypeChange(selectedValue);
+      break;
+    // Add other cases here
+    default:
+      break;
+  }
+}
+
+handleUnitTypeChange(value: any): void {
+  console.log('Unit type changed to:', value);
+  // You can add more logic here to handle the change
+}
+
   freesample(button: any): void {
     const free_sample_data = JSON.parse(
       button.getAttribute('data-free_sample_data')
