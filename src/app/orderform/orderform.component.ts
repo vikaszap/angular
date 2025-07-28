@@ -119,10 +119,6 @@ fetchInitialData(params: any): void {
       });
     }
   });
-  this.apiService.unitypelist(params).subscribe((data: any) => {
-    console.log(data);
-  });
-
 }
 
 
@@ -251,6 +247,7 @@ blindmatrix_render_hidden_field(field_args: any): any {
 }
 
 onFieldChange(event: any, field_args: any): void {
+  console.log('cvcx');
   const selectedValue = event.target.value;
   switch (field_args.fieldtypeid) {
     case 34:
