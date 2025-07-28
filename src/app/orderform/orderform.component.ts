@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, Renderer2, AfterViewChecked } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -23,7 +23,8 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
     RouterModule,
   ],
 })
-export class OrderformComponent implements OnInit {
+export class OrderformComponent implements OnInit, AfterViewChecked {
+  private listenersAdded = false;
   product_details_arr: any = {};
   product_specs: any = '';
   product_description: any = '';
@@ -65,7 +66,9 @@ export class OrderformComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private el: ElementRef,
+    private renderer: Renderer2
   ) {
     this.orderForm = this.fb.group({
       unit: ['mm'],
@@ -220,7 +223,7 @@ blindmatrix_render_list_field(field_args: any, option_data: any): any {
   if (field_args.showfieldonjob == '1') {
     field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
     field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" (change)='onFieldChange($event, ${JSON.stringify(field_args)})'>`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" data-field-args='${JSON.stringify(field_args)}'>`;
     field_html += `<option value="">Select Option</option>`;
     option_data.forEach((option: any) => {
       field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
@@ -310,5 +313,20 @@ handleUnitTypeChange(value: any): void {
 
   getRelatedProductName(related_product: any): string {
     return related_product.name;
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.listenersAdded) {
+      const selects = this.el.nativeElement.querySelectorAll('.blindmatrix-v4-parameter-input');
+      selects.forEach((select: any) => {
+        const fieldArgs = select.getAttribute('data-field-args');
+        if (fieldArgs) {
+          this.renderer.listen(select, 'change', (event) => {
+            this.onFieldChange(event, JSON.parse(fieldArgs));
+          });
+        }
+      });
+      this.listenersAdded = true;
+    }
   }
 }
