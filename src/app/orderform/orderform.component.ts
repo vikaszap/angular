@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, Renderer2, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -23,8 +23,7 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
     RouterModule,
   ],
 })
-export class OrderformComponent implements OnInit, AfterViewChecked {
-  private listenersAdded = false;
+export class OrderformComponent implements OnInit {
   product_details_arr: any = {};
   product_specs: any = '';
   product_description: any = '';
@@ -223,7 +222,7 @@ blindmatrix_render_list_field(field_args: any, option_data: any): any {
   if (field_args.showfieldonjob == '1') {
     field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
     field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" data-field-args='${JSON.stringify(field_args)}'>`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" (change)="onFieldChange(${field_args.fieldid}, $event)">`;
     field_html += `<option value="">Select Option</option>`;
     option_data.forEach((option: any) => {
       field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
@@ -249,16 +248,19 @@ blindmatrix_render_hidden_field(field_args: any): any {
   return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
 }
 
-onFieldChange(event: any, field_args: any): void {
-  console.log('cvcx');
+
+onFieldChange(fieldId: any, event: any): void {
   const selectedValue = event.target.value;
-  switch (field_args.fieldtypeid) {
-    case 34:
-      this.handleUnitTypeChange(selectedValue);
-      break;
-    // Add other cases here
-    default:
-      break;
+  const field = this.parameters_data.find(f => f.fieldid === fieldId);
+  if (field) {
+    switch (field.fieldtypeid) {
+      case 34:
+        this.handleUnitTypeChange(selectedValue);
+        break;
+      // Add other cases here
+      default:
+        break;
+    }
   }
 }
 
@@ -315,21 +317,4 @@ handleUnitTypeChange(value: any): void {
     return related_product.name;
   }
 
-  ngAfterViewChecked(): void {
-    if (!this.listenersAdded) {
-        console.log(this.listenersAdded);
-      const selects = this.el.nativeElement.querySelectorAll('.blindmatrix-v4-parameter-input');
-      console.log(selects);
-        console.log('adsda');
-      selects.forEach((select: any) => {
-        const fieldArgs = select.getAttribute('data-field-args');
-        if (fieldArgs) {
-          this.renderer.listen(select, 'change', (event) => {
-            this.onFieldChange(event, JSON.parse(fieldArgs));
-          });
-        }
-      });
-      this.listenersAdded = true;
-    }
-  }
 }
