@@ -317,7 +317,10 @@ handleUnitTypeChange(value: any): void {
 
   ngAfterViewChecked(): void {
     if (!this.listenersAdded) {
+        console.log(this.listenersAdded);
       const selects = this.el.nativeElement.querySelectorAll('.blindmatrix-v4-parameter-input');
+      console.log(selects);
+        console.log('adsda');
       selects.forEach((select: any) => {
         const fieldArgs = select.getAttribute('data-field-args');
         if (fieldArgs) {
