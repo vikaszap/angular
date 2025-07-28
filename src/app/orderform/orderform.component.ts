@@ -9,7 +9,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SafeHtmlPipe } from '../safe-html.pipe';
-import { ChangeListenerDirective } from './change-listener.directive';
 
 @Component({
   selector: 'app-orderform',
@@ -22,7 +21,6 @@ import { ChangeListenerDirective } from './change-listener.directive';
     CommonModule,
     SafeHtmlPipe,
     RouterModule,
-    ChangeListenerDirective
   ],
 })
 export class OrderformComponent implements OnInit {
@@ -228,7 +226,7 @@ blindmatrix_render_list_field(field_args: any, option_data: any): any {
   if (field_args.showfieldonjob == '1') {
     field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
     field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" appChangeListener [fieldArgs]='${JSON.stringify(field_args)}' (fieldChange)="onFieldChange($event)">`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" (change)="onFieldChange(${field_args.fieldid}, $event)">`;
     field_html += `<option value="">Select Option</option>`;
     option_data.forEach((option: any) => {
       field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
@@ -254,16 +252,18 @@ blindmatrix_render_hidden_field(field_args: any): any {
   return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
 }
 
-onFieldChange(data: any): void {
-  const { event, fieldArgs } = data;
+onFieldChange(fieldId: any, event: any): void {
   const selectedValue = event.target.value;
-  switch (fieldArgs.fieldtypeid) {
-    case 34:
-      this.handleUnitTypeChange(selectedValue);
-      break;
-    // Add other cases here
-    default:
-      break;
+  const field = this.parameters_data.find(f => f.fieldid === fieldId);
+  if (field) {
+    switch (field.fieldtypeid) {
+      case 34:
+        this.handleUnitTypeChange(selectedValue);
+        break;
+      // Add other cases here
+      default:
+        break;
+    }
   }
 }
 
