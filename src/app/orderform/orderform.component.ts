@@ -121,10 +121,6 @@ fetchInitialData(params: any): void {
       });
     }
   });
-  this.apiService.unitypelist(params).subscribe((data: any) => {
-    console.log(data);
-  });
-
 }
 
 
@@ -252,6 +248,7 @@ blindmatrix_render_hidden_field(field_args: any): any {
   return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
 }
 
+
 onFieldChange(fieldId: any, event: any): void {
   const selectedValue = event.target.value;
   const field = this.parameters_data.find(f => f.fieldid === fieldId);
@@ -319,4 +316,5 @@ handleUnitTypeChange(value: any): void {
   getRelatedProductName(related_product: any): string {
     return related_product.name;
   }
+
 }

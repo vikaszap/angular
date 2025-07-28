@@ -154,9 +154,8 @@ export class ApiService {
       productionformulalist: [],
       productid: product_id || null,
     };
-    console.log(payload);
     const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
-     console.log(passData);
+ 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
@@ -203,13 +202,5 @@ export class ApiService {
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-  unitypelist(
-    params: ApiCommonParams
-  ): Observable<any> {
-    const { api_url, api_key, api_name, recipeid,product_id, ...rest } = params;
 
-      const passData = `unitype/for/products/${product_id}`;
-    const payload ={};
-    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
-  }
 }
