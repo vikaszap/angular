@@ -67,7 +67,7 @@
             </div>
             <div *ngFor="let field of parameters_data">
               <div 
-                [innerHTML]="get_blindmatrix_v4_parameters_HTML(field.fieldtypeid, field, option_data[field.fieldid] || []) | safeHtml">
+                [innerHTML]="get_blindmatrix_v4_parameters_HTML(field.fieldtypeid, field, option_data[field.fieldid] || field.optionsvalue) | safeHtml">
               </div>
             </div>
             <div class="price_wrapper" style="display:none;">

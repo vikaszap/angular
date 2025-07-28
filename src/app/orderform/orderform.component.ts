@@ -119,128 +119,136 @@ fetchInitialData(params: any): void {
       });
     }
   });
+  this.apiService.unitypelist(params).subscribe((data: any) => {
+    console.log(data);
+  });
+
 }
 
-  get_blindmatrix_v4_parameters_HTML(
-    field_type_id: any,
-    field_args: any,
-    option_data:any = [],
-  ): any {
-    const field_type_name = this.get_field_type_name(field_type_id);
-    if (!field_type_name) {
+
+get_field_type_name(chosen_field_type_id: any): string {
+  const field_types: { [key: string]: string } = {
+    '3': 'list',
+    '5': 'fabric_and_color',
+    '6': 'number',
+    '7': 'x_footage',
+    '8': 'number',  // width (simple number)
+    '9': 'y_footage',
+    '10': 'height',
+    '11': 'width_with_fraction',  // special width with fraction
+    '12': 'drop_with_fraction',   // special drop with fraction
+    '13': 'pricegroup',
+    '14': 'qty',
+    '17': 'supplier',
+    '18': 'text',
+    '31': 'x_square_yard',
+    '32': 'y_square_yard',
+    '34': 'unit_type',
+    '21': 'shutter_materials',
+    '25': 'accessories_list',
+    '20': 'color',
+  };
+
+  return field_types[chosen_field_type_id] || '';
+}
+
+
+get_blindmatrix_v4_parameters_HTML(
+  field_type_id: any,
+  field_args: any,
+  option_data: any = [],
+): any {
+  const field_type_name = this.get_field_type_name(field_type_id);
+  if (!field_type_name) {
+    return '';
+  }
+
+  switch (field_type_name) {
+    case 'unit_type':
+      return this.blindmatrix_render_list_field(field_args, option_data);
+    case 'list':
+      return this.blindmatrix_render_list_field(field_args, option_data);
+    case 'number':
+      return this.blindmatrix_render_number_field(field_args);
+    case 'width_with_fraction':
+      return this.blindmatrix_render_width_with_fraction_field(field_args);
+    case 'drop_with_fraction':
+      return this.blindmatrix_render_drop_with_fraction_field(field_args);
+    case 'hidden':
+      return this.blindmatrix_render_hidden_field(field_args);
+    default:
       return '';
-    }
-
-    switch (field_type_name) {
-      case 'list':
-        return this.blindmatrix_render_list_field(field_args,option_data);
-      case 'number':
-        return this.blindmatrix_render_number_field(field_args);
-      case 'hidden':
-        return this.blindmatrix_render_hidden_field(field_args);
-      // Add other cases here
-      default:
-        return '';
-    }
   }
+}
 
-  get_field_type_name(chosen_field_type_id: any): string {
-  
-    const field_types: { [key: string]: string } = {
-      '3': 'list',
-      '5': 'fabric_and_color',
-      '6': 'number',
-      '7': 'x_footage',
-      '8': 'width',
-      '9': 'y_footage',
-      '10': 'height',
-      '11': 'width',
-      '12': 'drop',
-      '13': 'pricegroup',
-      '14': 'qty',
-      '17': 'supplier',
-      '18': 'text',
-      '31': 'x_square_yard',
-      '32': 'y_square_yard',
-      '34': 'unit_type',
-      '21': 'shutter_materials', //shutter_materials
-      '25': 'accessories_list',
-      '20': 'color',
-    };
-
-    if (!chosen_field_type_id) {
-      return '';
-    }
-
-    let field_type_name = field_types[chosen_field_type_id] || '';
-   
-    if (!field_type_name) {
-      return '';
-    }
-
-    switch (chosen_field_type_id) {
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-      case '10':
-      case '11':
-      case '12':
-      case '31':
-      case '32':
-        field_type_name = 'number';
-        break;
-      case '13':
-      case '14':
-      case '17':
-      case '34':
-      case '20':
-        field_type_name = 'hidden';
-        break;
-      case '21':
-        field_type_name = 'list';
-        break;
-    }
-  console.log(field_type_name);
-    return field_type_name;
+// Add new methods for width and drop with fraction
+blindmatrix_render_width_with_fraction_field(field_args: any): any {
+  let field_html = '';
+  if (field_args.showfieldonjob == '1') {
+    field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-width">`;
+    field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+    field_html += `<div class="d-flex align-items-center">`;
+    field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="width" id="width" min="${this.min_width}" max="${this.max_width}">`;
+    field_html += `<select class="blindmatrix-v4-parameter-fraction" formControlName="widthfraction" id="widthfraction">`;
+    this.inchfraction_array.forEach((fraction) => {
+      field_html += `<option value="${fraction.value}">${fraction.name}</option>`;
+    });
+    field_html += `</select>`;
+    field_html += `</div>`;
+    field_html += `</div>`;
   }
+  return field_html;
+}
 
-  blindmatrix_v4_render_colors_HTML(color_field_args: any): any {
-    // This function will be implemented later
+blindmatrix_render_drop_with_fraction_field(field_args: any): any {
+  let field_html = '';
+  if (field_args.showfieldonjob == '1') {
+    field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-drop">`;
+    field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+    field_html += `<div class="d-flex align-items-center">`;
+    field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="drop" id="drop" min="${this.min_drop}" max="${this.max_drop}">`;
+    field_html += `<select class="blindmatrix-v4-parameter-fraction" formControlName="dropfraction" id="dropfraction">`;
+    this.inchfraction_array.forEach((fraction) => {
+      field_html += `<option value="${fraction.value}">${fraction.name}</option>`;
+    });
+    field_html += `</select>`;
+    field_html += `</div>`;
+    field_html += `</div>`;
   }
+  return field_html;
+}
 
-  blindmatrix_render_list_field(field_args: any, option_data: any): any {
-    let field_html = '';
-    if (field_args.showfieldonjob == '1') {
-      field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
-      field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
-       field_html += `<option value="">Select Option</option>`;
-      option_data.forEach((option: any) => {
-        field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
-      });
-      field_html += `</select>`;
-      field_html += `</div>`;
-    }
-    return field_html;
+// Fix the template literals in existing methods
+blindmatrix_render_list_field(field_args: any, option_data: any): any {
+  let field_html = '';
+  if (field_args.showfieldonjob == '1') {
+    field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
+    field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}">`;
+    field_html += `<option value="">Select Option</option>`;
+    option_data.forEach((option: any) => {
+      field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
+    });
+    field_html += `</select>`;
+    field_html += `</div>`;
   }
+  return field_html;
+}
 
-  blindmatrix_render_number_field(field_args: any): any {
-    
-    let field_html = '';
-    if (field_args.showfieldonjob == '1') {
-      field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
-      field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-      field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" [value]="${field_args.value || ''}">`;
-      field_html += `</div>`;
-    }
-    return field_html;
+blindmatrix_render_number_field(field_args: any): any {
+  let field_html = '';
+  if (field_args.showfieldonjob == '1') {
+    field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">`;
+    field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
+    field_html += `<input type="number" class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+    field_html += `</div>`;
   }
+  return field_html;
+}
 
-  blindmatrix_render_hidden_field(field_args: any): any {
-    return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" [value]="${field_args.value || ''}">`;
-  }
-
+blindmatrix_render_hidden_field(field_args: any): any {
+  return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
+}
   freesample(button: any): void {
     const free_sample_data = JSON.parse(
       button.getAttribute('data-free_sample_data')
