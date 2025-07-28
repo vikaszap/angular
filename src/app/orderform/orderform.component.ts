@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, Renderer2, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, ElementRef, Renderer2 } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { SafeHtmlPipe } from '../safe-html.pipe';
+import { ChangeListenerDirective } from './change-listener.directive';
 
 @Component({
   selector: 'app-orderform',
@@ -21,10 +22,10 @@ import { SafeHtmlPipe } from '../safe-html.pipe';
     CommonModule,
     SafeHtmlPipe,
     RouterModule,
+    ChangeListenerDirective
   ],
 })
-export class OrderformComponent implements OnInit, AfterViewChecked {
-  private listenersAdded = false;
+export class OrderformComponent implements OnInit {
   product_details_arr: any = {};
   product_specs: any = '';
   product_description: any = '';
@@ -227,7 +228,7 @@ blindmatrix_render_list_field(field_args: any, option_data: any): any {
   if (field_args.showfieldonjob == '1') {
     field_html += `<div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">`;
     field_html += `<label class="blindmatrix-v4-parameter-label">${field_args.fieldname}</label>`;
-    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" data-field-args='${JSON.stringify(field_args)}'>`;
+    field_html += `<select class="blindmatrix-v4-parameter-input" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" appChangeListener [fieldArgs]='${JSON.stringify(field_args)}' (fieldChange)="onFieldChange($event)">`;
     field_html += `<option value="">Select Option</option>`;
     option_data.forEach((option: any) => {
       field_html += `<option value="${option.optionid}">${option.optionname}</option>`;
@@ -253,9 +254,10 @@ blindmatrix_render_hidden_field(field_args: any): any {
   return `<input type="hidden" formControlName="${field_args.labelnamecode}" id="${field_args.labelnamecode}" value="${field_args.value || ''}">`;
 }
 
-onFieldChange(event: any, field_args: any): void {
+onFieldChange(data: any): void {
+  const { event, fieldArgs } = data;
   const selectedValue = event.target.value;
-  switch (field_args.fieldtypeid) {
+  switch (fieldArgs.fieldtypeid) {
     case 34:
       this.handleUnitTypeChange(selectedValue);
       break;
@@ -316,20 +318,5 @@ handleUnitTypeChange(value: any): void {
 
   getRelatedProductName(related_product: any): string {
     return related_product.name;
-  }
-
-  ngAfterViewChecked(): void {
-    if (!this.listenersAdded) {
-      const selects = this.el.nativeElement.querySelectorAll('.blindmatrix-v4-parameter-input');
-      selects.forEach((select: any) => {
-        const fieldArgs = select.getAttribute('data-field-args');
-        if (fieldArgs) {
-          this.renderer.listen(select, 'change', (event) => {
-            this.onFieldChange(event, JSON.parse(fieldArgs));
-          });
-        }
-      });
-      this.listenersAdded = true;
-    }
   }
 }
