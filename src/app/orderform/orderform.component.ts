@@ -58,6 +58,7 @@ export class OrderformComponent implements OnInit {
   pricegroup_id: any = 0;
   supplier_id: any = 0;
   orderForm: FormGroup;
+  previousFormValue: any;
 
   constructor(
     private apiService: ApiService,
@@ -75,6 +76,7 @@ export class OrderformComponent implements OnInit {
       qty: [1],
       // Add other form controls here
     });
+    this.previousFormValue = this.orderForm.value;
   }
 
   parameters_data: any[] = [];
@@ -83,45 +85,53 @@ export class OrderformComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       this.fetchInitialData(params);
-    
+    });
+
+    this.orderForm.valueChanges.subscribe(values => {
+      this.onFormChanges(values);
     });
   }
-fetchInitialData(params: any): void {
-  this.apiService.getProductData(params).subscribe((data: any) => {
-    if (data) {
-      const responseData = data[0].data;
-      this.parameters_data = responseData;
 
-      const formControls: { [key: string]: any } = {};
-      this.parameters_data.forEach(field => {
-        formControls[field.labelnamecode] = [''];
-      });
-      this.orderForm = this.fb.group(formControls);
+  fetchInitialData(params: any): void {
+    this.apiService.getProductData(params).subscribe((data: any) => {
+      if (data) {
+        const responseData = data[0].data;
+        this.parameters_data = responseData;
 
-      this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
-        const filterresponseData = filterData[0].data;
-
-        this.parameters_data.forEach((field) => {
-          if (filterresponseData.optionarray[field.fieldid] != undefined) {
-            if (field.fieldtypeid == 3) {
-              this.apiService.getOptionlist(
-                params,
-                0,
-                3,
-                0,
-                field.fieldid,
-                filterresponseData.optionarray[field.fieldid]
-              ).subscribe((optionData: any) => {
-                const optionresponseData = optionData[0].data[0].optionsvalue;
-                this.option_data[field.fieldid] = optionresponseData;
-              });
-            }
-          }
+        const formControls: { [key: string]: any } = {};
+        this.parameters_data.forEach(field => {
+          formControls[field.labelnamecode] = [''];
         });
-      });
-    }
-  });
-}
+        this.orderForm = this.fb.group(formControls);
+
+        this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
+          const filterresponseData = filterData[0].data;
+
+          this.parameters_data.forEach((field) => {
+            if (filterresponseData.optionarray[field.fieldid] != undefined) {
+              if (field.fieldtypeid == 3) {
+                this.apiService.getOptionlist(
+                  params,
+                  0,
+                  3,
+                  0,
+                  field.fieldid,
+                  filterresponseData.optionarray[field.fieldid]
+                ).subscribe((optionData: any) => {
+                  const optionresponseData = optionData[0].data[0].optionsvalue;
+                  this.option_data[field.fieldid] = optionresponseData;
+                });
+              }
+            }
+          });
+        });
+
+        this.orderForm.valueChanges.subscribe(values => {
+          this.onFormChanges(values);
+        });
+      }
+    });
+  }
 
 
 get_field_type_name(chosen_field_type_id: any): string {
@@ -153,20 +163,24 @@ get_field_type_name(chosen_field_type_id: any): string {
 
 
 
-onFieldChange(fieldId: any, event: any): void {
-  const selectedValue = event.target.value;
-  const field = this.parameters_data.find(f => f.fieldid === fieldId);
-  if (field) {
-    switch (field.fieldtypeid) {
-      case 34:
-        const selectedValue = this.orderForm.get(field.labelnamecode)?.value;
-        this.handleUnitTypeChange(selectedValue);
-        break;
-      default:
-        break;
+  onFormChanges(values: any): void {
+    const changedField = Object.keys(values).find(key => values[key] !== this.previousFormValue[key]);
+    if (changedField) {
+      console.log('Field changed:', changedField, 'New value:', values[changedField]);
+      const field = this.parameters_data.find(f => f.labelnamecode === changedField);
+      if (field) {
+        switch (field.fieldtypeid) {
+          case 34: // unit_type
+            this.handleUnitTypeChange(values[changedField]);
+            break;
+          // Add other cases for other field types here
+          default:
+            break;
+        }
+      }
     }
+    this.previousFormValue = values;
   }
-}
 
 handleUnitTypeChange(value: any): void {
   console.log('Unit type changed to:', value);
