@@ -1,29 +1,29 @@
 <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart" [ngClass]="{'blinds-parameters-form': isBlinds}">
-  <div class="w-100 blinds container p-sm-0" style="max-width: 1250px;">
-    <div class="productaname py-3">
-      <a [routerLink]="[product_list_page_link]" target="_self" class="lowercase fw-bold mb-1">
+  <div class="blinds container">
+    <div class="productaname">
+      <a [routerLink]="[product_list_page_link]" target="_self">
         <i class="fa-solid fa-angle-left"></i> <span>Back to {{ productname }}</span>
       </a>
-      <h1 class="product-title product_title entry-title prodescprotitle">
-        <span class="setcolorname fw-bolder fst-italic">{{ productname }} - {{ fabricname }}</span>
+      <h1 class="product-title">
+        <span>{{ productname }} - {{ fabricname }}</span>
       </h1>
     </div>
     <div id="configurator-root" class="product_visualizer_wrapper">
-      <div class="d-md-flex gap-2 flex-nowrap">
-        <div class="col-md-6 col-sm-12 position-relative overflow-visible" style="box-shadow: 1px 0 5px #ccc; border-radius:10px">
-          <div class="position-sticky sticky-top z-0">
+      <div class="visualizer-container">
+        <div class="visualizer-main">
+          <div class="sticky-container">
             <div class="product_preview">
               <div id="main-img" class="configuratorpreviewimage">
-                <img *ngIf="!hide_frame" decoding="async" class="configurator-main-headertype" [src]="mainframe" [style.border-radius.px]="10" [style.background-image]="'url(' + background_color_image_url + ')'" alt="blinds image">
-                <img *ngIf="hide_frame" decoding="async" class="configurator-main-headertype" [src]="background_color_image_url" [style.border-radius.px]="10" alt="blinds image">
+                <img *ngIf="!hide_frame" decoding="async" class="configurator-main-headertype" [src]="mainframe" [style.background-image]="'url(' + background_color_image_url + ')'" alt="blinds image">
+                <img *ngIf="hide_frame" decoding="async" class="configurator-main-headertype" [src]="background_color_image_url" alt="blinds image">
                 <p class="preview-desc blinds">Diagram is for illustration only.</p>
               </div>
             </div>
-            <div *ngIf="!hide_frame" class="col-md-12 slider-container position-relative my-2 py-2 border-top-1">
+            <div *ngIf="!hide_frame" class="slider-container">
               <div class="blindmatrix-v4-slider">
                 <div *ngFor="let product_img of product_img_array">
                   <a class="multiple-frame-list-button" [class.selected_frame]="isSelectedFrame(product_img)">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" [style.border-radius.px]="10" [style.background-image]="'url(' + background_color_image_url + ')'">
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" [style.background-image]="'url(' + background_color_image_url + ')'">
                   </a>
                 </div>
               </div>
@@ -36,29 +36,29 @@
             </div>
           </div>
         </div>
-        <div class="product-wrapper col-md-6 col-sm-12">
-          <div class="product-from-price position-relative">
-            <div class="d-flex justify-content-between position-absolute w-100 cusoffsec" style="top: -30px;">
-              <p class="bm-spec-tagline-minprice" [style.visibility]="visualizertagline ? 'visible' : 'hidden'">
+        <div class="product-wrapper">
+          <div class="product-from-price">
+            <div class="price-container">
+              <p [style.visibility]="visualizertagline ? 'visible' : 'hidden'">
                 {{ visualizertagline || 'Transform Your Windows With ' + productname }}
               </p>
-              <p class="price product-page-price mb-0 proprice" [style.display]="fabricname !== 'single_view' ? 'block' : 'none'">
-                <span class="bm-spec-tagline-minprice" style='color:var(--color-primary);'> From </span>
-                <span class="bm-min-product-price">{{ product_minimum_price | currency:'GBP' }}</span>
+              <p class="price" [style.display]="fabricname !== 'single_view' ? 'block' : 'none'">
+                <span> From </span>
+                <span>{{ product_minimum_price | currency:'GBP' }}</span>
               </p>
             </div>
           </div>
           <div class="product-info">
             <div class='blindmatrix-v4-error-messages-wrapper'></div>
-            <h3 class="text-center fs-5 fw-bolder">Please enter your measurements</h3>
+            <h3>Please enter your measurements</h3>
             <div class="blinds-measurement">
-              <div colspan="2" class="value">
-                <span class="form-control-wrap">
-                  <span class="d-flex radio">
+              <div>
+                <span>
+                  <span class="radio-group">
                     <span *ngFor="let unit of unit_type_data" class="list-item">
-                      <label class='align-middle'>
-                        <input class="blindmatrix_v4_parameters_data align-middle" formControlName="unit" [value]="unit.name" type="radio">
-                        <span class="list-item-label fw-bolder">{{ unit.name }}</span>
+                      <label>
+                        <input formControlName="unit" [value]="unit.name" type="radio">
+                        <span>{{ unit.name }}</span>
                       </label>
                     </span>
                   </span>
@@ -68,56 +68,55 @@
             <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
                 <div *ngSwitchCase="'unit_type'">
-                  <div class="d-flex flex-column blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
-                    <label class="blindmatrix-v4-parameter-label mb-2">{{ field.fieldname }}</label>
+                  <div class="parameter-wrapper">
+                    <label>{{ field.fieldname }}</label>
                     <div *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" class="form-check">
                       <input
                         type="radio"
-                        class="form-check-input"
                         name="unit_type"
                         [id]="option.optionid"
                         [formControlName]="field.labelnamecode"
                         [value]="option.optionid"
                         (change)="onFieldChange(field.fieldid, $event)"
                       />
-                      <label class="form-check-label" [for]="'unittype_'+option.optionid">
+                      <label [for]="'unittype_'+option.optionid">
                         {{ option.optionname }}
                       </label>
                     </div>
                   </div>
                 </div>
                 <div *ngSwitchCase="'list'">
-                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
-                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
-                    <select class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <select [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
                       <option value="">Select Option</option>
                       <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
                     </select>
                   </div>
                 </div>
                 <div *ngSwitchCase="'number'">
-                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-number">
-                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
-                    <input type="number" class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <input type="number" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
                   </div>
                 </div>
                 <div *ngSwitchCase="'width_with_fraction'">
-                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-width">
-                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
-                    <div class="d-flex align-items-center">
-                      <input type="number" class="blindmatrix-v4-parameter-input" formControlName="width" id="width" [min]="min_width" [max]="max_width">
-                      <select class="blindmatrix-v4-parameter-fraction" formControlName="widthfraction" id="widthfraction">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <div>
+                      <input type="number" formControlName="width" id="width" [min]="min_width" [max]="max_width">
+                      <select formControlName="widthfraction" id="widthfraction">
                         <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
                   </div>
                 </div>
                 <div *ngSwitchCase="'drop_with_fraction'">
-                  <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-drop">
-                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
-                    <div class="d-flex align-items-center">
-                      <input type="number" class="blindmatrix-v4-parameter-input" formControlName="drop" id="drop" [min]="min_drop" [max]="max_drop">
-                      <select class="blindmatrix-v4-parameter-fraction" formControlName="dropfraction" id="dropfraction">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <div>
+                      <input type="number" formControlName="drop" id="drop" [min]="min_drop" [max]="max_drop">
+                      <select formControlName="dropfraction" id="dropfraction">
                         <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
@@ -128,35 +127,35 @@
                 </div>
               </div>
             </div>
-            <div class="price_wrapper" style="display:none;">
+            <div class="price_wrapper">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper"></div>
             </div>
-            <div class="woocommerce-variation-add-to-cart variations_button">
-              <div class="quantity buttons_added blindmatrix-v4-parameter-wrapper-hidden">
-                <input type="button" value="-" class="minus button is-form">
-                <input type="number" id="qty" class="input-text qty text" step="1" min="1" max="" formControlName="qty" title="Qty" size="4" placeholder="" inputmode="numeric">
-                <input type="button" value="+" class="plus button is-form">
+            <div class="variations_button">
+              <div class="quantity">
+                <input type="button" value="-" class="minus">
+                <input type="number" id="qty" formControlName="qty" title="Qty" size="4" placeholder="" inputmode="numeric">
+                <input type="button" value="+" class="plus">
               </div>
-              <button type="submit" name="submit-btn" value="Submit" class="rounded-pill blindmatrix-v4-add_to_cart_button button font-1" [disabled]="!orderForm.valid">
+              <button type="submit" name="submit-btn" value="Submit" class="add_to_cart_button" [disabled]="!orderForm.valid">
                 <i class="fa-solid fa-cart-shopping"></i> Add to cart
               </button>
             </div>
-            <p style="text-align: center;padding-bottom: 17px;" [style.visibility]="delivery_duration ? 'visible' : 'hidden'" class="paramlable">
-              <span><i class="fas fa-shipping-fast"></i></span> Delivered in<strong class="paramval">&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
+            <p [style.visibility]="delivery_duration ? 'visible' : 'hidden'" class="paramlable">
+              <span><i class="fas fa-shipping-fast"></i></span> Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
             </p>
-            <div class='d-flex justify-content-between quote-section-wrapper py-2'>
-              <div class="accordion col-8" id="accordionExample">
-                <div class="accordion-item Show-order-item-accordion m-0">
-                  <h2 class="accordion-header mb-0">
-                    <button class="accordion-button Show_order_details collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            <div class='quote-section-wrapper'>
+              <div class="accordion" id="accordionExample">
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                       Show Order Details
                     </button>
                   </h2>
                   <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-                    <div class="accordion-body p-2">
-                      <div id="allparametervalue" style="font-size: 14px;" class="text-dark">
-                        <table class="blindmatrix-v4-show-order-details-contents border-0">
+                    <div class="accordion-body">
+                      <div id="allparametervalue">
+                        <table class="show-order-details-contents">
                           <tbody></tbody>
                         </table>
                       </div>
@@ -164,26 +163,26 @@
                   </div>
                 </div>
               </div>
-              <div class="col-4 text-center">
-                <button type="submit" name="quote-btn" value="quote" class="rounded-pill blindmatrix-v4-get_a_quote button primary-background-color m-0 disabled">
-                  <i class="fas fa-envelope me-2"></i>Submit an Enquiry
+              <div class="quote-button-container">
+                <button type="submit" name="quote-btn" value="quote" class="get_a_quote">
+                  <i class="fas fa-envelope"></i>Submit an Enquiry
                 </button>
               </div>
             </div>
-            <div class="col-12 position-relative">
-              <div *ngIf="ecomFreeSample === '1'" class="cusordersample d-flex justify-content-around align-items-center">
+            <div class="order-sample-container">
+              <div *ngIf="ecomFreeSample === '1'" class="order-sample">
                 <span class="ordersampleimg">
-                  <img id="myimage" [src]="background_color_image_url" width="80" alt="" class="attachment-woocommerce_thumbnail" [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'" [style.-webkit-mask-size]="'100%'" [style.mask-size]="'100%'">
+                  <img id="myimage" [src]="background_color_image_url" width="80" alt="" [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'">
                 </span>
-                <button type="button" (click)="freesample($event.target)" class="single_add_to_cart_button rounded-pill m-0 button" style="background-color:#00B67A;" [attr.data-color_id]="colorid" [attr.data-fabric_id]="fabricid" [attr.data-price_group_id]="pricegroup_id" [attr.data-fabricname]="fabricname" [attr.data-fabric_image_url]="background_color_image_url" [attr.data-free_sample_data]="getFreeSampleData()">
-                  <span class="freesample-button p-0">Order Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
+                <button type="button" (click)="freesample($event.target)" class="add_to_cart_button" [attr.data-color_id]="colorid" [attr.data-fabric_id]="fabricid" [attr.data-price_group_id]="pricegroup_id" [attr.data-fabricname]="fabricname" [attr.data-fabric_image_url]="background_color_image_url" [attr.data-free_sample_data]="getFreeSampleData()">
+                  <span>Order Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
                 </button>
               </div>
-              <table class="border-0">
+              <table>
                 <tr class="guides-page-contianer">
-                  <td class="d-flex gap-1 justify-content-between p-0 pt-2" colspan="3">
-                    <a class="col-6" target="_blank" href="/measuring-guide/">Measuring Guide</a>
-                    <a class="col-6" target="_blank" href="/fitting-guide/">Fitting Guide</a>
+                  <td colspan="3">
+                    <a target="_blank" href="/measuring-guide/">Measuring Guide</a>
+                    <a target="_blank" href="/fitting-guide/">Fitting Guide</a>
                   </td>
                 </tr>
               </table>
@@ -192,44 +191,44 @@
         </div>
       </div>
     </div>
-    <div class="product-footer w-100 container mt-md-5 p-1" style="max-width: 1250px; margin-bottom:36px">
-      <div class="">
-        <div class="tabbed-content product-tabs-single">
-          <ul class="nav nav-tabs m-0" id="myTab" role="tablist">
-            <li *ngIf="color_arr.ecomdescription" class="nav-item tab-description-header-v4" role="presentation">
-              <button class="nav-link fw-semibold" id="description-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-description" type="button" role="tab" aria-controls="tab_tab-description">description</button>
+    <div class="product-footer">
+      <div>
+        <div class="tabbed-content">
+          <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li *ngIf="color_arr.ecomdescription" class="nav-item" role="presentation">
+              <button class="nav-link" id="description-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-description" type="button" role="tab" aria-controls="tab_tab-description">description</button>
             </li>
             <li *ngIf="product_specs" class="nav-item" role="presentation">
-              <button class="nav-link fw-semibold" [class.active]="!color_arr.ecomdescription" id="specification-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-specification" type="button" role="tab" aria-controls="tab_tab-specification">product specification</button>
+              <button class="nav-link" [class.active]="!color_arr.ecomdescription" id="specification-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-specification" type="button" role="tab" aria-controls="tab_tab-specification">product specification</button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link fw-semibold" [class.active]="!product_specs" id="details-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-details" type="button" role="tab" aria-controls="tab_tab-details">details</button>
+              <button class="nav-link" [class.active]="!product_specs" id="details-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-details" type="button" role="tab" aria-controls="tab_tab-details">details</button>
             </li>
           </ul>
-          <div class="tab-content tab-panels product_tab_panels_bm" id="myTabContent">
-            <div *ngIf="color_arr.ecomdescription" class="panel entry-content tab-pane fade show" id="tab_tab-description" role="tabpanel" aria-labelledby="description-tab" tabindex="0">
-              <div class="product_color_description_v4 d-flex justify-content-between">
-                <div class="product_color_description_wrapper_v4 w-100">
-                  <p class="product_color_description_msg_v4">{{ color_arr.ecomdescription }}</p>
+          <div class="tab-content" id="myTabContent">
+            <div *ngIf="color_arr.ecomdescription" class="tab-pane fade show" id="tab_tab-description" role="tabpanel" aria-labelledby="description-tab" tabindex="0">
+              <div class="product_color_description">
+                <div>
+                  <p>{{ color_arr.ecomdescription }}</p>
                 </div>
               </div>
             </div>
-            <div *ngIf="product_specs" class="panel entry-content tab-pane fade" [class.active]="!color_arr.ecomdescription" [class.show]="!color_arr.ecomdescription" id="tab_tab-specification" role="tabpanel" aria-labelledby="specification-tab" tabindex="0">
-              <div class="product_details_v4 d-flex justify-content-between">
-                <div class="product_details_dec_v4 w-100">
+            <div *ngIf="product_specs" class="tab-pane fade" [class.active]="!color_arr.ecomdescription" [class.show]="!color_arr.ecomdescription" id="tab_tab-specification" role="tabpanel" aria-labelledby="specification-tab" tabindex="0">
+              <div class="product_details">
+                <div>
                   <p>{{ product_specs }}</p>
                 </div>
               </div>
             </div>
-            <div class="panel entry-content tab-pane fade" [class.show]="!product_specs" [class.active]="!product_specs" id="tab_tab-details" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
-              <div class="product_details_v4 d-flex justify-content-between">
-                <div *ngIf="product_description" class="product_details_dec_v4 scrollable_desc">
+            <div class="tab-pane fade" [class.show]="!product_specs" [class.active]="!product_specs" id="tab_tab-details" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+              <div class="product_details">
+                <div *ngIf="product_description" class="product_details_dec">
                   <p>{{ product_description }}</p>
                 </div>
                 <table class="product_details_bm" [style.width.%]="product_description ? '' : 100">
-                  <tr *ngFor="let detail of objectKeys(product_details_arr)" style="margin:5px 0px" class="d-flex gap-2">
-                    <td class="p-2 product_details_td"><b>{{ detail }}</b></td>
-                    <td class="p-2" [class.product_spec_color_name]="detail === 'Color'">{{ product_details_arr[detail] }}</td>
+                  <tr *ngFor="let detail of objectKeys(product_details_arr)">
+                    <td><b>{{ detail }}</b></td>
+                    <td [class.product_spec_color_name]="detail === 'Color'">{{ product_details_arr[detail] }}</td>
                   </tr>
                 </table>
               </div>
@@ -240,41 +239,41 @@
         <!-- Social Share Shortcode -->
       </div>
     </div>
-    <div *ngIf="related_products_list_data.length >= 3" class="v4_related_products">
+    <div *ngIf="related_products_list_data.length >= 3" class="related_products">
       <h5>Related Products</h5>
     </div>
-    <div class="products row related_product_slider">
-      <div *ngFor="let related_product of related_products_list_data" class="product row-box-shadow-2">
+    <div class="products related_product_slider">
+      <div *ngFor="let related_product of related_products_list_data" class="product">
         <div class="col-inner">
-          <div class="product-small box">
+          <div class="product-small">
             <div class="box-image">
               <div class="image-fade_in_back">
-                <a class="text-dark" [routerLink]="getRelatedProductLink(related_product)">
-                  <img *ngIf="!hide_frame" [src]="productlisting_frame_url" class="product-frame frame_backgound" [style.background-image]="'url(' + getRelatedProductImageUrl(related_product) + ')'">
-                  <img *ngIf="hide_frame" [src]="getRelatedProductImageUrl(related_product)" class="product-frame frame_backgound">
+                <a [routerLink]="getRelatedProductLink(related_product)">
+                  <img *ngIf="!hide_frame" [src]="productlisting_frame_url" class="product-frame" [style.background-image]="'url(' + getRelatedProductImageUrl(related_product) + ')'">
+                  <img *ngIf="hide_frame" [src]="getRelatedProductImageUrl(related_product)" class="product-frame">
                 </a>
               </div>
             </div>
-            <div class="d-flex align-items-center justify-content-between m-2">
-              <div class="product details product-item-details">
-                <h6 class="fw-bold text-capitalize"><a class="product-item-link text-dark fw-bold" [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6>
+            <div class="product-details-container">
+              <div class="product-details">
+                <h6><a [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6>
                 <span *ngIf="related_product.minprice" class="price-container">
-                  <span id="product-price" class="price-wrapper">From : {{ related_product.minprice | currency:'GBP' }}</span>
+                  <span>From : {{ related_product.minprice | currency:'GBP' }}</span>
                 </span>
               </div>
-              <div class="d-flex justify-content-center">
-                <a [routerLink]="getRelatedProductLink(related_product)" [title]="getRelatedProductName(related_product)" class="">
-                  <div class="product-image-container position-relative">
-                    <img [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'" [style.-webkit-mask-size]="'100%'" [style.mask-size]="'100%'" [alt]="getRelatedProductName(related_product)" [src]="getRelatedProductImageUrl(related_product)" width="75" height="75" class="swatch-img">
+              <div>
+                <a [routerLink]="getRelatedProductLink(related_product)" [title]="getRelatedProductName(related_product)">
+                  <div class="product-image-container">
+                    <img [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'" [alt]="getRelatedProductName(related_product)" [src]="getRelatedProductImageUrl(related_product)" width="75" height="75" class="swatch-img">
                   </div>
                 </a>
               </div>
             </div>
-            <a [routerLink]="getRelatedProductLink(related_product)" class="button d-block w-100 bm-v4-buynow text-white m-0 rounded-0 box-shadow-2 text-center">
+            <a [routerLink]="getRelatedProductLink(related_product)" class="button buynow">
               <i class="fa-solid fa-cart-shopping"></i> <span class="ms-1 my-1"> Buy Now</span>
             </a>
-            <a *ngIf="ecomFreeSample == 1" class="sample_addtocart_container d-block" style="margin:5px 0 !important" href="javascript:;" [attr.data-color_id]="related_product.cd_id" [attr.data-fabric_id]="related_product.fd_id" [attr.data-price_group_id]="related_product.groupid" [attr.data-fabricname]="getRelatedProductName(related_product)" [attr.data-fabric_image_url]="getRelatedProductImageUrl(related_product)" [attr.data-free_sample_data]="getFreeSampleData(related_product)" (click)="freesample($event.target)">
-              <span class="free-sample-price">Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
+            <a *ngIf="ecomFreeSample == 1" class="sample_addtocart_container" href="javascript:;" [attr.data-color_id]="related_product.cd_id" [attr.data-fabric_id]="related_product.fd_id" [attr.data-price_group_id]="related_product.groupid" [attr.data-fabricname]="getRelatedProductName(related_product)" [attr.data-fabric_image_url]="getRelatedProductImageUrl(related_product)" [attr.data-free_sample_data]="getFreeSampleData(related_product)" (click)="freesample($event.target)">
+              <span>Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
             </a>
           </div>
         </div>
