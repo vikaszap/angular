@@ -140,11 +140,11 @@ get_field_type_name(chosen_field_type_id: any): string {
     '5': 'fabric_and_color',
     '6': 'number',
     '7': 'x_footage',
-    '8': 'number',  // width (simple number)
+    '8': 'number', 
     '9': 'y_footage',
     '10': 'height',
-    '11': 'width_with_fraction',  // special width with fraction
-    '12': 'drop_with_fraction',   // special drop with fraction
+    '11': 'width_with_fraction', 
+    '12': 'drop_with_fraction',   
     '13': 'pricegroup',
     '14': 'qty',
     '17': 'supplier',

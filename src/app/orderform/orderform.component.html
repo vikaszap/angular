@@ -72,6 +72,12 @@
                     </div>
                   </div>
                 </div>
+                <div *ngSwitchCase="'text'">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <input type="text" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                  </div>
+                </div>
                 <div *ngSwitchCase="'list'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
