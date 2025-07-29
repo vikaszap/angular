@@ -159,6 +159,7 @@ onFieldChange(fieldId: any, event: any): void {
   if (field) {
     switch (field.fieldtypeid) {
       case 34:
+        const selectedValue = this.orderForm.get(field.labelnamecode)?.value;
         this.handleUnitTypeChange(selectedValue);
         break;
       default:
