@@ -65,7 +65,6 @@
                         [id]="'unittype_'+option.optionid"
                         [formControlName]="field.labelnamecode"
                         [value]="option.optionid"
-                        (change)="onFieldChange(field.fieldid, $event)"
                       />
                       <label [for]="'unittype_'+option.optionid">
                         {{ option.optionname }}
@@ -73,10 +72,16 @@
                     </div>
                   </div>
                 </div>
+                <div *ngSwitchCase="'text'">
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <input type="text" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                  </div>
+                </div>
                 <div *ngSwitchCase="'list'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
-                    <select [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
+                    <select [formControlName]="field.labelnamecode" [id]="field.labelnamecode">
                       <option value="">Select Option</option>
                       <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
                     </select>
@@ -93,7 +98,7 @@
                     <label>{{field.fieldname}}</label>
                     <div>
                       <input type="number" formControlName="width" id="width" [min]="min_width" [max]="max_width">
-                      <select formControlName="widthfraction" id="widthfraction">
+                      <select *ngIf="showFractions" formControlName="widthfraction" id="widthfraction">
                         <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
@@ -104,7 +109,7 @@
                     <label>{{field.fieldname}}</label>
                     <div>
                       <input type="number" formControlName="drop" id="drop" [min]="min_drop" [max]="max_drop">
-                      <select formControlName="dropfraction" id="dropfraction">
+                      <select  *ngIf="showFractions" formControlName="dropfraction" id="dropfraction">
                         <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
