@@ -68,19 +68,29 @@
             <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
                 <div *ngSwitchCase="'unit_type'">
-                 <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
-                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
-                    <select class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
-                      <option value="">Select Option</option>
-                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
-                    </select>
+                  <div class="d-flex flex-column blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
+                    <label class="blindmatrix-v4-parameter-label mb-2">{{ field.fieldname }}</label>
+                    <div *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" class="form-check">
+                      <input
+                        type="radio"
+                        class="form-check-input"
+                        name="unit_type"
+                        [id]="field.labelnamecode + '_' + option.optionid"
+                        [formControlName]="field.labelnamecode"
+                        [value]="option.optionid"
+                        (change)="onFieldChange(field.fieldid, $event)"
+                      />
+                      <label class="form-check-label" [for]="field.labelnamecode + '_' + option.optionid">
+                        {{ option.optionname }}
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div *ngSwitchCase="'list'">
                   <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
                     <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
                     <select class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
-                      <option value="">Select Option</option>
+                      <option selected value="">Select Option</option>
                       <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
                     </select>
                   </div>
