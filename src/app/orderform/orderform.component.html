@@ -52,18 +52,6 @@
             <div class='blindmatrix-v4-error-messages-wrapper'></div>
             <h3>Please enter your measurements</h3>
             <div class="blinds-measurement">
-              <div>
-                <span>
-                  <span class="radio-group">
-                    <span *ngFor="let unit of unit_type_data" class="list-item">
-                      <label>
-                        <input formControlName="unit" [value]="unit.name" type="radio">
-                        <span>{{ unit.name }}</span>
-                      </label>
-                    </span>
-                  </span>
-                </span>
-              </div>
             </div>
             <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
@@ -74,7 +62,7 @@
                       <input
                         type="radio"
                         name="unit_type"
-                        [id]="option.optionid"
+                        [id]="'unittype_'+option.optionid"
                         [formControlName]="field.labelnamecode"
                         [value]="option.optionid"
                         (change)="onFieldChange(field.fieldid, $event)"
