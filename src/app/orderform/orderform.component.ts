@@ -91,14 +91,18 @@ fetchInitialData(params: any): void {
     if (data) {
       const responseData = data[0].data;
       this.parameters_data = responseData;
-      console.log(responseData);
+
+      const formControls: { [key: string]: any } = {};
+      this.parameters_data.forEach(field => {
+        formControls[field.labelnamecode] = [''];
+      });
+      this.orderForm = this.fb.group(formControls);
+
       this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
- 
         const filterresponseData = filterData[0].data;
-         
-      
+
         this.parameters_data.forEach((field) => {
-        if( filterresponseData.optionarray[field.fieldid] != undefined){
+          if (filterresponseData.optionarray[field.fieldid] != undefined) {
             if (field.fieldtypeid == 3) {
               this.apiService.getOptionlist(
                 params,
@@ -114,7 +118,6 @@ fetchInitialData(params: any): void {
             }
           }
         });
-       
       });
     }
   });
