@@ -21,6 +21,7 @@ import { ApiService } from '../services/api.service';
   ],
 })
 export class OrderformComponent implements OnInit {
+  showFractions: boolean = false;
   product_details_arr: any = {};
   product_specs: any = '';
   product_description: any = '';
@@ -175,7 +176,7 @@ get_field_type_name(chosen_field_type_id: any): string {
         if (field) {
           console.log('Field changed:', field.fieldname, 'New value:', values[key]);
           switch (field.fieldtypeid) {
-            case 34: // unit_type
+            case 34: 
               this.handleUnitTypeChange(values[key]);
               break;
             // Add other cases for other field types here
@@ -203,7 +204,7 @@ get_field_type_name(chosen_field_type_id: any): string {
   }
 
 handleUnitTypeChange(value: any): void {
-  console.log('Unit type changed to:', value);
+  this.showFractions = (value == 4);
 }
 
   freesample(button: any): void {
