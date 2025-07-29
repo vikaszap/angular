@@ -75,12 +75,12 @@
                         type="radio"
                         class="form-check-input"
                         name="unit_type"
-                        [id]="field.labelnamecode + '_' + option.optionid"
+                        [id]="option.optionid"
                         [formControlName]="field.labelnamecode"
                         [value]="option.optionid"
                         (change)="onFieldChange(field.fieldid, $event)"
                       />
-                      <label class="form-check-label" [for]="field.labelnamecode + '_' + option.optionid">
+                      <label class="form-check-label" [for]="'unittype_'+option.optionid">
                         {{ option.optionname }}
                       </label>
                     </div>
