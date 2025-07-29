@@ -164,22 +164,42 @@ get_field_type_name(chosen_field_type_id: any): string {
 
 
   onFormChanges(values: any): void {
-    const changedField = Object.keys(values).find(key => values[key] !== this.previousFormValue[key]);
-    if (changedField) {
-      console.log('Field changed:', changedField, 'New value:', values[changedField]);
-      const field = this.parameters_data.find(f => f.labelnamecode === changedField);
-      if (field) {
-        switch (field.fieldtypeid) {
-          case 34: // unit_type
-            this.handleUnitTypeChange(values[changedField]);
-            break;
-          // Add other cases for other field types here
-          default:
-            break;
+    if (!this.previousFormValue) {
+      this.previousFormValue = { ...values };
+      return;
+    }
+
+    for (const key in values) {
+      if (values[key] !== this.previousFormValue[key]) {
+        const field = this.parameters_data.find(f => f.labelnamecode === key);
+        if (field) {
+          console.log('Field changed:', field.fieldname, 'New value:', values[key]);
+          switch (field.fieldtypeid) {
+            case 34: // unit_type
+              this.handleUnitTypeChange(values[key]);
+              break;
+            // Add other cases for other field types here
+            default:
+              break;
+          }
+        } else {
+          // Handle composite fields
+          if (key === 'width' || key === 'widthfraction') {
+            const widthField = this.parameters_data.find(f => f.fieldtypeid === '11');
+            if (widthField) {
+              console.log('Field changed:', widthField.fieldname, 'New value:', { width: values.width, fraction: values.widthfraction });
+            }
+          } else if (key === 'drop' || key === 'dropfraction') {
+            const dropField = this.parameters_data.find(f => f.fieldtypeid === '12');
+            if (dropField) {
+              console.log('Field changed:', dropField.fieldname, 'New value:', { drop: values.drop, fraction: values.dropfraction });
+            }
+          }
         }
       }
     }
-    this.previousFormValue = values;
+
+    this.previousFormValue = { ...values };
   }
 
 handleUnitTypeChange(value: any): void {
