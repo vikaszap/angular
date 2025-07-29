@@ -154,9 +154,9 @@ get_field_type_name(chosen_field_type_id: any): string {
 
 
 onFieldChange(fieldId: any, event: any): void {
-  const selectedValue = event.target.value;
   const field = this.parameters_data.find(f => f.fieldid === fieldId);
   if (field) {
+    const selectedValue = this.orderForm.get(field.labelnamecode)?.value;
     switch (field.fieldtypeid) {
       case 34:
         this.handleUnitTypeChange(selectedValue);
