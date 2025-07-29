@@ -68,7 +68,13 @@
             <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
                 <div *ngSwitchCase="'unit_type'">
-                  <!-- No specific implementation for unit_type, so it will fall through to the 'list' case -->
+                 <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
+                    <label class="blindmatrix-v4-parameter-label">{{field.fieldname}}</label>
+                    <select class="blindmatrix-v4-parameter-input" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
+                      <option value="">Select Option</option>
+                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
+                    </select>
+                  </div>
                 </div>
                 <div *ngSwitchCase="'list'">
                   <div class="d-flex blindmatrix-v4-parameter-wrapper blindmatrix-v4-parameter-wrapper-list">
