@@ -121,12 +121,21 @@ export class OrderformComponent implements OnInit {
                 ).subscribe((optionData: any) => {
                   const optionresponseData = optionData[0].data[0].optionsvalue;
                   this.option_data[field.fieldid] = optionresponseData;
+                    if (field.optiondefault) {
+                      this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault);
+                    }
                 });
               }
             }
           });
         });
-
+        this.parameters_data.forEach(field => {
+        if (field.optiondefault && field.optiondefault != "") {
+          this.orderForm.patchValue({
+            [field.labelnamecode]: field.optiondefault
+          });
+        }
+      });
         this.orderForm.valueChanges.subscribe(values => {
           this.onFormChanges(values);
         });
