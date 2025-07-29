@@ -161,7 +161,6 @@ onFieldChange(fieldId: any, event: any): void {
       case 34:
         this.handleUnitTypeChange(selectedValue);
         break;
-      // Add other cases here
       default:
         break;
     }
@@ -170,7 +169,6 @@ onFieldChange(fieldId: any, event: any): void {
 
 handleUnitTypeChange(value: any): void {
   console.log('Unit type changed to:', value);
-  // You can add more logic here to handle the change
 }
 
   freesample(button: any): void {
