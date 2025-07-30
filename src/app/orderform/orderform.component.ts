@@ -77,7 +77,6 @@ export class OrderformComponent implements OnInit {
       drop: [''],
       dropfraction: [''],
       qty: [1],
-      // Add other form controls here
     });
     this.previousFormValue = this.orderForm.value;
   }
@@ -101,19 +100,9 @@ export class OrderformComponent implements OnInit {
         const responseData = data[0].data;
         this.parameters_data = responseData;
 
-        const formControls: { [key: string]: any } = {};
         this.parameters_data.forEach(field => {
-          formControls[field.labelnamecode] = [''];
-          if (field.fieldtypeid === '11') { // Width with fraction
-            formControls['width'] = [''];
-            formControls['widthfraction'] = [''];
-          }
-          if (field.fieldtypeid === '12') { // Drop with fraction
-            formControls['drop'] = [''];
-            formControls['dropfraction'] = [''];
-          }
+          this.orderForm.addControl(field.labelnamecode, this.fb.control(''));
         });
-        this.orderForm = this.fb.group(formControls);
 
         this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
           const filterresponseData = filterData[0].data;
