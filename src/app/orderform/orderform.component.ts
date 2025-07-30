@@ -177,7 +177,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
-      formControls[field.labelnamecode] = [field.value || '', field.showfieldonjob === '1' ? Validators.required : null];
+      const initialValue = field.selection == 1 ? [] : (field.value || '');
+      formControls[field.labelnamecode] = [initialValue, field.showfieldonjob === '1' ? Validators.required : null];
     });
 
     this.orderForm = this.fb.group(formControls);
