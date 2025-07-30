@@ -205,7 +205,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
                   if (optionData && optionData[0]?.data?.[0]?.optionsvalue) {
                     this.option_data[field.fieldid] = optionData[0].data[0].optionsvalue;
                     
-                    // Set default value if available
                     if (field.optiondefault && this.orderForm.get(field.labelnamecode)) {
                       setTimeout(() => {
                         if(field.selection != 1){
