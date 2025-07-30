@@ -1,5 +1,16 @@
 <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart" [ngClass]="{'blinds-parameters-form': isBlinds}">
   <div class="blinds container">
+    <!-- Loading indicator -->
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>Loading product data...</p>
+    </div>
+
+    <!-- Error message -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
     <div class="productaname">
       <a [routerLink]="[product_list_page_link]" target="_self">
         <i class="fa-solid fa-angle-left"></i> <span>Back to {{ productname }}</span>
@@ -8,22 +19,29 @@
         <span>{{ productname }} - {{ fabricname }}</span>
       </h1>
     </div>
+
     <div id="configurator-root" class="product_visualizer_wrapper">
       <div class="visualizer-container">
         <div class="visualizer-main">
           <div class="sticky-container">
             <div class="product_preview">
               <div id="main-img" class="configuratorpreviewimage">
-                <img *ngIf="!hide_frame" decoding="async" class="configurator-main-headertype" [src]="mainframe" [style.background-image]="'url(' + background_color_image_url + ')'" alt="blinds image">
-                <img *ngIf="hide_frame" decoding="async" class="configurator-main-headertype" [src]="background_color_image_url" alt="blinds image">
+                <img *ngIf="!hide_frame" decoding="async" class="configurator-main-headertype" 
+                     [src]="mainframe" 
+                     [style.background-image]="'url(' + background_color_image_url + ')'" 
+                     alt="blinds image">
+                <img *ngIf="hide_frame" decoding="async" class="configurator-main-headertype" 
+                     [src]="background_color_image_url" alt="blinds image">
                 <p class="preview-desc blinds">Diagram is for illustration only.</p>
               </div>
             </div>
+
             <div *ngIf="!hide_frame" class="slider-container">
               <div class="blindmatrix-v4-slider">
                 <div *ngFor="let product_img of product_img_array">
                   <a class="multiple-frame-list-button" [class.selected_frame]="isSelectedFrame(product_img)">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" [style.background-image]="'url(' + background_color_image_url + ')'">
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" 
+                         [style.background-image]="'url(' + background_color_image_url + ')'">
                   </a>
                 </div>
               </div>
@@ -36,6 +54,7 @@
             </div>
           </div>
         </div>
+
         <div class="product-wrapper">
           <div class="product-from-price">
             <div class="price-container">
@@ -48,23 +67,27 @@
               </p>
             </div>
           </div>
+
           <div class="product-info">
             <div class='blindmatrix-v4-error-messages-wrapper'></div>
             <h3>Please enter your measurements</h3>
+            
             <div class="blinds-measurement">
+              <!-- Form fields will be rendered here -->
             </div>
+
             <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
+                <!-- Unit Type -->
                 <div *ngSwitchCase="'unit_type'">
                   <div class="parameter-wrapper">
                     <label>{{ field.fieldname }}</label>
                     <div *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" class="form-check">
                       <input
                         type="radio"
-                        name="unit_type"
-                        [id]="'unittype_'+option.optionid"
                         [formControlName]="field.labelnamecode"
                         [value]="option.optionid"
+                        [id]="'unittype_'+option.optionid"
                       />
                       <label [for]="'unittype_'+option.optionid">
                         {{ option.optionname }}
@@ -72,82 +95,140 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Text Input -->
                 <div *ngSwitchCase="'text'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
-                    <input type="text" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                    <input type="text" 
+                           [formControlName]="field.labelnamecode" 
+                           [id]="field.labelnamecode"
+                           [attr.aria-label]="field.fieldname">
                   </div>
                 </div>
+
+                <!-- Dropdown List -->
                 <div *ngSwitchCase="'list'">
-              <div class="parameter-wrapper">
-                  <label>{{field.fieldname}}</label>
-                  <select [formControlName]="field.labelnamecode" 
-                          [id]="field.labelnamecode" 
-                          [multiple]="field.selection === 1">
-                    <option value="">Select Option</option>
-                    <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" 
-                            [value]="option.optionid">
-                      {{option.optionname}}
-                    </option>
-                  </select>
+                  <div class="parameter-wrapper">
+                    <label>{{field.fieldname}}</label>
+                    <select [formControlName]="field.labelnamecode" 
+                            [id]="field.labelnamecode" 
+                            [multiple]="field.selection == 1"
+                            [attr.aria-label]="field.fieldname">
+                      <option value="">Select Option</option>
+                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" 
+                              [value]="option.optionid">
+                        {{option.optionname}}
+                      </option>
+                    </select>
+                  </div>
                 </div>
 
-                </div>
+                <!-- Number Input -->
                 <div *ngSwitchCase="'number'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
-                    <input type="number" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                    <input type="number" 
+                           [formControlName]="field.labelnamecode" 
+                           [id]="field.labelnamecode"
+                           [attr.aria-label]="field.fieldname">
                   </div>
                 </div>
+
+                <!-- Width with Fraction -->
                 <div *ngSwitchCase="'width_with_fraction'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
                     <div>
-                      <input type="number" formControlName="width" id="width" [min]="min_width" [max]="max_width">
-                      <select *ngIf="showFractions" formControlName="widthfraction" id="widthfraction">
-                        <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
+                      <input type="number" 
+                             formControlName="width" 
+                             id="width" 
+                             [min]="min_width" 
+                             [max]="max_width"
+                             aria-label="Width">
+                      <select *ngIf="showFractions" 
+                              formControlName="widthfraction" 
+                              id="widthfraction"
+                              aria-label="Width fraction">
+                        <option *ngFor="let fraction of inchfraction_array" 
+                                [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
                   </div>
                 </div>
+
+                <!-- Drop with Fraction -->
                 <div *ngSwitchCase="'drop_with_fraction'">
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
                     <div>
-                      <input type="number" formControlName="drop" id="drop" [min]="min_drop" [max]="max_drop">
-                      <select  *ngIf="showFractions" formControlName="dropfraction" id="dropfraction">
-                        <option *ngFor="let fraction of inchfraction_array" [value]="fraction.value">{{fraction.name}}</option>
+                      <input type="number" 
+                             formControlName="drop" 
+                             id="drop" 
+                             [min]="min_drop" 
+                             [max]="max_drop"
+                             aria-label="Drop">
+                      <select *ngIf="showFractions" 
+                              formControlName="dropfraction" 
+                              id="dropfraction"
+                              aria-label="Drop fraction">
+                        <option *ngFor="let fraction of inchfraction_array" 
+                                [value]="fraction.value">{{fraction.name}}</option>
                       </select>
                     </div>
                   </div>
                 </div>
+
+                <!-- Hidden Field -->
                 <div *ngSwitchCase="'hidden'">
-                  <input type="hidden" [formControlName]="field.labelnamecode" [id]="field.labelnamecode" [value]="field.value || ''">
+                  <input type="hidden" 
+                         [formControlName]="field.labelnamecode" 
+                         [id]="field.labelnamecode">
                 </div>
               </div>
             </div>
+
             <div class="price_wrapper">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper"></div>
             </div>
+
             <div class="variations_button">
               <div class="quantity">
-                <input type="button" value="-" class="minus">
-                <input type="number" id="qty" formControlName="qty" title="Qty" size="4" placeholder="" inputmode="numeric">
-                <input type="button" value="+" class="plus">
+                <button type="button" class="minus">-</button>
+                <input type="number" 
+                       formControlName="qty" 
+                       title="Qty" 
+                       size="4" 
+                       inputmode="numeric"
+                       min="1"
+                       aria-label="Quantity">
+                <button type="button"  class="plus">+</button>
               </div>
-              <button type="submit" name="submit-btn" value="Submit" class="add_to_cart_button" [disabled]="!orderForm.valid">
-                <i class="fa-solid fa-cart-shopping"></i> Add to cart
+              <button type="submit" 
+                      name="submit-btn" 
+                      value="Submit" 
+                      class="add_to_cart_button" 
+                      [disabled]="!orderForm.valid || isSubmitting">
+                <i class="fa-solid fa-cart-shopping"></i> 
+                {{ isSubmitting ? 'Adding...' : 'Add to cart' }}
               </button>
             </div>
+
             <p [style.visibility]="delivery_duration ? 'visible' : 'hidden'" class="paramlable">
-              <span><i class="fas fa-shipping-fast"></i></span> Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
+              <span><i class="fas fa-shipping-fast"></i></span> 
+              Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
             </p>
+
             <div class='quote-section-wrapper'>
               <div class="accordion" id="accordionExample">
                 <div class="accordion-item">
                   <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    <button class="accordion-button collapsed" type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#collapseOne" 
+                            aria-expanded="true" 
+                            aria-controls="collapseOne">
                       Show Order Details
                     </button>
                   </h2>
@@ -163,17 +244,35 @@
                 </div>
               </div>
               <div class="quote-button-container">
-                <button type="submit" name="quote-btn" value="quote" class="get_a_quote">
+                <button type="submit" 
+                        name="quote-btn" 
+                        value="quote" 
+                        class="get_a_quote"
+                        [disabled]="isSubmitting">
                   <i class="fas fa-envelope"></i>Submit an Enquiry
                 </button>
               </div>
             </div>
+
             <div class="order-sample-container">
               <div *ngIf="ecomFreeSample === '1'" class="order-sample">
                 <span class="ordersampleimg">
-                  <img id="myimage" [src]="background_color_image_url" width="80" alt="" [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'">
+                  <img id="myimage" 
+                       [src]="background_color_image_url" 
+                       width="80" 
+                       alt="" 
+                       [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" 
+                       [style.mask-image]="'url(' + sample_img_frame_url + ')'">
                 </span>
-                <button type="button" (click)="freesample($event.target)" class="add_to_cart_button" [attr.data-color_id]="colorid" [attr.data-fabric_id]="fabricid" [attr.data-price_group_id]="pricegroup_id" [attr.data-fabricname]="fabricname" [attr.data-fabric_image_url]="background_color_image_url" [attr.data-free_sample_data]="getFreeSampleData()">
+                <button type="button" 
+                        (click)="freesample($event.target)" 
+                        class="add_to_cart_button"
+                        [attr.data-color_id]="colorid" 
+                        [attr.data-fabric_id]="fabricid" 
+                        [attr.data-price_group_id]="pricegroup_id" 
+                        [attr.data-fabricname]="fabricname" 
+                        [attr.data-fabric_image_url]="background_color_image_url" 
+                        [attr.data-free_sample_data]="getFreeSampleData()">
                   <span>Order Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
                 </button>
               </div>
@@ -190,54 +289,9 @@
         </div>
       </div>
     </div>
-    <div class="product-footer">
-      <div>
-        <div class="tabbed-content">
-          <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li *ngIf="color_arr.ecomdescription" class="nav-item" role="presentation">
-              <button class="nav-link" id="description-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-description" type="button" role="tab" aria-controls="tab_tab-description">description</button>
-            </li>
-            <li *ngIf="product_specs" class="nav-item" role="presentation">
-              <button class="nav-link" [class.active]="!color_arr.ecomdescription" id="specification-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-specification" type="button" role="tab" aria-controls="tab_tab-specification">product specification</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" [class.active]="!product_specs" id="details-tab" data-bs-toggle="tab" data-bs-target="#tab_tab-details" type="button" role="tab" aria-controls="tab_tab-details">details</button>
-            </li>
-          </ul>
-          <div class="tab-content" id="myTabContent">
-            <div *ngIf="color_arr.ecomdescription" class="tab-pane fade show" id="tab_tab-description" role="tabpanel" aria-labelledby="description-tab" tabindex="0">
-              <div class="product_color_description">
-                <div>
-                  <p>{{ color_arr.ecomdescription }}</p>
-                </div>
-              </div>
-            </div>
-            <div *ngIf="product_specs" class="tab-pane fade" [class.active]="!color_arr.ecomdescription" [class.show]="!color_arr.ecomdescription" id="tab_tab-specification" role="tabpanel" aria-labelledby="specification-tab" tabindex="0">
-              <div class="product_details">
-                <div>
-                  <p>{{ product_specs }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="tab-pane fade" [class.show]="!product_specs" [class.active]="!product_specs" id="tab_tab-details" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
-              <div class="product_details">
-                <div *ngIf="product_description" class="product_details_dec">
-                  <p>{{ product_description }}</p>
-                </div>
-                <table class="product_details_bm" [style.width.%]="product_description ? '' : 100">
-                  <tr *ngFor="let detail of objectKeys(product_details_arr)">
-                    <td><b>{{ detail }}</b></td>
-                    <td [class.product_spec_color_name]="detail === 'Color'">{{ product_details_arr[detail] }}</td>
-                  </tr>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <br>
-        <!-- Social Share Shortcode -->
-      </div>
-    </div>
+
+  
+
     <div *ngIf="related_products_list_data.length >= 3" class="related_products">
       <h5>Related Products</h5>
     </div>
@@ -248,8 +302,11 @@
             <div class="box-image">
               <div class="image-fade_in_back">
                 <a [routerLink]="getRelatedProductLink(related_product)">
-                  <img *ngIf="!hide_frame" [src]="productlisting_frame_url" class="product-frame" [style.background-image]="'url(' + getRelatedProductImageUrl(related_product) + ')'">
-                  <img *ngIf="hide_frame" [src]="getRelatedProductImageUrl(related_product)" class="product-frame">
+                  <img *ngIf="!hide_frame" [src]="productlisting_frame_url" 
+                       class="product-frame" 
+                       [style.background-image]="'url(' + getRelatedProductImageUrl(related_product) + ')'">
+                  <img *ngIf="hide_frame" [src]="getRelatedProductImageUrl(related_product)" 
+                       class="product-frame">
                 </a>
               </div>
             </div>
@@ -261,9 +318,14 @@
                 </span>
               </div>
               <div>
-                <a [routerLink]="getRelatedProductLink(related_product)" [title]="getRelatedProductName(related_product)">
+                <a [routerLink]="getRelatedProductLink(related_product)" 
+                   [title]="getRelatedProductName(related_product)">
                   <div class="product-image-container">
-                    <img [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" [style.mask-image]="'url(' + sample_img_frame_url + ')'" [alt]="getRelatedProductName(related_product)" [src]="getRelatedProductImageUrl(related_product)" width="75" height="75" class="swatch-img">
+                    <img [style.-webkit-mask-image]="'url(' + sample_img_frame_url + ')'" 
+                         [style.mask-image]="'url(' + sample_img_frame_url + ')'" 
+                         [alt]="getRelatedProductName(related_product)" 
+                         [src]="getRelatedProductImageUrl(related_product)" 
+                         width="75" height="75" class="swatch-img">
                   </div>
                 </a>
               </div>
@@ -271,7 +333,15 @@
             <a [routerLink]="getRelatedProductLink(related_product)" class="button buynow">
               <i class="fa-solid fa-cart-shopping"></i> <span class="ms-1 my-1"> Buy Now</span>
             </a>
-            <a *ngIf="ecomFreeSample == 1" class="sample_addtocart_container" href="javascript:;" [attr.data-color_id]="related_product.cd_id" [attr.data-fabric_id]="related_product.fd_id" [attr.data-price_group_id]="related_product.groupid" [attr.data-fabricname]="getRelatedProductName(related_product)" [attr.data-fabric_image_url]="getRelatedProductImageUrl(related_product)" [attr.data-free_sample_data]="getFreeSampleData(related_product)" (click)="freesample($event.target)">
+            <a *ngIf="ecomFreeSample == '1'" class="sample_addtocart_container" 
+               href="javascript:;" 
+               [attr.data-color_id]="related_product.cd_id" 
+               [attr.data-fabric_id]="related_product.fd_id" 
+               [attr.data-price_group_id]="related_product.groupid" 
+               [attr.data-fabricname]="getRelatedProductName(related_product)" 
+               [attr.data-fabric_image_url]="getRelatedProductImageUrl(related_product)" 
+               [attr.data-free_sample_data]="getFreeSampleData(related_product)" 
+               (click)="freesample($event.target)">
               <span>Free Sample{{ ecomsampleprice >= 1 ? ' - ' + (ecomsampleprice | currency:'GBP') : '' }}</span>
             </a>
           </div>
@@ -280,5 +350,3 @@
     </div>
   </div>
 </form>
-<br />
-<br />

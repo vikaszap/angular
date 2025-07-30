@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Console } from 'console';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 interface ApiCommonParams {
   api_url: string;
@@ -12,40 +12,26 @@ interface ApiCommonParams {
   [key: string]: any;
 }
 
+interface ApiResponse {
+  success: boolean;
+  data: any;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php'; // Default API URL
+  private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php';
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Generic API call method supporting GET, POST, PUT
-   */
-  callApi(
-    method: string,
-    passData: string,
-    payload: any = null,
-    node: boolean = false,
-    appointment: boolean = false,
-    api_url: string,
-    api_key: string,
-    api_name: string
-  ): Observable<any> {
-    let url = '';
+  private constructUrl(base: string, endpoint: string): string {
+    return `${base.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`;
+  }
 
-    if (appointment) {
-      url = `${api_url}/api/public/api/`;
-    } else if (node) {
-      url = `https://curtainmatrix.co.uk/devsource/nodeapi/`;
-    } else {
-      url = `${api_url}/api/public/api/`;
-    }
-
-    url += passData;
-
-    const headers = new HttpHeaders({
+  private getHeaders(api_name: string, api_key: string): HttpHeaders {
+    return new HttpHeaders({
       'Accept': 'application/json',
       'Content-Type': 'application/json',
       'companyname': api_name,
@@ -58,12 +44,38 @@ export class ApiService {
         browsernameversion: ''
       })
     });
+  }
+
+  callApi(
+    method: string,
+    passData: string,
+    payload: any = null,
+    node: boolean = false,
+    appointment: boolean = false,
+    api_url: string,
+    api_key: string,
+    api_name: string
+  ): Observable<ApiResponse> {
+    let url = '';
+    if (appointment) {
+      url = this.constructUrl(`${api_url}/api/public/api`, passData);
+    } else if (node) {
+      url = this.constructUrl('https://curtainmatrix.co.uk/devsource/nodeapi', passData);
+    } else {
+      url = this.constructUrl(`${api_url}/api/public/api`, passData);
+    }
+
+    const headers = this.getHeaders(api_name, api_key);
 
     switch (method.toUpperCase()) {
       case 'POST':
-        return this.http.post(url, payload || {}, { headers });
+        return this.http.post<ApiResponse>(url, payload || {}, { headers }).pipe(
+          catchError(this.handleError)
+        );
       case 'PUT':
-        return this.http.put(url, payload || {}, { headers });
+        return this.http.put<ApiResponse>(url, payload || {}, { headers }).pipe(
+          catchError(this.handleError)
+        );
       case 'GET':
       default:
         let params = new HttpParams();
@@ -74,26 +86,27 @@ export class ApiService {
             }
           });
         }
-        return this.http.get(url, { headers, params });
+        return this.http.get<ApiResponse>(url, { headers, params }).pipe(
+          catchError(this.handleError)
+        );
     }
   }
 
-  /**
-   * Get product data with default fields
-   */
-  getProductData(params: ApiCommonParams): Observable<any> {
+  private handleError(error: any): Observable<never> {
+    console.error('API Error:', error);
+    return throwError(() => new Error('An error occurred. Please try again later.'));
+  }
+
+  getProductData(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, recipeid, ...payload } = params;
     if (!recipeid) {
-      throw new Error('recipeid is required');
+      return throwError(() => new Error('recipeid is required'));
     }
     const passData = `products/fields/withdefault/list/${recipeid}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
 
-  /**
-   * Calculate price by sending form data as JSON body
-   */
-  calculatePrice(formData: any): Observable<any> {
+  calculatePrice(formData: any): Observable<ApiResponse> {
     const payload = {
       action: 'price_calculation',
       form_data: JSON.stringify(formData)
@@ -101,13 +114,12 @@ export class ApiService {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
-    return this.http.post(this.apiUrl, payload, { headers });
+    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Add item to cart by sending form data as JSON body
-   */
-  addToCart(formData: any): Observable<any> {
+  addToCart(formData: any): Observable<ApiResponse> {
     const payload = {
       action: 'add_to_cart',
       form_data: JSON.stringify(formData)
@@ -115,13 +127,12 @@ export class ApiService {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
-    return this.http.post(this.apiUrl, payload, { headers });
+    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Add free sample by sending sample data as JSON body
-   */
-  addFreeSample(sampleData: any): Observable<any> {
+  addFreeSample(sampleData: any): Observable<ApiResponse> {
     const payload = {
       action: 'add_freesample',
       ...sampleData
@@ -129,12 +140,11 @@ export class ApiService {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
-    return this.http.post(this.apiUrl, payload, { headers });
+    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Get option list with POST request and JSON payload
-   */
   getOptionlist(
     params: ApiCommonParams,
     level: number = 0,
@@ -142,11 +152,11 @@ export class ApiService {
     fabriccolor: number = 0,
     fieldid: number,
     filter: any
-  ): Observable<any> {
-    const { api_url, api_key, api_name, recipeid,product_id, ...rest } = params;
+  ): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, recipeid, product_id, ...rest } = params;
 
     if (!recipeid) {
-      throw new Error('recipeid is required');
+      return throwError(() => new Error('recipeid is required'));
     }
 
     const payload = {
@@ -159,17 +169,14 @@ export class ApiService {
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
-  /**
-   * Filter based list with POST request and JSON payload
-   */
   filterbasedlist(
     params: ApiCommonParams,
     level: string = "",
     fieldtype: number,
     fabriccolor: string = "",
     fieldid: string = ""
-  ): Observable<any> {
-    const { api_url, api_key, api_name,product_id } = params;
+  ): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id } = params;
     const payload = {
       changedfieldtypeid: "",
       colorid: "",
@@ -202,5 +209,4 @@ export class ApiService {
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-
 }
