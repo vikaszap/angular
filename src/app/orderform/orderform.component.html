@@ -53,7 +53,7 @@
             <h3>Please enter your measurements</h3>
             <div class="blinds-measurement">
             </div>
-            <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
+            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldonjob == '1'">
                 <div *ngSwitchCase="'unit_type'">
                   <div class="parameter-wrapper">

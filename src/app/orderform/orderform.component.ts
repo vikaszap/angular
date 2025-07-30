@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-orderform',
   templateUrl: './orderform.component.html',
@@ -107,31 +108,30 @@ export class OrderformComponent implements OnInit {
 
         this.apiService.filterbasedlist(params, "", 5).subscribe((filterData: any) => {
           const filterresponseData = filterData[0].data;
+          const optionRequests = this.parameters_data
+            .filter(field => filterresponseData.optionarray[field.fieldid] != undefined && field.fieldtypeid == 3)
+            .map(field =>
+              this.apiService.getOptionlist(
+                params,
+                0,
+                3,
+                0,
+                field.fieldid,
+                filterresponseData.optionarray[field.fieldid]
+              )
+            );
 
-          this.parameters_data.forEach((field) => {
-            if (filterresponseData.optionarray[field.fieldid] != undefined) {
-              if (field.fieldtypeid == 3) {
-                this.apiService.getOptionlist(
-                  params,
-                  0,
-                  3,
-                  0,
-                  field.fieldid,
-                  filterresponseData.optionarray[field.fieldid]
-                ).subscribe((optionData: any) => {
-                  const optionresponseData = optionData[0].data[0].optionsvalue;
-                  this.option_data[field.fieldid] = optionresponseData;
-                    if (field.optiondefault) {
-                      this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault);
-                    }
-                });
+          forkJoin(optionRequests).subscribe((optionResponses: any) => {
+            optionResponses.forEach((optionData: any, index: number) => {
+              const field = this.parameters_data.filter(f => filterresponseData.optionarray[f.fieldid] != undefined && f.fieldtypeid == 3)[index];
+              const optionresponseData = optionData[0].data[0].optionsvalue;
+              this.option_data[field.fieldid] = optionresponseData;
+              if (field.optiondefault) {
+                const defaultValue = this.option_data[field.fieldid].find((option: any) => option.optionid === field.optiondefault);
+                this.orderForm.get(field.labelnamecode)?.setValue(defaultValue);
               }
-            }
+            });
           });
-        });
-       
-        this.orderForm.valueChanges.subscribe(values => {
-          this.onFormChanges(values);
         });
       }
     });
@@ -258,4 +258,7 @@ handleUnitTypeChange(value: any): void {
     return related_product.name;
   }
 
+  trackByFieldId(index: number, field: any): number {
+    return field.fieldid;
+  }
 }
