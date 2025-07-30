@@ -204,14 +204,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 next: (optionData: any) => {
                   if (optionData && optionData[0]?.data?.[0]?.optionsvalue) {
                     this.option_data[field.fieldid] = optionData[0].data[0].optionsvalue;
-                    
-                    if (field.optiondefault && this.orderForm.get(field.labelnamecode)) {
+                  if (field.optiondefault && this.orderForm.get(field.labelnamecode)) {
                       setTimeout(() => {
-                        if(field.selection != 1){
-                          console.log(field.labelnamecode)
-                          this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault, { emitEvent: false });
-                        }
+                        const control = this.orderForm.get(field.labelnamecode);
+                        if (control) {
+                          const valueToSet = field.selection == 1
+                            ? (field.optiondefault ? [field.optiondefault] : [])
+                            : field.optiondefault;
                       
+                          console.log(`Setting value for ${field.labelnamecode}:`, valueToSet);
+                          control.setValue(valueToSet, { emitEvent: false });
+                        }
                       });
                     }
                   }
