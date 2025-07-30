@@ -74,13 +74,19 @@
                   </div>
                 </div>
                 <div *ngSwitchCase="'list'">
-                  <div class="parameter-wrapper">
-                    <label>{{field.fieldname}}</label>
-                    <select [formControlName]="field.labelnamecode" [id]="field.labelnamecode" (change)="onFieldChange(field.fieldid, $event)">
-                      <option value="">Select Option</option>
-                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" [value]="option.optionid">{{option.optionname}}</option>
-                    </select>
-                  </div>
+              <div class="parameter-wrapper">
+                  <label>{{field.fieldname}}</label>
+                  <select [formControlName]="field.labelnamecode" 
+                          [id]="field.labelnamecode" 
+                          (change)="onFieldChange(field.fieldid, $event)"
+                          [multiple]="field.selection === 1">
+                    <option value="">Select Option</option>
+                    <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" 
+                            [value]="option.optionid">
+                      {{option.optionname}}
+                    </option>
+                  </select>
+                </div>
                 </div>
                 <div *ngSwitchCase="'number'">
                   <div class="parameter-wrapper">
