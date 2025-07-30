@@ -128,12 +128,13 @@ export class OrderformComponent implements OnInit, OnDestroy {
     ).subscribe(params => {
       this.fetchInitialData(params);
     });
-
+    /*
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(values => {
       this.onFormChanges(values);
     });
+    */
   }
 
   ngOnDestroy(): void {
@@ -181,6 +182,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     });
 
     this.orderForm = this.fb.group(formControls);
+     (window as any).orderForm = this.orderForm;
     this.previousFormValue = this.orderForm.value;
     this.cd.detectChanges();
   }
@@ -204,19 +206,30 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 next: (optionData: any) => {
                   if (optionData && optionData[0]?.data?.[0]?.optionsvalue) {
                     this.option_data[field.fieldid] = optionData[0].data[0].optionsvalue;
-                  if (field.optiondefault && this.orderForm.get(field.labelnamecode)) {
-                      setTimeout(() => {
-                        const control = this.orderForm.get(field.labelnamecode);
-                        if (control) {
-                          const valueToSet = field.selection == 1
-                            ? (field.optiondefault ? [field.optiondefault] : [])
-                            : field.optiondefault;
-                      
-                          console.log(`Setting value for ${field.labelnamecode}:`, valueToSet);
-                          control.setValue(valueToSet, { emitEvent: false });
-                        }
-                      });
-                    }
+                    
+                     if (field.optiondefault !== undefined && this.orderForm.get(field.labelnamecode)) {
+                            setTimeout(() => {
+                              const control = this.orderForm.get(field.labelnamecode);
+                              if (control) {
+                                let valueToSet: any;
+
+                                if (field.selection == 1) {
+                                  valueToSet = field.optiondefault
+                                    ? field.optiondefault.toString().split(',').filter(val => val !== '')
+                                    : [];
+                                } else {
+                                  valueToSet = field.optiondefault;
+                                }
+                                try {
+                                  control.setValue(valueToSet, { emitEvent: false });
+                                  console.log(`Set value for ${field.labelnamecode}:`, valueToSet);
+                                } catch (err) {
+                                  console.error(`Error setting value for ${field.labelnamecode}:`, valueToSet, err);
+                                }
+                              }
+                            });
+                          }
+
                   }
                 },
                 error: (err) => {

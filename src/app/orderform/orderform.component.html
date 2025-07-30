@@ -107,18 +107,18 @@
                   </div>
                 </div>
 
-                <!-- Dropdown List -->
-                <div *ngSwitchCase="'list'">
+              <div *ngSwitchCase="'list'">
                   <div class="parameter-wrapper">
-                    <label>{{field.fieldname}}</label>
-                    <select [formControlName]="field.labelnamecode" 
-                            [id]="field.labelnamecode" 
+                    <label>{{ field.fieldname }}</label>
+
+                    <select [formControlName]="field.labelnamecode"
+                            [id]="field.labelnamecode"
                             [multiple]="field.selection == 1"
                             [attr.aria-label]="field.fieldname">
-                      <option value="">Select Option</option>
-                      <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" 
+                      <option  value="">Select Option</option>
+                      <option *ngFor="let option of option_data[field.fieldid] "
                               [value]="option.optionid">
-                        {{option.optionname}}
+                        {{ option.optionname }}
                       </option>
                     </select>
                   </div>
