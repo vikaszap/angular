@@ -9,6 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { tap } from 'rxjs/operators';
 @Component({
   selector: 'app-orderform',
   templateUrl: './orderform.component.html',
@@ -131,10 +132,15 @@ export class OrderformComponent implements OnInit {
                   0,
                   field.fieldid,
                   filterresponseData.optionarray[field.fieldid]
-                ).subscribe((optionData: any) => {
-                  const optionresponseData = optionData[0].data[0].optionsvalue;
-                  this.option_data[field.fieldid] = optionresponseData;
-                });
+                ).pipe(
+                  tap((optionData: any) => {
+                    const optionresponseData = optionData[0].data[0].optionsvalue;
+                    this.option_data[field.fieldid] = optionresponseData;
+                    if (field.optiondefault) {
+                      this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault);
+                    }
+                  })
+                ).subscribe();
               } else if (field.fieldtypeid == 34) { // Unit Type
                 this.unit_type_data = field.optionsvalue;
                 if (field.optiondefault) {
