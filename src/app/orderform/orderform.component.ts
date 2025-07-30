@@ -4,6 +4,7 @@ import {
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  Validators,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -102,6 +103,14 @@ export class OrderformComponent implements OnInit {
         const formControls: { [key: string]: any } = {};
         this.parameters_data.forEach(field => {
           formControls[field.labelnamecode] = [''];
+          if (field.fieldtypeid === '11') { // Width with fraction
+            formControls['width'] = [''];
+            formControls['widthfraction'] = [''];
+          }
+          if (field.fieldtypeid === '12') { // Drop with fraction
+            formControls['drop'] = [''];
+            formControls['dropfraction'] = [''];
+          }
         });
         this.orderForm = this.fb.group(formControls);
 
@@ -109,8 +118,12 @@ export class OrderformComponent implements OnInit {
           const filterresponseData = filterData[0].data;
 
           this.parameters_data.forEach((field) => {
-            if (filterresponseData.optionarray[field.fieldid] != undefined) {
-              if (field.fieldtypeid == 3) {
+            if (field.optiondefault) {
+              this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault);
+            }
+
+            if (filterresponseData.optionarray[field.fieldid] !== undefined) {
+              if (field.fieldtypeid == 3) { // List
                 this.apiService.getOptionlist(
                   params,
                   0,
@@ -121,15 +134,17 @@ export class OrderformComponent implements OnInit {
                 ).subscribe((optionData: any) => {
                   const optionresponseData = optionData[0].data[0].optionsvalue;
                   this.option_data[field.fieldid] = optionresponseData;
-                    if (field.optiondefault) {
-                      this.orderForm.get(field.labelnamecode)?.setValue(field.optiondefault);
-                    }
                 });
+              } else if (field.fieldtypeid == 34) { // Unit Type
+                this.unit_type_data = field.optionsvalue;
+                if (field.optiondefault) {
+                  this.handleUnitTypeChange(field.optiondefault);
+                }
               }
             }
           });
         });
-       
+
         this.orderForm.valueChanges.subscribe(values => {
           this.onFormChanges(values);
         });
@@ -208,6 +223,20 @@ get_field_type_name(chosen_field_type_id: any): string {
 
 handleUnitTypeChange(value: any): void {
   this.showFractions = (value == 4);
+  const widthControl = this.orderForm.get('width');
+  const dropControl = this.orderForm.get('drop');
+
+  if (widthControl && dropControl) {
+    if (this.showFractions) {
+      widthControl.setValidators([Validators.required]);
+      dropControl.setValidators([Validators.required]);
+    } else {
+      widthControl.clearValidators();
+      dropControl.clearValidators();
+    }
+    widthControl.updateValueAndValidity();
+    dropControl.updateValueAndValidity();
+  }
 }
 
   freesample(button: any): void {
