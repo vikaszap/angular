@@ -83,7 +83,6 @@
                   <label>{{field.fieldname}}</label>
                   <select [formControlName]="field.labelnamecode" 
                           [id]="field.labelnamecode" 
-                          (change)="onFieldChange(field.fieldid, $event)"
                           [multiple]="field.selection === 1">
                     <option value="">Select Option</option>
                     <option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" 
