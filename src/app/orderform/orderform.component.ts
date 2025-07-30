@@ -129,13 +129,7 @@ export class OrderformComponent implements OnInit {
             }
           });
         });
-        this.parameters_data.forEach(field => {
-        if (field.optiondefault && field.optiondefault != "") {
-          this.orderForm.patchValue({
-            [field.labelnamecode]: field.optiondefault
-          });
-        }
-      });
+       
         this.orderForm.valueChanges.subscribe(values => {
           this.onFormChanges(values);
         });
