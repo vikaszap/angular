@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, ElementRef, Renderer2, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -45,6 +47,8 @@ interface FractionOption {
     RouterModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatInputModule,
+    MatRadioModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
