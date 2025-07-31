@@ -17,7 +17,7 @@ describe('OrderformComponent', () => {
         fieldname: 'Test Field',
         labelnamecode: 'test_field',
         fieldtypeid: 3,
-        showfieldonjob: '1',
+        showfieldecomonjob: '1',
         optionsvalue: []
       }
     ]

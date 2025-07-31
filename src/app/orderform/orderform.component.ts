@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, Renderer2, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
@@ -10,7 +12,8 @@ interface ProductField {
   fieldname: string;
   labelnamecode: string;
   fieldtypeid: number;
-  showfieldonjob: string;
+  showfieldonjob: number;
+  showfieldecomonjob: number;
   optiondefault?: string;
   optionsvalue?: any[];
   value?: string;
@@ -37,6 +40,8 @@ interface FractionOption {
     FormsModule,
     CommonModule,
     RouterModule,
+    MatSelectModule,
+    MatFormFieldModule,
   ],
 })
 export class OrderformComponent implements OnInit, OnDestroy {
@@ -171,11 +176,12 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
-      // Use fieldid as the control name with 'field_' prefix
-      formControls[`field_${field.fieldid}`] = [
-        field.value || '', 
-        field.showfieldonjob === '1' ? Validators.required : null
-      ];
+      if (field.showfieldecomonjob == 1) {  
+        formControls[`field_${field.fieldid}`] = [
+          field.value || '',
+          [Validators.required]  
+        ];
+      }
     });
 
     this.orderForm = this.fb.group(formControls);
@@ -220,6 +226,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                           try {
                             control.setValue(valueToSet, { emitEvent: false });
                             console.log(`Set value for field_${field.fieldid}:`, valueToSet);
+                            this.cd.detectChanges();
                           } catch (err) {
                             console.error(`Error setting value for field_${field.fieldid}:`, valueToSet, err);
                           }

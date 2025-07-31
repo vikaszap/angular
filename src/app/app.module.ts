@@ -8,6 +8,7 @@ import { AppComponent } from './app.component';
 import { OrderformComponent } from './orderform/orderform.component';
 import { ApiService } from './services/api.service';
 import { AppRoutingModule } from './app-routing.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { AppRoutingModule } from './app-routing.module';
     HttpClientModule,
     RouterModule,
     AppRoutingModule,
-    OrderformComponent
+    OrderformComponent,
+    BrowserAnimationsModule
   ],
   providers: [ApiService],  // Added ApiService to providers
   bootstrap: [AppComponent]
