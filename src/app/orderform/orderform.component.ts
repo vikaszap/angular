@@ -27,7 +27,7 @@ interface ProductField {
 interface ProductOption {
   optionid: string;
   optionname: string;
-  optionimage: string
+  optionimage: string;
 }
 
 interface FractionOption {
@@ -54,6 +54,7 @@ interface FractionOption {
 })
 export class OrderformComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private routeParams: any;
 
   // Form state
   isLoading: boolean = false;
@@ -112,6 +113,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   orderForm: FormGroup;
   previousFormValue: any;
   apiUrl: string = '';
+  
   // Data arrays with proper typing
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
@@ -139,6 +141,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
+      this.routeParams = params;
       this.fetchInitialData(params);
     });
   }
@@ -195,6 +198,11 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
+    this.orderForm.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(values => {
+      this.onFormChanges(values, this.routeParams);
+    });
     this.cd.detectChanges();
   }
 
@@ -209,18 +217,18 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
           this.parameters_data.forEach((field) => {
             if (filterresponseData.optionarray[field.fieldid] !== undefined && field.fieldtypeid === 3) {
-              optionRequests.push(
-                this.apiService.getOptionlist(
-                  params,
-                  0,
-                  3,
-                  0,
-                  field.fieldid,
-                  filterresponseData.optionarray[field.fieldid]
-                ).pipe(
-                  map(optionData => ({ fieldId: field.fieldid, optionData }))
-                )
-              );
+                 optionRequests.push(
+                    this.apiService.getOptionlist(
+                      params,
+                      0,
+                      3,
+                      0,
+                      field.fieldid,
+                      filterresponseData.optionarray[field.fieldid]
+                    ).pipe(
+                      map(optionData => ({ fieldId: field.fieldid, optionData }))
+                    )
+                  );
             }
             if (field.fieldtypeid === 34 && Array.isArray(field.optionsvalue)) {
                 const control = this.orderForm.get(`field_${field.fieldid}`);
@@ -264,12 +272,20 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 });
                 this.cd.detectChanges();
               },
-              error: (err) => console.error('Error loading options:', err)
+              error: (err) => {
+                console.error('Error loading options:', err);
+                this.errorMessage = 'Failed to load product options. Please try again.';
+                this.cd.detectChanges();
+              }
             });
           }
         }
       },
-      error: (err) => console.error('Error fetching filter data:', err)
+      error: (err) => {
+        console.error('Error fetching filter data:', err);
+        this.errorMessage = 'Failed to load filter data. Please try again.';
+        this.cd.detectChanges();
+      }
     });
   }
 
@@ -299,7 +315,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     return field_types[chosen_field_type_id] || '';
   }
 
-  onFormChanges(values: any): void {
+  onFormChanges(values: any, params: any): void {
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;
@@ -314,7 +330,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
             console.log('Field changed:', field.fieldname, 'New value:', values[key]);
             switch (field.fieldtypeid) {
               case 34: 
-                this.handleUnitTypeChange(values[key]);
+                this.handleUnitTypeChange(values[key], params);
                 break;
               default:
                 break;
@@ -345,11 +361,30 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.previousFormValue = { ...values };
   }
 
-  handleUnitTypeChange(value: any): void {
+  handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.showFractions = (unitValue === 4);
-    console.log('Unit type changed:', value, 'Show fractions:', this.showFractions);
-    this.cd.detectChanges();
+
+    this.apiService.getFractionData(params, unitValue).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (FractionData: any) => {
+        if (FractionData?.result?.inchfraction) {
+          this.inchfraction_array = FractionData.result.inchfraction.map((item: any) => ({
+            name: item.name,
+            value: item.decimalvalue
+          }));
+        } else {
+          this.inchfraction_array = [];
+        }
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error fetching fraction data:', err);
+        this.inchfraction_array = [];
+        this.cd.detectChanges();
+      }
+    });
   }
 
   freesample(button: any): void {

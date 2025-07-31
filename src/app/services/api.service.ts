@@ -106,6 +106,15 @@ export class ApiService {
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
 
+  getFractionData(params: ApiCommonParams,faction_value: any): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, recipeid,product_id, ...payload } = params;
+    if (!recipeid) {
+      return throwError(() => new Error('recipeid is required'));
+    }
+    const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
+    return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
+  }
+
   calculatePrice(formData: any): Observable<ApiResponse> {
     const payload = {
       action: 'price_calculation',

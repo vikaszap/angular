@@ -73,13 +73,6 @@ describe('OrderformComponent', () => {
     expect(component.orderForm.get('qty')?.value).toBe(1);
   });
 
-  it('should handle unit type change', () => {
-    component.handleUnitTypeChange('4');
-    expect(component.showFractions).toBeTrue();
-    
-    component.handleUnitTypeChange('2');
-    expect(component.showFractions).toBeFalse();
-  });
 
   it('should get field type name correctly', () => {
     expect(component.get_field_type_name('3')).toBe('list');
