@@ -12,7 +12,8 @@ interface ProductField {
   fieldname: string;
   labelnamecode: string;
   fieldtypeid: number;
-  showfieldonjob: string;
+  showfieldonjob: number;
+  showfieldecomonjob: number;
   optiondefault?: string;
   optionsvalue?: any[];
   value?: string;
@@ -175,11 +176,12 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
-      // Use fieldid as the control name with 'field_' prefix
-      formControls[`field_${field.fieldid}`] = [
-        field.value || '', 
-        field.showfieldonjob === '1' ? Validators.required : null
-      ];
+      if (field.showfieldecomonjob == 1) {  
+        formControls[`field_${field.fieldid}`] = [
+          field.value || '',
+          [Validators.required]  
+        ];
+      }
     });
 
     this.orderForm = this.fb.group(formControls);
