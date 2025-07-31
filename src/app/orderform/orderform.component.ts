@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, Renderer2, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
@@ -37,6 +39,8 @@ interface FractionOption {
     FormsModule,
     CommonModule,
     RouterModule,
+    MatSelectModule,
+    MatFormFieldModule,
   ],
 })
 export class OrderformComponent implements OnInit, OnDestroy {

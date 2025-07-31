@@ -110,17 +110,18 @@
                 <!-- List Input -->
                 <div *ngSwitchCase="'list'">
                   <div class="parameter-wrapper">
-                    <label>{{ field.fieldname }}</label>
-                    <select [formControlName]="'field_' + field.fieldid"
-                            [id]="'field_' + field.fieldid"
-                            [multiple]="field.selection == 1"
-                            [attr.aria-label]="field.fieldname">
-                      <option value="">Select Option</option>
-                      <option *ngFor="let option of option_data[field.fieldid]"
-                              [value]="option.optionid">
-                        {{ option.optionname }}
-                      </option>
-                    </select>
+                    <mat-form-field>
+                      <mat-label>{{ field.fieldname }}</mat-label>
+                      <mat-select [formControlName]="'field_' + field.fieldid"
+                                  [id]="'field_' + field.fieldid"
+                                  [multiple]="field.selection == 1"
+                                  [attr.aria-label]="field.fieldname">
+                        <mat-option *ngFor="let option of option_data[field.fieldid]"
+                                    [value]="option.optionid">
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
                   </div>
                 </div>
 
