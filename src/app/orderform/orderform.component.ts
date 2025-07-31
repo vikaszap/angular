@@ -216,12 +216,14 @@ export class OrderformComponent implements OnInit, OnDestroy {
                         if (control) {
                           let valueToSet: any;
 
-                          if (field.selection == 1) {
+                       if (field.selection == 1) {
                             valueToSet = field.optiondefault
-                              ? field.optiondefault.toString().split(',').filter(val => val !== '')
+                              ? field.optiondefault.toString().split(',').filter(val => val !== '').map(Number)
                               : [];
                           } else {
-                            valueToSet = field.optiondefault;
+                            valueToSet = field.optiondefault !== undefined && field.optiondefault !== null
+                              ? Number(field.optiondefault) 
+                              : '';
                           }
                           try {
                             control.setValue(valueToSet, { emitEvent: false });

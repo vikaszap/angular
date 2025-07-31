@@ -114,6 +114,7 @@
                       <mat-label>{{ field.fieldname }}</mat-label>
                       <mat-select [formControlName]="'field_' + field.fieldid"
                                   [id]="'field_' + field.fieldid"
+                                  [multiple]="field.selection == 1"
                                   [attr.aria-label]="field.fieldname">
                         <mat-option *ngFor="let option of option_data[field.fieldid]"
                                     [value]="option.optionid">
