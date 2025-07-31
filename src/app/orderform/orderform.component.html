@@ -85,7 +85,7 @@
                     <div *ngFor="let option of option_data[field.fieldid] || field.optionsvalue" class="form-check">
                       <input
                         type="radio"
-                        [formControlName]="field.labelnamecode"
+                        [formControlName]="'field_' + field.fieldid"
                         [value]="option.optionid"
                         [id]="'unittype_'+option.optionid"
                       />
@@ -101,22 +101,22 @@
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
                     <input type="text" 
-                           [formControlName]="field.labelnamecode" 
-                           [id]="field.labelnamecode"
+                           [formControlName]="'field_' + field.fieldid" 
+                           [id]="'field_' + field.fieldid"
                            [attr.aria-label]="field.fieldname">
                   </div>
                 </div>
 
-              <div *ngSwitchCase="'list'">
+                <!-- List Input -->
+                <div *ngSwitchCase="'list'">
                   <div class="parameter-wrapper">
                     <label>{{ field.fieldname }}</label>
-
-                    <select [formControlName]="field.labelnamecode"
-                            [id]="field.labelnamecode"
+                    <select [formControlName]="'field_' + field.fieldid"
+                            [id]="'field_' + field.fieldid"
                             [multiple]="field.selection == 1"
                             [attr.aria-label]="field.fieldname">
-                      <option  value="">Select Option</option>
-                      <option *ngFor="let option of option_data[field.fieldid] "
+                      <option value="">Select Option</option>
+                      <option *ngFor="let option of option_data[field.fieldid]"
                               [value]="option.optionid">
                         {{ option.optionname }}
                       </option>
@@ -129,8 +129,8 @@
                   <div class="parameter-wrapper">
                     <label>{{field.fieldname}}</label>
                     <input type="number" 
-                           [formControlName]="field.labelnamecode" 
-                           [id]="field.labelnamecode"
+                           [formControlName]="'field_' + field.fieldid" 
+                           [id]="'field_' + field.fieldid"
                            [attr.aria-label]="field.fieldname">
                   </div>
                 </div>
@@ -182,8 +182,8 @@
                 <!-- Hidden Field -->
                 <div *ngSwitchCase="'hidden'">
                   <input type="hidden" 
-                         [formControlName]="field.labelnamecode" 
-                         [id]="field.labelnamecode">
+                         [formControlName]="'field_' + field.fieldid" 
+                         [id]="'field_' + field.fieldid">
                 </div>
               </div>
             </div>
@@ -289,8 +289,6 @@
         </div>
       </div>
     </div>
-
-  
 
     <div *ngIf="related_products_list_data.length >= 3" class="related_products">
       <h5>Related Products</h5>

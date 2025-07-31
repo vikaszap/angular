@@ -128,13 +128,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
     ).subscribe(params => {
       this.fetchInitialData(params);
     });
-    /*
-    this.orderForm.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(values => {
-      this.onFormChanges(values);
-    });
-    */
   }
 
   ngOnDestroy(): void {
@@ -178,12 +171,16 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
-      formControls[field.labelnamecode] = [field.value || '', field.showfieldonjob === '1' ? Validators.required : null];
+      // Use fieldid as the control name with 'field_' prefix
+      formControls[`field_${field.fieldid}`] = [
+        field.value || '', 
+        field.showfieldonjob === '1' ? Validators.required : null
+      ];
     });
 
     this.orderForm = this.fb.group(formControls);
-     (window as any).orderForm = this.orderForm;
     this.previousFormValue = this.orderForm.value;
+    (window as any).form = this.orderForm;
     this.cd.detectChanges();
   }
 
@@ -207,29 +204,28 @@ export class OrderformComponent implements OnInit, OnDestroy {
                   if (optionData && optionData[0]?.data?.[0]?.optionsvalue) {
                     this.option_data[field.fieldid] = optionData[0].data[0].optionsvalue;
                     
-                     if (field.optiondefault !== undefined && this.orderForm.get(field.labelnamecode)) {
-                            setTimeout(() => {
-                              const control = this.orderForm.get(field.labelnamecode);
-                              if (control) {
-                                let valueToSet: any;
+                    if (field.optiondefault !== undefined) {
+                      setTimeout(() => {
+                        const control = this.orderForm.get(`field_${field.fieldid}`);
+                        if (control) {
+                          let valueToSet: any;
 
-                                if (field.selection == 1) {
-                                  valueToSet = field.optiondefault
-                                    ? field.optiondefault.toString().split(',').filter(val => val !== '')
-                                    : [];
-                                } else {
-                                  valueToSet = field.optiondefault;
-                                }
-                                try {
-                                  control.setValue(valueToSet, { emitEvent: false });
-                                  console.log(`Set value for ${field.labelnamecode}:`, valueToSet);
-                                } catch (err) {
-                                  console.error(`Error setting value for ${field.labelnamecode}:`, valueToSet, err);
-                                }
-                              }
-                            });
+                          if (field.selection == 1) {
+                            valueToSet = field.optiondefault
+                              ? field.optiondefault.toString().split(',').filter(val => val !== '')
+                              : [];
+                          } else {
+                            valueToSet = field.optiondefault;
                           }
-
+                          try {
+                            control.setValue(valueToSet, { emitEvent: false });
+                            console.log(`Set value for field_${field.fieldid}:`, valueToSet);
+                          } catch (err) {
+                            console.error(`Error setting value for field_${field.fieldid}:`, valueToSet, err);
+                          }
+                        }
+                      });
+                    }
                   }
                 },
                 error: (err) => {
@@ -280,15 +276,19 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     for (const key in values) {
       if (values[key] !== this.previousFormValue[key]) {
-        const field = this.parameters_data.find(f => f.labelnamecode === key);
-        if (field) {
-          console.log('Field changed:', field.fieldname, 'New value:', values[key]);
-          switch (field.fieldtypeid) {
-            case 34: 
-              this.handleUnitTypeChange(values[key]);
-              break;
-            default:
-              break;
+        // Check if this is a field control (starts with 'field_')
+        if (key.startsWith('field_')) {
+          const fieldId = parseInt(key.replace('field_', ''), 10);
+          const field = this.parameters_data.find(f => f.fieldid === fieldId);
+          if (field) {
+            console.log('Field changed:', field.fieldname, 'New value:', values[key]);
+            switch (field.fieldtypeid) {
+              case 34: 
+                this.handleUnitTypeChange(values[key]);
+                break;
+              default:
+                break;
+            }
           }
         } else {
           if (key === 'width' || key === 'widthfraction') {
@@ -316,9 +316,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   handleUnitTypeChange(value: any): void {
-    // Convert to number if it's a string
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
-    this.showFractions = (unitValue === 4); // 4 typically represents inches
+    this.showFractions = (unitValue === 4);
     console.log('Unit type changed:', value, 'Show fractions:', this.showFractions);
     this.cd.detectChanges();
   }
