@@ -76,7 +76,7 @@
               <!-- Form fields will be rendered here -->
             </div>
 
-            <div *ngFor="let field of parameters_data" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
+            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldecomonjob == 1">
                 <!-- Unit Type -->
                 <div *ngSwitchCase="'unit_type'">

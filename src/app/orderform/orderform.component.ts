@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, ElementRef, Renderer2, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, Renderer2, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 interface ProductField {
   fieldid: number;
@@ -43,6 +44,7 @@ interface FractionOption {
     MatSelectModule,
     MatFormFieldModule,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderformComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -191,59 +193,67 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private loadOptionData(params: any): void {
-    this.apiService.filterbasedlist(params, "", 5).subscribe({
+    this.apiService.filterbasedlist(params, '', 5).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (filterData: any) => {
         if (filterData && filterData[0]?.data?.optionarray) {
           const filterresponseData = filterData[0].data;
+          const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
 
           this.parameters_data.forEach((field) => {
             if (filterresponseData.optionarray[field.fieldid] !== undefined && field.fieldtypeid === 3) {
-              this.apiService.getOptionlist(
-                params,
-                0,
-                3,
-                0,
-                field.fieldid,
-                filterresponseData.optionarray[field.fieldid]
-              ).subscribe({
-                next: (optionData: any) => {
-                  if (optionData && optionData[0]?.data?.[0]?.optionsvalue) {
-                    this.option_data[field.fieldid] = optionData[0].data[0].optionsvalue;
-                    
-                    if (field.optiondefault !== undefined) {
-                      setTimeout(() => {
-                        const control = this.orderForm.get(`field_${field.fieldid}`);
-                        if (control) {
-                          let valueToSet: any;
-
-                       if (field.selection == 1) {
-                            valueToSet = field.optiondefault
-                              ? field.optiondefault.toString().split(',').filter(val => val !== '').map(Number)
-                              : [];
-                          } else {
-                            valueToSet = field.optiondefault !== undefined && field.optiondefault !== null
-                              ? Number(field.optiondefault) 
-                              : '';
-                          }
-                            control.setValue(valueToSet, { emitEvent: false });
-                            this.cd.detectChanges();
-                          
-                        }
-                      });
-                    }
-                  }
-                },
-                error: (err) => {
-                  console.error(`Error loading options for field ${field.fieldid}:`, err);
-                }
-              });
+              optionRequests.push(
+                this.apiService.getOptionlist(
+                  params,
+                  0,
+                  3,
+                  0,
+                  field.fieldid,
+                  filterresponseData.optionarray[field.fieldid]
+                ).pipe(
+                  map(optionData => ({ fieldId: field.fieldid, optionData }))
+                )
+              );
             }
           });
+
+          if (optionRequests.length > 0) {
+            forkJoin(optionRequests).pipe(
+              takeUntil(this.destroy$)
+            ).subscribe({
+              next: (responses: { fieldId: number, optionData: any }[]) => {
+                responses.forEach(response => {
+                  const field = this.parameters_data.find(f => f.fieldid === response.fieldId);
+                  if (field && response.optionData && response.optionData[0]?.data?.[0]?.optionsvalue) {
+                    this.option_data[field.fieldid] = response.optionData[0].data[0].optionsvalue;
+
+                    if (field.optiondefault !== undefined) {
+                      const control = this.orderForm.get(`field_${field.fieldid}`);
+                      if (control) {
+                        let valueToSet: any;
+                        if (field.selection == 1) {
+                          valueToSet = field.optiondefault
+                            ? field.optiondefault.toString().split(',').filter(val => val !== '').map(Number)
+                            : [];
+                        } else {
+                          valueToSet = field.optiondefault !== undefined && field.optiondefault !== null
+                            ? Number(field.optiondefault)
+                            : '';
+                        }
+                        control.setValue(valueToSet, { emitEvent: false });
+                      }
+                    }
+                  }
+                });
+                this.cd.detectChanges();
+              },
+              error: (err) => console.error('Error loading options:', err)
+            });
+          }
         }
       },
-      error: (err) => {
-        console.error('Error fetching filter data:', err);
-      }
+      error: (err) => console.error('Error fetching filter data:', err)
     });
   }
 
@@ -399,5 +409,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
   getRelatedProductName(related_product: any): string {
     return related_product?.name || '';
+  }
+
+  trackByFieldId(index: number, field: ProductField): number {
+    return field.fieldid;
   }
 }
