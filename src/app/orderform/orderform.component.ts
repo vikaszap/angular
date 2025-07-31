@@ -225,13 +225,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
                               ? Number(field.optiondefault) 
                               : '';
                           }
-                          try {
                             control.setValue(valueToSet, { emitEvent: false });
-                            console.log(`Set value for field_${field.fieldid}:`, valueToSet);
                             this.cd.detectChanges();
-                          } catch (err) {
-                            console.error(`Error setting value for field_${field.fieldid}:`, valueToSet, err);
-                          }
+                          
                         }
                       });
                     }
