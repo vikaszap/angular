@@ -19,11 +19,13 @@ interface ProductField {
   optionsvalue?: any[];
   value?: string;
   selection?: any;
+  mandatory?: any;
 }
 
 interface ProductOption {
   optionid: string;
   optionname: string;
+  optionimage: string
 }
 
 interface FractionOption {
@@ -105,7 +107,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
-
+  apiUrl: string = '';
   // Data arrays with proper typing
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
@@ -150,6 +152,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
       next: (data: any) => {
         if (data && data[0]?.data) {
           this.parameters_data = data[0].data;
+          this.apiUrl = params.api_url;
           this.initializeFormControls();
           this.loadOptionData(params);
         } else {
@@ -178,17 +181,16 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
-      if (field.showfieldecomonjob == 1) {  
+      if (field.showfieldecomonjob == 1) {
         formControls[`field_${field.fieldid}`] = [
           field.value || '',
-          [Validators.required]  
+          field.mandatory == 1 ? [Validators.required] : []
         ];
       }
     });
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
-    (window as any).form = this.orderForm;
     this.cd.detectChanges();
   }
 
@@ -291,7 +293,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     for (const key in values) {
       if (values[key] !== this.previousFormValue[key]) {
-        // Check if this is a field control (starts with 'field_')
         if (key.startsWith('field_')) {
           const fieldId = parseInt(key.replace('field_', ''), 10);
           const field = this.parameters_data.find(f => f.fieldid === fieldId);
