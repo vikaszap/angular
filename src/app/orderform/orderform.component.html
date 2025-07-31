@@ -159,7 +159,7 @@
 
                 <!-- Width with Fraction -->
                 <div *ngSwitchCase="'width_with_fraction'">
-                  <div class="parameter-wrapper fraction-wrapper">
+                  <div class="parameter-wrapper fraction-wrapper"  [ngClass]="{'fraction-visible': showFractions}">
                     <mat-form-field class="fraction-field">
                       <mat-label>{{field.fieldname}}</mat-label>
                       <input matInput
@@ -170,7 +170,7 @@
                              [max]="max_width"
                              aria-label="Width">
                     </mat-form-field>
-                    <mat-form-field *ngIf="showFractions" class="fraction-select">
+                    <mat-form-field *ngIf="showFractions" class="fraction-select" >
                       <mat-label>Fraction</mat-label>
                       <mat-select formControlName="widthfraction"
                                   id="widthfraction"
@@ -183,7 +183,7 @@
                 </div>
 
                 <div *ngSwitchCase="'drop_with_fraction'">
-                  <div class="parameter-wrapper fraction-wrapper">
+                  <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
                     <mat-form-field class="fraction-field">
                       <mat-label>{{field.fieldname}}</mat-label>
                       <input matInput

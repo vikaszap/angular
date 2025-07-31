@@ -302,3 +302,16 @@
     display: block;
     margin: 5px 0 !important;
 }
+.fraction-wrapper.fraction-visible {
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+}
+  
+.fraction-wrapper.fraction-visible .fraction-field {
+    flex: 1 1 60%;
+}
+  
+.fraction-wrapper.fraction-visible .fraction-select {
+    flex: 1 1 40%;
+}
