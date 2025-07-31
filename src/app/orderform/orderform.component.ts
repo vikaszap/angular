@@ -222,6 +222,16 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 )
               );
             }
+            if (field.fieldtypeid === 34 && Array.isArray(field.optionsvalue)) {
+                const control = this.orderForm.get(`field_${field.fieldid}`);
+                if (control) {
+                  const valueToSet =
+                    field.optiondefault !== undefined && field.optiondefault !== null
+                      ? Number(field.optiondefault)
+                      : '';
+                  control.setValue(valueToSet, { emitEvent: false });
+                }
+              }
           });
 
           if (optionRequests.length > 0) {
