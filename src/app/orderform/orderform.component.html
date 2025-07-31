@@ -159,45 +159,51 @@
 
                 <!-- Width with Fraction -->
                 <div *ngSwitchCase="'width_with_fraction'">
-                  <div class="parameter-wrapper">
-                    <label>{{field.fieldname}}</label>
-                    <div>
-                      <input type="number" 
+                  <div class="parameter-wrapper fraction-wrapper">
+                    <mat-form-field class="fraction-field">
+                      <mat-label>{{field.fieldname}}</mat-label>
+                      <input matInput
+                             type="number"
                              formControlName="width" 
                              id="width" 
                              [min]="min_width" 
                              [max]="max_width"
                              aria-label="Width">
-                      <select *ngIf="showFractions" 
-                              formControlName="widthfraction" 
-                              id="widthfraction"
-                              aria-label="Width fraction">
-                        <option *ngFor="let fraction of inchfraction_array" 
-                                [value]="fraction.value">{{fraction.name}}</option>
-                      </select>
-                    </div>
+                    </mat-form-field>
+                    <mat-form-field *ngIf="showFractions" class="fraction-select">
+                      <mat-label>Fraction</mat-label>
+                      <mat-select formControlName="widthfraction"
+                                  id="widthfraction"
+                                  aria-label="Width fraction">
+                        <mat-option *ngFor="let fraction of inchfraction_array"
+                                    [value]="fraction.value">{{fraction.name}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
                   </div>
                 </div>
 
                 <!-- Drop with Fraction -->
                 <div *ngSwitchCase="'drop_with_fraction'">
-                  <div class="parameter-wrapper">
-                    <label>{{field.fieldname}}</label>
-                    <div>
-                      <input type="number" 
+                  <div class="parameter-wrapper fraction-wrapper">
+                    <mat-form-field class="fraction-field">
+                      <mat-label>{{field.fieldname}}</mat-label>
+                      <input matInput
+                             type="number"
                              formControlName="drop" 
                              id="drop" 
                              [min]="min_drop" 
                              [max]="max_drop"
                              aria-label="Drop">
-                      <select *ngIf="showFractions" 
-                              formControlName="dropfraction" 
-                              id="dropfraction"
-                              aria-label="Drop fraction">
-                        <option *ngFor="let fraction of inchfraction_array" 
-                                [value]="fraction.value">{{fraction.name}}</option>
-                      </select>
-                    </div>
+                    </mat-form-field>
+                    <mat-form-field *ngIf="showFractions" class="fraction-select">
+                      <mat-label>Fraction</mat-label>
+                      <mat-select formControlName="dropfraction"
+                                  id="dropfraction"
+                                  aria-label="Drop fraction">
+                        <mat-option *ngFor="let fraction of inchfraction_array"
+                                    [value]="fraction.value">{{fraction.name}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
                   </div>
                 </div>
 
