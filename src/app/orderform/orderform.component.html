@@ -81,8 +81,8 @@
                 <!-- Unit Type -->
                 <div *ngSwitchCase="'unit_type'">
                   <div class="parameter-wrapper">
-                    <mat-radio-group [formControlName]="'field_' + field.fieldid" [aria-label]="field.fieldname">
-                      <mat-label>{{ field.fieldname }}</mat-label>
+                    <label id="example-radio-group-label" class="mat-label">{{ field.fieldname }}</label>
+                    <mat-radio-group [formControlName]="'field_' + field.fieldid" aria-labelledby="example-radio-group-label">
                       <mat-radio-button *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
                                         [value]="option.optionid"
                                         [id]="'unittype_'+option.optionid">
