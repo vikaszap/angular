@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OrderformComponent } from './orderform.component';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
@@ -86,4 +86,39 @@ describe('OrderformComponent', () => {
     expect(console.log).toHaveBeenCalled();
   });
 
+  it('should update parameters_data on option selection change', () => {
+    // 1. Setup mock data
+    const fieldId = 1365;
+    const selectedOption = { optionid: '4634', optionname: 'Affordable Hybrawood', optionimage: '' };
+
+    component.parameters_data = [{
+      fieldid: fieldId,
+      fieldname: 'Test Dropdown',
+      fieldtypeid: 3,
+      showfieldecomonjob: 1,
+      labelnamecode: 'test_dropdown',
+      showfieldonjob: 1
+    }];
+    component.option_data[fieldId] = [
+      selectedOption,
+      { optionid: '4635', optionname: 'Another Option', optionimage: '' }
+    ];
+
+    // Have to manually add the control because initializeFormControls is complex
+    component.orderForm.addControl(`field_${fieldId}`, new FormControl(''));
+    component.previousFormValue = component.orderForm.value;
+
+
+    // 2. Trigger value change
+    const control = component.orderForm.get(`field_${fieldId}`);
+    control?.setValue(selectedOption.optionid);
+
+    // 3. Assert
+    const updatedField = component.parameters_data.find(f => f.fieldid === fieldId);
+    expect(updatedField).toBeDefined();
+    expect(updatedField?.value).toBe(selectedOption.optionname);
+    expect(updatedField?.valueid).toBe(selectedOption.optionid);
+    expect(updatedField?.optionid).toBe(selectedOption.optionid);
+    expect(updatedField?.optionsvalue).toEqual([selectedOption]);
+  });
 });
