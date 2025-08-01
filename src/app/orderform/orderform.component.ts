@@ -314,16 +314,19 @@ private loadOptionData(params: any): void {
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
+                        this.handleOptionSelectionChange(field, valueToSet);
                       } 
                       else if (field.fieldtypeid == 20) {
                         const colorid: string = params.color_id;
                         const coloridval: number = +colorid;
                         control.setValue(coloridval, { emitEvent: false });
+                        this.handleOptionSelectionChange(field, coloridval);
                       } 
                       else if (field.fieldtypeid == 5) {
                         const fabric_id: string = params.fabric_id;
                         const fabric_idval: number = +fabric_id;
                         control.setValue(fabric_idval, { emitEvent: false });
+                        this.handleOptionSelectionChange(field, fabric_idval);
                       }
                     }
                   }
