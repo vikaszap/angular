@@ -200,6 +200,19 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
+
+    // Initialize parameters_data for fields with default values
+    Object.keys(this.orderForm.controls).forEach(key => {
+      if (key.startsWith('field_')) {
+        const fieldId = parseInt(key.replace('field_', ''), 10);
+        const field = this.parameters_data.find(f => f.fieldid === fieldId);
+        const value = this.orderForm.get(key)?.value;
+        if (field && (value !== null && value !== undefined && value !== '')) {
+          this.updateParameterData(field, value);
+        }
+      }
+    });
+
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(values => {
@@ -235,6 +248,7 @@ private loadOptionData(params: any): void {
                       ? Number(field.optiondefault)
                       : '';
                   control.setValue(valueToSet, { emitEvent: false });
+                  this.updateParameterData(field, valueToSet);
                 }
               }
             }
@@ -314,19 +328,19 @@ private loadOptionData(params: any): void {
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, valueToSet);
+                        this.updateParameterData(field, valueToSet);
                       } 
                       else if (field.fieldtypeid == 20) {
                         const colorid: string = params.color_id;
                         const coloridval: number = +colorid;
                         control.setValue(coloridval, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, coloridval);
+                        this.updateParameterData(field, coloridval);
                       } 
                       else if (field.fieldtypeid == 5) {
                         const fabric_id: string = params.fabric_id;
                         const fabric_idval: number = +fabric_id;
                         control.setValue(fabric_idval, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, fabric_idval);
+                        this.updateParameterData(field, fabric_idval);
                       }
                     }
                   }
@@ -372,26 +386,34 @@ private loadOptionData(params: any): void {
       }
     });
   }
-  private handleOptionSelectionChange(field: ProductField, value: any): void {
-    if (!field || Array.isArray(value)) {
-      // Also handles multi-select by ignoring it, as per task focus.
+  private updateParameterData(field: ProductField, value: any): void {
+    if (!field) {
       return;
     }
 
-    const options = this.option_data[field.fieldid];
-    if (!options) return;
+    // Determine if the field has options
+    const options = this.option_data[field.fieldid] || field.optionsvalue;
+    const hasOptions = Array.isArray(options) && options.length > 0;
 
-    const selectedOption = options.find(opt => opt.optionid == value);
-
-    if (selectedOption) {
-      field.value = selectedOption.optionname;
-      field.valueid = selectedOption.optionid;
-      field.optionid = selectedOption.optionid;
-      field.optionsvalue = [selectedOption];
+    if (hasOptions) {
+      // Logic for fields with options (dropdowns, radios)
+      const selectedOption = options.find(opt => opt.optionid == value);
+      if (selectedOption) {
+        field.value = selectedOption.optionname;
+        field.valueid = selectedOption.optionid;
+        field.optionid = selectedOption.optionid;
+        field.optionsvalue = [selectedOption];
+      } else {
+        field.value = '';
+        field.valueid = '';
+        field.optionid = '';
+        field.optionsvalue = [];
+      }
     } else {
-      field.value = '';
-      field.valueid = '';
-      field.optionid = '';
+      // Logic for simple input fields (text, number)
+      field.value = value;
+      field.valueid = String(field.fieldid);
+      field.optionid = value; // As per request
       field.optionsvalue = [];
     }
 
@@ -437,17 +459,10 @@ private loadOptionData(params: any): void {
           const field = this.parameters_data.find(f => f.fieldid === fieldId);
           if (field) {
             console.log('Field changed:', field.fieldname, 'New value:', values[key]);
-            switch (field.fieldtypeid) {
-              case 3:
-              case 5:
-              case 20:
-                this.handleOptionSelectionChange(field, values[key]);
-                break;
-              case 34: 
-                this.handleUnitTypeChange(values[key], params);
-                break;
-              default:
-                break;
+            this.updateParameterData(field, values[key]);
+            // Special handling for unit type change if needed, as it triggers a side effect
+            if (field.fieldtypeid === 34) {
+              this.handleUnitTypeChange(values[key], params);
             }
           }
         } else {
