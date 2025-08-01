@@ -157,7 +157,7 @@ export class ApiService {
   getOptionlist(
     params: ApiCommonParams,
     level: number = 0,
-    fieldtype: number = 3,
+    fieldtype: number,
     fabriccolor: number = 0,
     fieldid: number,
     filter: any
@@ -169,23 +169,22 @@ export class ApiService {
     }
 
     const payload = {
-      filterids: fieldtype === 3 ? filter : null,
+      filterids: filter,
       productionformulalist: [],
       productid: product_id || null,
     };
-    const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}`;
- 
+    const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
+    
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
   filterbasedlist(
     params: ApiCommonParams,
     level: string = "",
-    fieldtype: number,
     fabriccolor: string = "",
     fieldid: string = ""
   ): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, product_id } = params;
+    const { api_url, api_key, api_name, product_id,category } = params;
     const payload = {
       changedfieldtypeid: "",
       colorid: "",
@@ -194,7 +193,7 @@ export class ApiService {
       drop: null,
       fabricid: "",
       fabriciddual: "",
-      fieldtypeid: fieldtype,
+      fieldtypeid: category,
       lineitemselectedvalues: [],
       numFraction: null,
       orderItemId: "",
@@ -215,7 +214,7 @@ export class ApiService {
     };
     
     const passData = `products/fields/filterbasedongeneraldata`;
-
+  
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }

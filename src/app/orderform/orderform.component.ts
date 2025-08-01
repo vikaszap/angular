@@ -108,7 +108,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
   matmapid: number = 0;
   pricegroup_id: number = 0;
   supplier_id: number = 0;
-
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
@@ -207,7 +206,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private loadOptionData(params: any): void {
-    this.apiService.filterbasedlist(params, '', 5).pipe(
+
+    this.apiService.filterbasedlist(params, '').pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (filterData: any) => {
@@ -216,21 +216,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
           const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
 
           this.parameters_data.forEach((field) => {
-            if (filterresponseData.optionarray[field.fieldid] !== undefined && field.fieldtypeid === 3) {
-                 optionRequests.push(
-                    this.apiService.getOptionlist(
-                      params,
-                      0,
-                      3,
-                      0,
-                      field.fieldid,
-                      filterresponseData.optionarray[field.fieldid]
-                    ).pipe(
-                      map(optionData => ({ fieldId: field.fieldid, optionData }))
-                    )
-                  );
-            }
-            if (field.fieldtypeid === 34 && Array.isArray(field.optionsvalue)) {
+           
+            if (field.fieldtypeid == 34 && Array.isArray(field.optionsvalue)) {
                 const control = this.orderForm.get(`field_${field.fieldid}`);
                 if (control) {
                   const valueToSet =
@@ -239,6 +226,32 @@ export class OrderformComponent implements OnInit, OnDestroy {
                       : '';
                   control.setValue(valueToSet, { emitEvent: false });
                 }
+              }else{
+                let matrial: number =0;
+                let filter: any ='';
+                if( field.fieldtypeid == 3){
+                    matrial = 0;
+                    filter = filterresponseData.optionarray[field.fieldid]
+                }else if(field.fieldtypeid == 5){
+                    matrial = 1;
+                    filter = filterresponseData.coloridsarray
+                }else if(field.fieldtypeid == 20){
+                    matrial = 2;
+                    filter = filterresponseData.coloridsarray
+                }
+                    optionRequests.push(
+                        this.apiService.getOptionlist(
+                          params,
+                          1,
+                          field.fieldtypeid,
+                          matrial,
+                          field.fieldid,
+                          filter
+                        ).pipe(
+                          map(optionData => ({ fieldId: field.fieldid, optionData }))
+                        )
+                      );
+                  
               }
           });
 
@@ -254,18 +267,28 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
                     if (field.optiondefault !== undefined) {
                       const control = this.orderForm.get(`field_${field.fieldid}`);
-                      if (control) {
+                      if (control && field.fieldtypeid == 3 ) {
                         let valueToSet: any;
                         if (field.selection == 1) {
                           valueToSet = field.optiondefault
                             ? field.optiondefault.toString().split(',').filter(val => val !== '').map(Number)
                             : [];
                         } else {
-                          valueToSet = field.optiondefault !== undefined && field.optiondefault !== null
+                          valueToSet = field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault != ""
                             ? Number(field.optiondefault)
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
+                      }else if(control && field.fieldtypeid == 20 ){
+                        let colorid: string = params.color_id;
+                        let coloridval: number = +colorid;
+                        control.setValue(coloridval, { emitEvent: false }); 
+
+                      }else if(control && field.fieldtypeid == 5 ){
+                        let fabric_id: string = params.fabric_id;
+                        let fabric_idval: number = +fabric_id;
+                        control.setValue(fabric_idval, { emitEvent: false }); 
+
                       }
                     }
                   }
@@ -309,7 +332,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
       '34': 'unit_type',
       '21': 'shutter_materials',
       '25': 'accessories_list',
-      '20': 'color',
+      '20': 'slats_materials',
     };
 
     return field_types[chosen_field_type_id] || '';

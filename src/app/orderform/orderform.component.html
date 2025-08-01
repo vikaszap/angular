@@ -119,10 +119,10 @@
                       [id]="'field_' + field.fieldid"
                       [multiple]="field.selection == 1"
                       [attr.aria-label]="field.fieldname">
-
+                      <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
                       <mat-option *ngFor="let option of option_data[field.fieldid]"
                                   [value]="option.optionid">
-
+                        
                         <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
                           <img [src]="apiUrl + '/api/public' + option.optionimage"
                               alt="{{ option.optionname }}"
@@ -138,6 +138,35 @@
                   </mat-form-field>
                 </div>
               </div>
+               <div *ngSwitchCase="'slats_materials'">
+                <div class="parameter-wrapper">
+                  <mat-form-field>
+                    <mat-label>{{ field.fieldname }}</mat-label>
+                    <mat-select
+                      [formControlName]="'field_' + field.fieldid"
+                      [id]="'field_' + field.fieldid"
+                      [multiple]="field.selection == 1"
+                      [attr.aria-label]="field.fieldname">
+                      <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                      <mat-option *ngFor="let option of option_data[field.fieldid]"
+                                  [value]="option.optionid">
+                        
+                        <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                          <img [src]="apiUrl + '/api/public' + option.optionimage"
+                              alt="{{ option.optionname }}"
+                              width="24"
+                              height="24"
+                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                        </ng-container>
+
+                        {{ option.optionname }}
+                      </mat-option>
+
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+              
 
                 <!-- Number Input -->
                 <div *ngSwitchCase="'number'">
