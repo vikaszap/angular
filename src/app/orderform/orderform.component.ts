@@ -139,6 +139,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    (window as any).orderFormComponent = this;
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
