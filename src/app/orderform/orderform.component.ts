@@ -217,7 +217,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
           this.parameters_data.forEach((field) => {
            
-            if (field.fieldtypeid == 34 && Array.isArray(field.optionsvalue)) {
+            if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13 && Array.isArray(field.optionsvalue)) {
                 const control = this.orderForm.get(`field_${field.fieldid}`);
                 if (control) {
                   const valueToSet =

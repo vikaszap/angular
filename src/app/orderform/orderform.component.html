@@ -234,8 +234,50 @@
                     </mat-form-field>
                   </div>
                 </div>
-
-                <!-- Hidden Field -->
+                 <div *ngSwitchCase="'qty'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>{{field.fieldname}}</mat-label>
+                      <input matInput
+                             type="text"
+                             [formControlName]="'field_' + field.fieldid"
+                             [id]="'field_' + field.fieldid"
+                            >
+                    </mat-form-field>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'supplier'">
+                    <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>{{ field.fieldname }}</mat-label>
+                      <mat-select
+                        [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid">
+                        <mat-option  value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of field.optionsvalue"
+                                    [value]="option.optionid">
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'pricegroup'">
+                    <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>{{ field.fieldname }}</mat-label>
+                      <mat-select
+                        [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid">
+                        <mat-option  value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of field.optionsvalue"
+                                    [value]="option.optionid">
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
                 <div *ngSwitchCase="'hidden'">
                   <input type="hidden" 
                          [formControlName]="'field_' + field.fieldid" 
