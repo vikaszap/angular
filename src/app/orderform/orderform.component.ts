@@ -205,8 +205,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.cd.detectChanges();
   }
 
-  private loadOptionData(params: any): void {
-
+private loadOptionData(params: any): void {
     this.apiService.filterbasedlist(params, '').pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -215,9 +214,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
           const filterresponseData = filterData[0].data;
           const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
 
-          this.parameters_data.forEach((field) => {
-           
-            if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13 && Array.isArray(field.optionsvalue)) {
+          // First pass: Handle all field types
+          this.parameters_data.forEach((field: ProductField) => {
+            // Handle field types that have predefined options
+            if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
+              if (Array.isArray(field.optionsvalue)) {
+                // Remove control if options are empty
+                if (field.optionsvalue.length === 0) {
+                  this.orderForm.removeControl(`field_${field.fieldid}`);
+                  return;
+                }
+
                 const control = this.orderForm.get(`field_${field.fieldid}`);
                 if (control) {
                   const valueToSet =
@@ -226,33 +233,38 @@ export class OrderformComponent implements OnInit, OnDestroy {
                       : '';
                   control.setValue(valueToSet, { emitEvent: false });
                 }
-              }else{
-                let matrial: number =0;
-                let filter: any ='';
-                if( field.fieldtypeid == 3){
-                    matrial = 0;
-                    filter = filterresponseData.optionarray[field.fieldid]
-                }else if(field.fieldtypeid == 5){
-                    matrial = 1;
-                    filter = filterresponseData.coloridsarray
-                }else if(field.fieldtypeid == 20){
-                    matrial = 2;
-                    filter = filterresponseData.coloridsarray
-                }
-                    optionRequests.push(
-                        this.apiService.getOptionlist(
-                          params,
-                          1,
-                          field.fieldtypeid,
-                          matrial,
-                          field.fieldid,
-                          filter
-                        ).pipe(
-                          map(optionData => ({ fieldId: field.fieldid, optionData }))
-                        )
-                      );
-                  
               }
+            }
+            // Handle field types that need option requests
+            else if (field.fieldtypeid == 3 || field.fieldtypeid == 5 || field.fieldtypeid == 20) {
+              let matrial: number = 0;
+              let filter: any = '';
+              
+              if (field.fieldtypeid == 3) {
+                matrial = 0;
+                filter = filterresponseData.optionarray[field.fieldid];
+              } else if (field.fieldtypeid == 5) {
+                matrial = 1;
+                filter = filterresponseData.coloridsarray;
+              } else if (field.fieldtypeid == 20) {
+                matrial = 2;
+                filter = filterresponseData.coloridsarray;
+              }
+
+              optionRequests.push(
+                this.apiService.getOptionlist(
+                  params,
+                  1,
+                  field.fieldtypeid,
+                  matrial,
+                  field.fieldid,
+                  filter
+                ).pipe(
+                  map((optionData: any) => ({ fieldId: field.fieldid, optionData }))
+                )
+              );
+            }
+            // Other field types remain as they are
           });
 
           if (optionRequests.length > 0) {
@@ -260,58 +272,100 @@ export class OrderformComponent implements OnInit, OnDestroy {
               takeUntil(this.destroy$)
             ).subscribe({
               next: (responses: { fieldId: number, optionData: any }[]) => {
-                responses.forEach(response => {
-                  const field = this.parameters_data.find(f => f.fieldid === response.fieldId);
-                  if (field && response.optionData && response.optionData[0]?.data?.[0]?.optionsvalue) {
-                    this.option_data[field.fieldid] = response.optionData[0].data[0].optionsvalue;
+                responses.forEach((response: { fieldId: number, optionData: any }) => {
+                  const field = this.parameters_data.find((f: ProductField) => f.fieldid === response.fieldId);
+                  if (!field) return;
 
-                    if (field.optiondefault !== undefined) {
-                      const control = this.orderForm.get(`field_${field.fieldid}`);
-                      if (control && field.fieldtypeid == 3 ) {
-                        let valueToSet: any;
+                  // Process response only for field types 3, 5, 20
+                  if ([3, 5, 20].includes(field.fieldtypeid)) {
+                    const options = response.optionData?.[0]?.data?.[0]?.optionsvalue;
+                    const filteredOptions = Array.isArray(options) 
+                      ? options.filter((option: any) => {
+                          return option.availableForEcommerce === undefined || 
+                                 option.availableForEcommerce === 1;
+                        })
+                      : [];
+
+                    // Remove control if no valid options
+                    if (filteredOptions.length === 0) {
+                      this.orderForm.removeControl(`field_${field.fieldid}`);
+                      return;
+                    }
+
+                    this.option_data[field.fieldid] = filteredOptions;
+
+                    const control = this.orderForm.get(`field_${field.fieldid}`);
+                    if (control) {
+                      let valueToSet: any;
+                      
+                      if (field.fieldtypeid == 3) {
                         if (field.selection == 1) {
                           valueToSet = field.optiondefault
-                            ? field.optiondefault.toString().split(',').filter(val => val !== '').map(Number)
+                            ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
                             : [];
                         } else {
-                          valueToSet = field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault != ""
+                          valueToSet = field.optiondefault !== undefined && 
+                                    field.optiondefault !== null && 
+                                    field.optiondefault != ""
                             ? Number(field.optiondefault)
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
-                      }else if(control && field.fieldtypeid == 20 ){
-                        let colorid: string = params.color_id;
-                        let coloridval: number = +colorid;
-                        control.setValue(coloridval, { emitEvent: false }); 
-
-                      }else if(control && field.fieldtypeid == 5 ){
-                        let fabric_id: string = params.fabric_id;
-                        let fabric_idval: number = +fabric_id;
-                        control.setValue(fabric_idval, { emitEvent: false }); 
-
+                      } 
+                      else if (field.fieldtypeid == 20) {
+                        const colorid: string = params.color_id;
+                        const coloridval: number = +colorid;
+                        control.setValue(coloridval, { emitEvent: false });
+                      } 
+                      else if (field.fieldtypeid == 5) {
+                        const fabric_id: string = params.fabric_id;
+                        const fabric_idval: number = +fabric_id;
+                        control.setValue(fabric_idval, { emitEvent: false });
                       }
                     }
                   }
                 });
+
+                // Filter parameters_data to remove fields that have no options
+                this.parameters_data = this.parameters_data.filter((field: ProductField) => {
+                  // Keep fields that have options or aren't option-based
+                  if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
+                    return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
+                  }
+                  else if ([3, 5, 20].includes(field.fieldtypeid)) {
+                    return this.option_data[field.fieldid]?.length > 0;
+                  }
+                  // Keep all other field types
+                  return true;
+                });
+
                 this.cd.detectChanges();
               },
-              error: (err) => {
+              error: (err: any) => {
                 console.error('Error loading options:', err);
                 this.errorMessage = 'Failed to load product options. Please try again.';
                 this.cd.detectChanges();
               }
             });
+          } else {
+            // Filter parameters_data for fields with predefined options
+            this.parameters_data = this.parameters_data.filter((field: ProductField) => {
+              if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
+                return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
+              }
+              return true;
+            });
+            this.cd.detectChanges();
           }
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error fetching filter data:', err);
         this.errorMessage = 'Failed to load filter data. Please try again.';
         this.cd.detectChanges();
       }
     });
   }
-
   get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
       '3': 'list',
