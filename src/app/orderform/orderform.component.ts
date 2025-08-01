@@ -22,6 +22,8 @@ interface ProductField {
   value?: string;
   selection?: any;
   mandatory?: any;
+  valueid?: string;
+  optionid?: any;
 }
 
 interface ProductOption {
@@ -366,6 +368,32 @@ private loadOptionData(params: any): void {
       }
     });
   }
+  private handleOptionSelectionChange(field: ProductField, value: any): void {
+    if (!field || Array.isArray(value)) {
+      // Also handles multi-select by ignoring it, as per task focus.
+      return;
+    }
+
+    const options = this.option_data[field.fieldid];
+    if (!options) return;
+
+    const selectedOption = options.find(opt => opt.optionid == value);
+
+    if (selectedOption) {
+      field.value = selectedOption.optionname;
+      field.valueid = selectedOption.optionid;
+      field.optionid = selectedOption.optionid;
+      field.optionsvalue = [selectedOption];
+    } else {
+      field.value = '';
+      field.valueid = '';
+      field.optionid = '';
+      field.optionsvalue = [];
+    }
+
+    this.cd.detectChanges();
+  }
+
   get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
       '3': 'list',
@@ -406,6 +434,11 @@ private loadOptionData(params: any): void {
           if (field) {
             console.log('Field changed:', field.fieldname, 'New value:', values[key]);
             switch (field.fieldtypeid) {
+              case 3:
+              case 5:
+              case 20:
+                this.handleOptionSelectionChange(field, values[key]);
+                break;
               case 34: 
                 this.handleUnitTypeChange(values[key], params);
                 break;
