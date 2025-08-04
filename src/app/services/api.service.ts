@@ -217,4 +217,29 @@ export class ApiService {
   
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  
+  sublist(
+    params: ApiCommonParams,
+    level: number = 2,
+    fieldtype: number,
+    optionlinkid:any,
+    selectedvalue:any,
+    masterparentfieldid: any,
+  ): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, recipeid,product_id } = params;
+      const payload = {
+      supplierid: 1,
+      productid:product_id, 
+      optionid: [selectedvalue],
+      subfieldoptionlinkid: [optionlinkid],
+      productionformulalist: [],
+      orderitemselectedvalues: {
+        [masterparentfieldid]: [selectedvalue]
+      }
+    };
+    const passData = `products/fields/list/0/${recipeid}/${level}/${fieldtype}/${masterparentfieldid}`;
+    console.log(passData);
+    console.log(payload);
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
 }

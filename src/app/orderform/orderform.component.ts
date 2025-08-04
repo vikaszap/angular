@@ -27,9 +27,11 @@ interface ProductField {
 }
 
 interface ProductOption {
+  subdatacount: any;
   optionid: string;
   optionname: string;
   optionimage: string;
+  fieldoptionlinkid:number;
 }
 
 interface FractionOption {
@@ -314,19 +316,19 @@ private loadOptionData(params: any): void {
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, valueToSet);
+                        this.handleOptionSelectionChange(params,field, valueToSet);
                       } 
                       else if (field.fieldtypeid == 20) {
                         const colorid: string = params.color_id;
                         const coloridval: number = +colorid;
                         control.setValue(coloridval, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, coloridval);
+                        this.handleOptionSelectionChange(params,field, coloridval);
                       } 
                       else if (field.fieldtypeid == 5) {
                         const fabric_id: string = params.fabric_id;
                         const fabric_idval: number = +fabric_id;
                         control.setValue(fabric_idval, { emitEvent: false });
-                        this.handleOptionSelectionChange(field, fabric_idval);
+                        this.handleOptionSelectionChange(params,field, fabric_idval);
                       }
                     }
                   }
@@ -372,32 +374,50 @@ private loadOptionData(params: any): void {
       }
     });
   }
-  private handleOptionSelectionChange(field: ProductField, value: any): void {
-    if (!field || Array.isArray(value)) {
-      // Also handles multi-select by ignoring it, as per task focus.
-      return;
-    }
-
-    const options = this.option_data[field.fieldid];
-    if (!options) return;
-
-    const selectedOption = options.find(opt => opt.optionid == value);
-
-    if (selectedOption) {
-      field.value = selectedOption.optionname;
-      field.valueid = selectedOption.optionid;
-      field.optionid = selectedOption.optionid;
-      field.optionsvalue = [selectedOption];
-    } else {
-      field.value = '';
-      field.valueid = '';
-      field.optionid = '';
-      field.optionsvalue = [];
-    }
-
-    this.cd.detectChanges();
+  private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
+  if (!field || Array.isArray(value)) {
+    // Skip multi-select or invalid field
+    return;
   }
 
+  const options = this.option_data[field.fieldid];
+  if (!options) return;
+
+  const selectedOption = options.find(opt => opt.optionid == value);
+
+  if (selectedOption && selectedOption.subdatacount && selectedOption.subdatacount > 0) {
+    this.apiService.sublist(
+      params,
+      2, 
+      3,
+      selectedOption.fieldoptionlinkid,
+      selectedOption.optionid,
+      field.fieldid
+    ).subscribe({
+      next: (filterData: any) => {
+        console.log('Sublist data received:', filterData);
+       
+      },
+      error: (err) => {
+        console.error('Error fetching sublist:', err);
+      }
+    });
+  }
+
+  if (selectedOption) {
+    field.value = selectedOption.optionname;
+    field.valueid = selectedOption.optionid;
+    field.optionid = selectedOption.optionid;
+    field.optionsvalue = [selectedOption];
+  } else {
+    field.value = '';
+    field.valueid = '';
+    field.optionid = '';
+    field.optionsvalue = [];
+  }
+
+  this.cd.detectChanges();
+}
   get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
       '3': 'list',
@@ -441,7 +461,7 @@ private loadOptionData(params: any): void {
               case 3:
               case 5:
               case 20:
-                this.handleOptionSelectionChange(field, values[key]);
+                this.handleOptionSelectionChange(params,field, values[key]);
                 break;
               case 34: 
                 this.handleUnitTypeChange(values[key], params);
