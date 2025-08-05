@@ -61,7 +61,7 @@ interface FractionOption {
 export class OrderformComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private routeParams: any;
-  private readonly MAX_NESTING_LEVEL = 5;
+  private readonly MAX_NESTING_LEVEL = 8;
 
   // Form state
   isLoading: boolean = false;
