@@ -397,9 +397,14 @@ private loadOptionData(params: any): void {
       next: (subFeild: any) => {
        if (subFeild && subFeild[0]?.data) {
           const sublist = subFeild[0].data;
+          const currentIndex = this.parameters_data.findIndex(f => f.fieldid === field.fieldid);
           sublist.forEach((subfield: ProductField) => {
             if (subfield.fieldtypeid === 3) {
-              this.parameters_data.push(subfield);
+              if (currentIndex !== -1) {
+                this.parameters_data.splice(currentIndex + 1, 0, subfield);
+              } else {
+                this.parameters_data.push(subfield);
+              }
               this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid)).subscribe({
                 next: (filterData: any) => {
                   let filter: any = '';
