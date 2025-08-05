@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { Subject, takeUntil, forkJoin, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 interface ProductField {
   fieldid: number;
@@ -211,169 +211,131 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
 private loadOptionData(params: any): void {
-    this.apiService.filterbasedlist(params, '').pipe(
+  const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
+
+  this.parameters_data.forEach((field: ProductField) => {
+    if (field.fieldtypeid === 34 || field.fieldtypeid === 17 || field.fieldtypeid === 13) {
+      if (Array.isArray(field.optionsvalue)) {
+        if (field.optionsvalue.length === 0) {
+          this.orderForm.removeControl(`field_${field.fieldid}`);
+          return;
+        }
+        const control = this.orderForm.get(`field_${field.fieldid}`);
+        if (control) {
+          const valueToSet = field.optiondefault !== undefined && field.optiondefault !== null
+            ? Number(field.optiondefault)
+            : '';
+          control.setValue(valueToSet, { emitEvent: false });
+        }
+      }
+    } else if (field.fieldtypeid === 3 || field.fieldtypeid === 5 || field.fieldtypeid === 20) {
+      let matrial: number = 0;
+      if (field.fieldtypeid === 5) matrial = 1;
+      if (field.fieldtypeid === 20) matrial = 2;
+
+      const optionRequest = this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid)).pipe(
+        map((filterData: any) => {
+          let filter: any = '';
+          if (filterData && filterData[0]?.data) {
+            if (field.fieldtypeid === 3) {
+              filter = filterData[0].data.optionarray?.[field.fieldid] || '';
+            } else if (field.fieldtypeid === 5 || field.fieldtypeid === 20) {
+              filter = filterData[0].data.coloridsarray || '';
+            }
+          }
+          return { field, matrial, filter };
+        }),
+        switchMap(({ field, matrial, filter }) =>
+          this.apiService.getOptionlist(params, 1, field.fieldtypeid, matrial, field.fieldid, filter).pipe(
+            map((optionData: any) => ({ fieldId: field.fieldid, optionData }))
+          )
+        )
+      );
+      optionRequests.push(optionRequest);
+    }
+  });
+
+  if (optionRequests.length > 0) {
+    forkJoin(optionRequests).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (filterData: any) => {
-        if (filterData && filterData[0]?.data?.optionarray) {
-          const filterresponseData = filterData[0].data;
-          const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
+      next: (responses: any) => {
+        responses.forEach((response: any) => {
+         response.subscribe({
+          next: (res:any)=>{
+            const field = this.parameters_data.find((f: ProductField) => f.fieldid === res.fieldId);
+            if (!field) return;
 
-          // First pass: Handle all field types
-          this.parameters_data.forEach((field: ProductField) => {
-            // Handle field types that have predefined options
-            if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
-              if (Array.isArray(field.optionsvalue)) {
-                // Remove control if options are empty
-                if (field.optionsvalue.length === 0) {
-                  this.orderForm.removeControl(`field_${field.fieldid}`);
-                  return;
-                }
+            if ([3, 5, 20].includes(field.fieldtypeid)) {
+              const options = res.optionData?.[0]?.data?.[0]?.optionsvalue;
+              const filteredOptions = Array.isArray(options)
+                ? options.filter((option: any) => option.availableForEcommerce === undefined || option.availableForEcommerce === 1)
+                : [];
 
-                const control = this.orderForm.get(`field_${field.fieldid}`);
-                if (control) {
-                  const valueToSet =
-                    field.optiondefault !== undefined && field.optiondefault !== null
+              if (filteredOptions.length === 0) {
+                this.orderForm.removeControl(`field_${field.fieldid}`);
+                return;
+              }
+
+              this.option_data[field.fieldid] = filteredOptions;
+
+              const control = this.orderForm.get(`field_${field.fieldid}`);
+              if (control) {
+                let valueToSet: any;
+                if (field.fieldtypeid === 3) {
+                  if (field.selection == 1) {
+                    valueToSet = field.optiondefault ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number) : [];
+                  } else {
+                    valueToSet = field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== ""
                       ? Number(field.optiondefault)
                       : '';
+                  }
                   control.setValue(valueToSet, { emitEvent: false });
+                  this.handleOptionSelectionChange(params, field, valueToSet);
+                } else if (field.fieldtypeid === 20) {
+                  const colorid: string = params.color_id;
+                  const coloridval: number = +colorid;
+                  control.setValue(coloridval, { emitEvent: false });
+                  this.handleOptionSelectionChange(params, field, coloridval);
+                } else if (field.fieldtypeid === 5) {
+                  const fabric_id: string = params.fabric_id;
+                  const fabric_idval: number = +fabric_id;
+                  control.setValue(fabric_idval, { emitEvent: false });
+                  this.handleOptionSelectionChange(params, field, fabric_idval);
                 }
               }
             }
-            // Handle field types that need option requests
-            else if (field.fieldtypeid == 3 || field.fieldtypeid == 5 || field.fieldtypeid == 20) {
-              let matrial: number = 0;
-              let filter: any = '';
-              
-              if (field.fieldtypeid == 3) {
-                matrial = 0;
-                filter = filterresponseData.optionarray[field.fieldid];
-              } else if (field.fieldtypeid == 5) {
-                matrial = 1;
-                filter = filterresponseData.coloridsarray;
-              } else if (field.fieldtypeid == 20) {
-                matrial = 2;
-                filter = filterresponseData.coloridsarray;
-              }
-
-              optionRequests.push(
-                this.apiService.getOptionlist(
-                  params,
-                  1,
-                  field.fieldtypeid,
-                  matrial,
-                  field.fieldid,
-                  filter
-                ).pipe(
-                  map((optionData: any) => ({ fieldId: field.fieldid, optionData }))
-                )
-              );
-            }
-            // Other field types remain as they are
-          });
-
-          if (optionRequests.length > 0) {
-            forkJoin(optionRequests).pipe(
-              takeUntil(this.destroy$)
-            ).subscribe({
-              next: (responses: { fieldId: number, optionData: any }[]) => {
-                responses.forEach((response: { fieldId: number, optionData: any }) => {
-                  const field = this.parameters_data.find((f: ProductField) => f.fieldid === response.fieldId);
-                  if (!field) return;
-
-                  // Process response only for field types 3, 5, 20
-                  if ([3, 5, 20].includes(field.fieldtypeid)) {
-                    const options = response.optionData?.[0]?.data?.[0]?.optionsvalue;
-                    const filteredOptions = Array.isArray(options) 
-                      ? options.filter((option: any) => {
-                          return option.availableForEcommerce === undefined || 
-                                 option.availableForEcommerce === 1;
-                        })
-                      : [];
-
-                    // Remove control if no valid options
-                    if (filteredOptions.length === 0) {
-                      this.orderForm.removeControl(`field_${field.fieldid}`);
-                      return;
-                    }
-
-                    this.option_data[field.fieldid] = filteredOptions;
-
-                    const control = this.orderForm.get(`field_${field.fieldid}`);
-                    if (control) {
-                      let valueToSet: any;
-                      
-                      if (field.fieldtypeid == 3) {
-                        if (field.selection == 1) {
-                          valueToSet = field.optiondefault
-                            ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
-                            : [];
-                        } else {
-                          valueToSet = field.optiondefault !== undefined && 
-                                    field.optiondefault !== null && 
-                                    field.optiondefault != ""
-                            ? Number(field.optiondefault)
-                            : '';
-                        }
-                        control.setValue(valueToSet, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, valueToSet);
-                      } 
-                      else if (field.fieldtypeid == 20) {
-                        const colorid: string = params.color_id;
-                        const coloridval: number = +colorid;
-                        control.setValue(coloridval, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, coloridval);
-                      } 
-                      else if (field.fieldtypeid == 5) {
-                        const fabric_id: string = params.fabric_id;
-                        const fabric_idval: number = +fabric_id;
-                        control.setValue(fabric_idval, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, fabric_idval);
-                      }
-                    }
-                  }
-                });
-
-                // Filter parameters_data to remove fields that have no options
-                this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-                  // Keep fields that have options or aren't option-based
-                  if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
-                    return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
-                  }
-                  else if ([3, 5, 20].includes(field.fieldtypeid)) {
-                    return this.option_data[field.fieldid]?.length > 0;
-                  }
-                  // Keep all other field types
-                  return true;
-                });
-
-                this.cd.detectChanges();
-              },
-              error: (err: any) => {
-                console.error('Error loading options:', err);
-                this.errorMessage = 'Failed to load product options. Please try again.';
-                this.cd.detectChanges();
-              }
-            });
-          } else {
-            // Filter parameters_data for fields with predefined options
-            this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-              if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
-                return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
-              }
-              return true;
-            });
-            this.cd.detectChanges();
           }
-        }
+         })
+        });
+
+        this.parameters_data = this.parameters_data.filter((field: ProductField) => {
+          if (field.fieldtypeid === 34 || field.fieldtypeid === 17 || field.fieldtypeid === 13) {
+            return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
+          } else if ([3, 5, 20].includes(field.fieldtypeid)) {
+            return this.option_data[field.fieldid]?.length > 0;
+          }
+          return true;
+        });
+
+        this.cd.detectChanges();
       },
       error: (err: any) => {
-        console.error('Error fetching filter data:', err);
-        this.errorMessage = 'Failed to load filter data. Please try again.';
+        console.error('Error loading options:', err);
+        this.errorMessage = 'Failed to load product options. Please try again.';
         this.cd.detectChanges();
       }
     });
+  } else {
+    this.parameters_data = this.parameters_data.filter((field: ProductField) => {
+      if (field.fieldtypeid === 34 || field.fieldtypeid === 17 || field.fieldtypeid === 13) {
+        return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
+      }
+      return true;
+    });
+    this.cd.detectChanges();
   }
+}
   private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
   if (!field || Array.isArray(value)) {
     // Skip multi-select or invalid field
@@ -388,15 +350,49 @@ private loadOptionData(params: any): void {
   if (selectedOption && selectedOption.subdatacount && selectedOption.subdatacount > 0) {
     this.apiService.sublist(
       params,
-      2, 
+      2,
       3,
       selectedOption.fieldoptionlinkid,
       selectedOption.optionid,
       field.fieldid
     ).subscribe({
       next: (subFeild: any) => {
-        console.log('Sublist data received:', subFeild);
-        
+        if (subFeild && subFeild[0]?.data) {
+          const sublist = subFeild[0].data;
+          sublist.forEach((subfield: ProductField) => {
+            if (subfield.fieldtypeid === 3) {
+              this.parameters_data.push(subfield);
+              this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid)).subscribe({
+                next: (filterData: any) => {
+                  let filter: any = '';
+                  if (filterData && filterData[0]?.data) {
+                    filter = filterData[0].data.optionarray?.[subfield.fieldid] || '';
+                  }
+                  this.apiService.getOptionlist(params, 1, subfield.fieldtypeid, 0, subfield.fieldid, filter).subscribe({
+                    next: (optionData: any) => {
+                      const options = optionData?.[0]?.data?.[0]?.optionsvalue;
+                      if (Array.isArray(options)) {
+                        this.option_data[subfield.fieldid] = options;
+                        const formControl = this.fb.control(
+                          subfield.value || '',
+                          subfield.mandatory == 1 ? [Validators.required] : []
+                        );
+                        this.orderForm.addControl(`field_${subfield.fieldid}`, formControl);
+                        this.cd.detectChanges();
+                      }
+                    },
+                    error: (err) => {
+                      console.error(`Error fetching options for subfield ${subfield.fieldid}:`, err);
+                    }
+                  });
+                },
+                error: (err) => {
+                  console.error(`Error fetching filter data for subfield ${subfield.fieldid}:`, err);
+                }
+              });
+            }
+          });
+        }
       },
       error: (err) => {
         console.error('Error fetching sublist:', err);

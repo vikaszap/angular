@@ -89,7 +89,7 @@ describe('OrderformComponent', () => {
   it('should update parameters_data on option selection change', () => {
     // 1. Setup mock data
     const fieldId = 1365;
-    const selectedOption = { optionid: '4634', optionname: 'Affordable Hybrawood', optionimage: '' };
+    const selectedOption = { optionid: '4634', optionname: 'Affordable Hybrawood', optionimage: '', subdatacount: 0, fieldoptionlinkid: 1 };
 
     component.parameters_data = [{
       fieldid: fieldId,
@@ -101,7 +101,7 @@ describe('OrderformComponent', () => {
     }];
     component.option_data[fieldId] = [
       selectedOption,
-      { optionid: '4635', optionname: 'Another Option', optionimage: '' }
+      { optionid: '4635', optionname: 'Another Option', optionimage: '', subdatacount: 0, fieldoptionlinkid: 2 }
     ];
 
     // Have to manually add the control because initializeFormControls is complex
