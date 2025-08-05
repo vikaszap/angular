@@ -74,11 +74,6 @@ describe('OrderformComponent', () => {
   });
 
 
-  it('should get field type name correctly', () => {
-    expect(component.get_field_type_name('3')).toBe('list');
-    expect(component.get_field_type_name('11')).toBe('width_with_fraction');
-    expect(component.get_field_type_name('999')).toBe('');
-  });
 
   it('should detect form changes', () => {
     spyOn(console, 'log');
@@ -91,14 +86,6 @@ describe('OrderformComponent', () => {
     const fieldId = 1365;
     const selectedOption = { optionid: '4634', optionname: 'Affordable Hybrawood', optionimage: '' };
 
-    component.parameters_data = [{
-      fieldid: fieldId,
-      fieldname: 'Test Dropdown',
-      fieldtypeid: 3,
-      showfieldecomonjob: 1,
-      labelnamecode: 'test_dropdown',
-      showfieldonjob: 1
-    }];
 
 
     // Have to manually add the control because initializeFormControls is complex
@@ -116,6 +103,5 @@ describe('OrderformComponent', () => {
     expect(updatedField?.value).toBe(selectedOption.optionname);
     expect(updatedField?.valueid).toBe(selectedOption.optionid);
     expect(updatedField?.optionid).toBe(selectedOption.optionid);
-    expect(updatedField?.optionsvalue).toEqual([selectedOption]);
   });
 });

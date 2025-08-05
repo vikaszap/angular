@@ -7,8 +7,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
-import { Subject, takeUntil, forkJoin, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Subject, forkJoin, Observable } from 'rxjs';
+import { map, takeUntil } from 'rxjs/operators';
 
 interface ProductField {
   fieldid: number;
@@ -24,14 +24,16 @@ interface ProductField {
   mandatory?: any;
   valueid?: string;
   optionid?: any;
+  level?: number;
+  parentFieldId?: number;
 }
 
 interface ProductOption {
-  subdatacount: any;
+  subdatacount: number;
   optionid: string;
   optionname: string;
   optionimage: string;
-  fieldoptionlinkid:number;
+  fieldoptionlinkid: number;
 }
 
 interface FractionOption {
@@ -59,6 +61,7 @@ interface FractionOption {
 export class OrderformComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private routeParams: any;
+  private readonly MAX_NESTING_LEVEL = 5;
 
   // Form state
   isLoading: boolean = false;
@@ -112,6 +115,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   matmapid: number = 0;
   pricegroup_id: number = 0;
   supplier_id: number = 0;
+  
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
@@ -192,6 +196,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
     };
 
     this.parameters_data.forEach(field => {
+      // Set initial level (1 for root fields)
+      field.level = 1;
+      
       if (field.showfieldecomonjob == 1) {
         formControls[`field_${field.fieldid}`] = [
           field.value || '',
@@ -210,7 +217,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.cd.detectChanges();
   }
 
-private loadOptionData(params: any): void {
+  private loadOptionData(params: any): void {
     this.apiService.filterbasedlist(params, '').pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -219,12 +226,9 @@ private loadOptionData(params: any): void {
           const filterresponseData = filterData[0].data;
           const optionRequests: Observable<{ fieldId: number, optionData: any }>[] = [];
 
-          // First pass: Handle all field types
           this.parameters_data.forEach((field: ProductField) => {
-            // Handle field types that have predefined options
             if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
               if (Array.isArray(field.optionsvalue)) {
-                // Remove control if options are empty
                 if (field.optionsvalue.length === 0) {
                   this.orderForm.removeControl(`field_${field.fieldid}`);
                   return;
@@ -240,7 +244,6 @@ private loadOptionData(params: any): void {
                 }
               }
             }
-            // Handle field types that need option requests
             else if (field.fieldtypeid == 3 || field.fieldtypeid == 5 || field.fieldtypeid == 20) {
               let matrial: number = 0;
               let filter: any = '';
@@ -269,7 +272,6 @@ private loadOptionData(params: any): void {
                 )
               );
             }
-            // Other field types remain as they are
           });
 
           if (optionRequests.length > 0) {
@@ -281,7 +283,6 @@ private loadOptionData(params: any): void {
                   const field = this.parameters_data.find((f: ProductField) => f.fieldid === response.fieldId);
                   if (!field) return;
 
-                  // Process response only for field types 3, 5, 20
                   if ([3, 5, 20].includes(field.fieldtypeid)) {
                     const options = response.optionData?.[0]?.data?.[0]?.optionsvalue;
                     const filteredOptions = Array.isArray(options) 
@@ -291,7 +292,6 @@ private loadOptionData(params: any): void {
                         })
                       : [];
 
-                    // Remove control if no valid options
                     if (filteredOptions.length === 0) {
                       this.orderForm.removeControl(`field_${field.fieldid}`);
                       return;
@@ -316,34 +316,31 @@ private loadOptionData(params: any): void {
                             : '';
                         }
                         control.setValue(valueToSet, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, valueToSet);
+                        this.handleOptionSelectionChange(params, field, valueToSet);
                       } 
                       else if (field.fieldtypeid == 20) {
                         const colorid: string = params.color_id;
                         const coloridval: number = +colorid;
                         control.setValue(coloridval, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, coloridval);
+                        this.handleOptionSelectionChange(params, field, coloridval);
                       } 
                       else if (field.fieldtypeid == 5) {
                         const fabric_id: string = params.fabric_id;
                         const fabric_idval: number = +fabric_id;
                         control.setValue(fabric_idval, { emitEvent: false });
-                        this.handleOptionSelectionChange(params,field, fabric_idval);
+                        this.handleOptionSelectionChange(params, field, fabric_idval);
                       }
                     }
                   }
                 });
 
-                // Filter parameters_data to remove fields that have no options
                 this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-                  // Keep fields that have options or aren't option-based
                   if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
                     return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
                   }
                   else if ([3, 5, 20].includes(field.fieldtypeid)) {
                     return this.option_data[field.fieldid]?.length > 0;
                   }
-                  // Keep all other field types
                   return true;
                 });
 
@@ -356,7 +353,6 @@ private loadOptionData(params: any): void {
               }
             });
           } else {
-            // Filter parameters_data for fields with predefined options
             this.parameters_data = this.parameters_data.filter((field: ProductField) => {
               if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
                 return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
@@ -374,90 +370,158 @@ private loadOptionData(params: any): void {
       }
     });
   }
+
   private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
-  if (!field || Array.isArray(value)) {
-    // Skip multi-select or invalid field
-    return;
+    if (!field || !value) return;
+
+    // Clear previous subfields
+    this.clearExistingSubfields(field.fieldid);
+
+    const options = this.option_data[field.fieldid];
+    if (!options) return;
+
+    const selectedOption = Array.isArray(value) 
+      ? options.filter(opt => value.includes(opt.optionid))
+      : options.find(opt => opt.optionid == value);
+
+    if (!selectedOption) return;
+
+    // Handle single selection case
+    if (!Array.isArray(selectedOption)) {
+      this.processSelectedOption(params, field, selectedOption);
+    }
+    // Handle multi-selection case
+    else {
+      selectedOption.forEach(option => {
+        this.processSelectedOption(params, field, option);
+      });
+    }
+
+    this.updateFieldValues(field, selectedOption);
+    this.cd.detectChanges();
   }
 
-  const options = this.option_data[field.fieldid];
-  if (!options) return;
+  private clearExistingSubfields(parentFieldId: number): void {
+    // Remove subfields from parameters_data
+    this.parameters_data = this.parameters_data.filter(f => 
+      !f.parentFieldId || f.parentFieldId !== parentFieldId
+    );
 
-  const selectedOption = options.find(opt => opt.optionid == value);
-
-  if (selectedOption && selectedOption.subdatacount && selectedOption.subdatacount > 0) {
-    this.apiService.sublist(
-      params,
-      2, 
-      3,
-      selectedOption.fieldoptionlinkid,
-      selectedOption.optionid,
-      field.fieldid
-    ).subscribe({
-      next: (subFeild: any) => {
-       if (subFeild && subFeild[0]?.data) {
-          const sublist = subFeild[0].data;
-          const currentIndex = this.parameters_data.findIndex(f => f.fieldid === field.fieldid);
-          sublist.forEach((subfield: ProductField) => {
-            if (subfield.fieldtypeid === 3) {
-              if (currentIndex !== -1) {
-                this.parameters_data.splice(currentIndex + 1, 0, subfield);
-              } else {
-                this.parameters_data.push(subfield);
-              }
-              this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid)).subscribe({
-                next: (filterData: any) => {
-                  let filter: any = '';
-                  if (filterData && filterData[0]?.data) {
-                    filter = filterData[0].data.optionarray?.[subfield.fieldid] || '';
-                  }
-                  this.apiService.getOptionlist(params, 1, subfield.fieldtypeid, 0, subfield.fieldid, filter).subscribe({
-                    next: (optionData: any) => {
-                      const options = optionData?.[0]?.data?.[0]?.optionsvalue;
-                      if (Array.isArray(options)) {
-                        this.option_data[subfield.fieldid] = options;
-                        const formControl = this.fb.control(
-                          subfield.value || '',
-                          subfield.mandatory == 1 ? [Validators.required] : []
-                        );
-                        this.orderForm.addControl(`field_${subfield.fieldid}`, formControl);
-                        this.cd.detectChanges();
-                      }
-                    },
-                    error: (err) => {
-                      console.error(`Error fetching options for subfield ${subfield.fieldid}:`, err);
-                    }
-                  });
-                },
-                error: (err) => {
-                  console.error(`Error fetching filter data for subfield ${subfield.fieldid}:`, err);
-                }
-              });
-            }
-          });
+    // Remove corresponding form controls
+    Object.keys(this.orderForm.controls).forEach(controlKey => {
+      if (controlKey.startsWith('field_')) {
+        const fieldId = Number(controlKey.replace('field_', ''));
+        const field = this.parameters_data.find(f => f.fieldid === fieldId);
+        if (field && field.parentFieldId === parentFieldId) {
+          this.orderForm.removeControl(controlKey);
+          delete this.option_data[fieldId];
         }
-        
-      },
-      error: (err) => {
-        console.error('Error fetching sublist:', err);
       }
     });
   }
 
-  if (selectedOption) {
-    field.value = selectedOption.optionname;
-    field.valueid = selectedOption.optionid;
-    field.optionid = selectedOption.optionid;
-    field.optionsvalue = [selectedOption];
-  } else {
-    field.value = '';
-    field.valueid = '';
-    field.optionid = '';
-    field.optionsvalue = [];
+  private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): void {
+    if (!option.subdatacount || option.subdatacount <= 0) return;
+
+    // Calculate dynamic level - parent level + 1, default to 2 if no parent level
+    const parentLevel = parentField.level || 1;
+    if (parentLevel >= this.MAX_NESTING_LEVEL) {
+      console.warn(`Maximum nesting level (${this.MAX_NESTING_LEVEL}) reached`);
+      return;
+    }
+    const currentLevel = parentLevel + 1;
+
+    this.apiService.sublist(
+      params,
+      currentLevel, // Dynamic level based on parent
+      parentField.fieldtypeid,
+      option.fieldoptionlinkid,
+      option.optionid,
+      parentField.fieldid
+    ).subscribe({
+      next: (subFieldResponse: any) => {
+        const sublist = subFieldResponse?.[0]?.data;
+        if (!Array.isArray(sublist)) return;
+
+        const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
+        
+        sublist.forEach((subfield: ProductField, index: number) => {
+          if (subfield.fieldtypeid !== 3) return;
+
+          // Mark hierarchy relationships
+          subfield.parentFieldId = parentField.fieldid;
+          subfield.level = currentLevel;
+          
+          // Insert after parent or append to end
+          if (parentIndex !== -1) {
+            this.parameters_data.splice(parentIndex + index + 1, 0, subfield);
+          } else {
+            this.parameters_data.push(subfield);
+          }
+
+          this.loadSubfieldOptions(params, subfield);
+        });
+      },
+      error: (err) => {
+        console.error(`Error loading level ${currentLevel} subfields:`, err);
+      }
+    });
   }
 
-  this.cd.detectChanges();
-}
+  private loadSubfieldOptions(params: any, subfield: ProductField): void {
+    this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid))
+      .subscribe({
+        next: (filterData: any) => {
+          const filter = filterData?.[0]?.data?.optionarray?.[subfield.fieldid] || '';
+          
+          this.apiService.getOptionlist(
+            params, 
+            1, 
+            subfield.fieldtypeid, 
+            0, 
+            subfield.fieldid, 
+            filter
+          ).subscribe({
+            next: (optionData: any) => {
+              const options = optionData?.[0]?.data?.[0]?.optionsvalue || [];
+              if (options.length === 0) return;
+
+              this.option_data[subfield.fieldid] = options;
+              this.addSubfieldFormControl(subfield);
+              this.cd.detectChanges();
+            }
+          });
+        }
+      });
+  }
+
+  private addSubfieldFormControl(subfield: ProductField): void {
+    const controlName = `field_${subfield.fieldid}`;
+    
+    if (this.orderForm.get(controlName)) return;
+
+    const formControl = this.fb.control(
+      subfield.value || '',
+      subfield.mandatory == 1 ? [Validators.required] : []
+    );
+
+    this.orderForm.addControl(controlName, formControl);
+  }
+
+  private updateFieldValues(field: ProductField, selectedOption: any): void {
+    if (Array.isArray(selectedOption)) {
+      field.value = selectedOption.map(opt => opt.optionname).join(', ');
+      field.valueid = selectedOption.map(opt => opt.optionid).join(',');
+      field.optionsvalue = selectedOption;
+    } else {
+      field.value = selectedOption.optionname;
+      field.valueid = selectedOption.optionid;
+      field.optionsvalue = [selectedOption];
+    }
+    field.optionid = field.valueid;
+  }
+
+  // ... rest of your existing methods (get_field_type_name, onFormChanges, handleUnitTypeChange, etc.) ...
   get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
       '3': 'list',
@@ -501,7 +565,7 @@ private loadOptionData(params: any): void {
               case 3:
               case 5:
               case 20:
-                this.handleOptionSelectionChange(params,field, values[key]);
+                this.handleOptionSelectionChange(params, field, values[key]);
                 break;
               case 34: 
                 this.handleUnitTypeChange(values[key], params);
