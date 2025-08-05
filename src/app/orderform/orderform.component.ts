@@ -394,9 +394,9 @@ private loadOptionData(params: any): void {
       selectedOption.optionid,
       field.fieldid
     ).subscribe({
-      next: (filterData: any) => {
-        console.log('Sublist data received:', filterData);
-       
+      next: (subFeild: any) => {
+        console.log('Sublist data received:', subFeild);
+        
       },
       error: (err) => {
         console.error('Error fetching sublist:', err);
