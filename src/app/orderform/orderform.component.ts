@@ -402,22 +402,23 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private clearExistingSubfields(parentFieldId: number): void {
-    // Remove subfields from parameters_data
-    this.parameters_data = this.parameters_data.filter(f => 
-      !f.parentFieldId || f.parentFieldId !== parentFieldId
+    const subfieldsToRemove = this.parameters_data.filter(
+      (f) => f.parentFieldId === parentFieldId
     );
 
-    // Remove corresponding form controls
-    Object.keys(this.orderForm.controls).forEach(controlKey => {
-      if (controlKey.startsWith('field_')) {
-        const fieldId = Number(controlKey.replace('field_', ''));
-        const field = this.parameters_data.find(f => f.fieldid === fieldId);
-        if (field && field.parentFieldId === parentFieldId) {
-          this.orderForm.removeControl(controlKey);
-          delete this.option_data[fieldId];
-        }
+    subfieldsToRemove.forEach((field) => {
+      this.clearExistingSubfields(field.fieldid); // Recursive call for grandchildren
+      const controlName = `field_${field.fieldid}`;
+      if (this.orderForm.get(controlName)) {
+        this.orderForm.removeControl(controlName, { emitEvent: false });
       }
+      delete this.option_data[field.fieldid];
     });
+
+    // Remove the subfields from the main array
+    this.parameters_data = this.parameters_data.filter(
+      (f) => f.parentFieldId !== parentFieldId
+    );
   }
 
   private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): void {
@@ -446,7 +447,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
         const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
         
         sublist.forEach((subfield: ProductField, index: number) => {
-          if (subfield.fieldtypeid !== 3) return;
+          //if (subfield.fieldtypeid !== 3) return;
 
           // Mark hierarchy relationships
           subfield.parentFieldId = parentField.fieldid;
@@ -505,7 +506,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
       subfield.mandatory == 1 ? [Validators.required] : []
     );
 
-    this.orderForm.addControl(controlName, formControl);
+    this.orderForm.addControl(controlName, formControl, { emitEvent: false });
   }
 
   private updateFieldValues(field: ProductField, selectedOption: any): void {
