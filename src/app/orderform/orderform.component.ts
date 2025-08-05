@@ -395,7 +395,42 @@ private loadOptionData(params: any): void {
       field.fieldid
     ).subscribe({
       next: (subFeild: any) => {
-        console.log('Sublist data received:', subFeild);
+       if (subFeild && subFeild[0]?.data) {
+          const sublist = subFeild[0].data;
+          sublist.forEach((subfield: ProductField) => {
+            if (subfield.fieldtypeid === 3) {
+              this.parameters_data.push(subfield);
+              this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid)).subscribe({
+                next: (filterData: any) => {
+                  let filter: any = '';
+                  if (filterData && filterData[0]?.data) {
+                    filter = filterData[0].data.optionarray?.[subfield.fieldid] || '';
+                  }
+                  this.apiService.getOptionlist(params, 1, subfield.fieldtypeid, 0, subfield.fieldid, filter).subscribe({
+                    next: (optionData: any) => {
+                      const options = optionData?.[0]?.data?.[0]?.optionsvalue;
+                      if (Array.isArray(options)) {
+                        this.option_data[subfield.fieldid] = options;
+                        const formControl = this.fb.control(
+                          subfield.value || '',
+                          subfield.mandatory == 1 ? [Validators.required] : []
+                        );
+                        this.orderForm.addControl(`field_${subfield.fieldid}`, formControl);
+                        this.cd.detectChanges();
+                      }
+                    },
+                    error: (err) => {
+                      console.error(`Error fetching options for subfield ${subfield.fieldid}:`, err);
+                    }
+                  });
+                },
+                error: (err) => {
+                  console.error(`Error fetching filter data for subfield ${subfield.fieldid}:`, err);
+                }
+              });
+            }
+          });
+        }
         
       },
       error: (err) => {

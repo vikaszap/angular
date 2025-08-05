@@ -99,10 +99,7 @@ describe('OrderformComponent', () => {
       labelnamecode: 'test_dropdown',
       showfieldonjob: 1
     }];
-    component.option_data[fieldId] = [
-      selectedOption,
-      { optionid: '4635', optionname: 'Another Option', optionimage: '' }
-    ];
+
 
     // Have to manually add the control because initializeFormControls is complex
     component.orderForm.addControl(`field_${fieldId}`, new FormControl(''));
