@@ -402,23 +402,40 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private clearExistingSubfields(parentFieldId: number): void {
-    const subfieldsToRemove = this.parameters_data.filter(
-      (f) => f.parentFieldId === parentFieldId
-    );
+    const fieldsToRemove = new Set<number>();
+    const queue: number[] = [];
 
-    subfieldsToRemove.forEach((field) => {
-      this.clearExistingSubfields(field.fieldid); // Recursive call for grandchildren
-      const controlName = `field_${field.fieldid}`;
-      if (this.orderForm.get(controlName)) {
-        this.orderForm.removeControl(controlName, { emitEvent: false });
+    // Start with direct children of the parent
+    this.parameters_data.forEach(f => {
+      if (f.parentFieldId === parentFieldId) {
+        queue.push(f.fieldid);
       }
-      delete this.option_data[field.fieldid];
     });
 
-    // Remove the subfields from the main array
-    this.parameters_data = this.parameters_data.filter(
-      (f) => f.parentFieldId !== parentFieldId
-    );
+    while(queue.length > 0) {
+      const fieldId = queue.shift()!;
+      if (fieldsToRemove.has(fieldId)) continue;
+
+      fieldsToRemove.add(fieldId);
+
+      // Find children of the current field and add them to the queue
+      const children = this.parameters_data.filter(f => f.parentFieldId === fieldId);
+      children.forEach(child => queue.push(child.fieldid));
+    }
+
+    if (fieldsToRemove.size > 0) {
+      // Remove controls and option data first
+      fieldsToRemove.forEach(id => {
+        const controlName = `field_${id}`;
+        if (this.orderForm.get(controlName)) {
+          this.orderForm.removeControl(controlName, { emitEvent: false });
+        }
+        delete this.option_data[id];
+      });
+
+      // Then remove from parameters_data
+      this.parameters_data = this.parameters_data.filter(f => !fieldsToRemove.has(f.fieldid));
+    }
   }
 
   private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): void {
@@ -447,8 +464,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
         const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
         
         sublist.forEach((subfield: ProductField, index: number) => {
-          //if (subfield.fieldtypeid !== 3) return;
-
           // Mark hierarchy relationships
           subfield.parentFieldId = parentField.fieldid;
           subfield.level = currentLevel;
