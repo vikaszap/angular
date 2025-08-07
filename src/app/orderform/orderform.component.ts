@@ -404,21 +404,29 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private clearExistingSubfields(parentFieldId: number): void {
-  
-    this.parameters_data = this.parameters_data.filter(f => 
-      !f.parentFieldId || f.parentFieldId !== parentFieldId
-    );
-
-    Object.keys(this.orderForm.controls).forEach(controlKey => {
-      if (controlKey.startsWith('field_')) {
-        const fieldId = Number(controlKey.replace('field_', ''));
-        const field = this.parameters_data.find(f => f.fieldid === fieldId);
-        if (field && field.parentFieldId === parentFieldId) {
-          this.orderForm.removeControl(controlKey);
-          delete this.option_data[fieldId];
-        }
+    const getDescendantIds = (pId: number): number[] => {
+      const ids: number[] = [];
+      const children = this.parameters_data.filter(f => f.parentFieldId === pId);
+      for (const child of children) {
+        ids.push(child.fieldid);
+        ids.push(...getDescendantIds(child.fieldid));
       }
-    });
+      return ids;
+    };
+
+    const allIdsToRemove = getDescendantIds(parentFieldId);
+
+    if (allIdsToRemove.length > 0) {
+      this.parameters_data = this.parameters_data.filter(f => !allIdsToRemove.includes(f.fieldid));
+
+      allIdsToRemove.forEach(id => {
+        const controlName = `field_${id}`;
+        if (this.orderForm.get(controlName)) {
+          this.orderForm.removeControl(controlName);
+        }
+        delete this.option_data[id];
+      });
+    }
   }
 
   private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): void {
