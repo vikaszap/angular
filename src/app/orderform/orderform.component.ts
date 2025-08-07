@@ -26,6 +26,7 @@ interface ProductField {
   optionid?: any;
   level?: number;
   parentFieldId?: number;
+  masterparentfieldid?: number;
 }
 
 interface ProductOption {
@@ -388,6 +389,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     // Handle single selection case
     if (!Array.isArray(selectedOption)) {
+      console.log('cchhhahsjsjj');
       this.processSelectedOption(params, field, selectedOption);
     }
     // Handle multi-selection case
@@ -402,12 +404,11 @@ export class OrderformComponent implements OnInit, OnDestroy {
   }
 
   private clearExistingSubfields(parentFieldId: number): void {
-    // Remove subfields from parameters_data
+  
     this.parameters_data = this.parameters_data.filter(f => 
       !f.parentFieldId || f.parentFieldId !== parentFieldId
     );
 
-    // Remove corresponding form controls
     Object.keys(this.orderForm.controls).forEach(controlKey => {
       if (controlKey.startsWith('field_')) {
         const fieldId = Number(controlKey.replace('field_', ''));
@@ -437,9 +438,10 @@ export class OrderformComponent implements OnInit, OnDestroy {
       parentField.fieldtypeid,
       option.fieldoptionlinkid,
       option.optionid,
-      parentField.fieldid
+      parentField.masterparentfieldid
     ).subscribe({
       next: (subFieldResponse: any) => {
+        console.log(subFieldResponse);
         const sublist = subFieldResponse?.[0]?.data;
         if (!Array.isArray(sublist)) return;
 
@@ -476,13 +478,14 @@ export class OrderformComponent implements OnInit, OnDestroy {
           
           this.apiService.getOptionlist(
             params, 
-            1, 
+            subfield.level, 
             subfield.fieldtypeid, 
             0, 
             subfield.fieldid, 
             filter
           ).subscribe({
             next: (optionData: any) => {
+              console.log(optionData);
               const options = optionData?.[0]?.data?.[0]?.optionsvalue || [];
               if (options.length === 0) return;
 
