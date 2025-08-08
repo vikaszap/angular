@@ -302,7 +302,7 @@ private loadOptionData(params: any): Observable<any> {
           }
 
           control.setValue(valueToSet, { emitEvent: false });
-          this.handleOptionSelectionChange(params, field, valueToSet);
+          //this.handleOptionSelectionChange(params, field, valueToSet);
         }
       });
 
