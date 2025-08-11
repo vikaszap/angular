@@ -552,7 +552,7 @@ private loadOptionData(params: any): Observable<any> {
         if (field && [3, 5, 20].includes(field.fieldtypeid)) {
           this.handleOptionSelectionChange(params, field, values[key]);
         } else if (field && field.fieldtypeid === 34) {
-          this.handleUnitTypeChange(values, params);
+          this.handleUnitTypeChange(values[key], params);
         }
       }
     }
