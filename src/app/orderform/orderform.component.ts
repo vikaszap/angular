@@ -136,7 +136,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     private cd: ChangeDetectorRef
   ) {
     this.orderForm = this.fb.group({
-      unit: ['mm', Validators.required],
+      unit: ['', Validators.required],
       width: ['', [Validators.required, Validators.min(this.min_width), Validators.max(this.max_width)]],
       widthfraction: [''],
       drop: ['', [Validators.required, Validators.min(this.min_drop), Validators.max(this.max_drop)]],
@@ -229,6 +229,7 @@ private loadOptionData(params: any): Observable<any> {
       const optionRequests: Observable<any>[] = [];
 
       this.parameters_data.forEach((field: ProductField) => {
+         let valueToSet: any;
         if ([3, 5, 20].includes(field.fieldtypeid)) {
           let matrial = 0;
           let filter = '';
@@ -260,6 +261,18 @@ private loadOptionData(params: any): Observable<any> {
               })
             )
           );
+        }else if([14,34,17,13].includes(field.fieldtypeid)){
+          const control = this.orderForm.get(`field_${field.fieldid}`);
+            if (control) {
+              if(field.fieldtypeid ==14){
+                valueToSet = 1;
+              }else{
+                valueToSet = field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault != ""
+                ? Number(field.optiondefault)
+                : '';
+              }
+              control.setValue(valueToSet, { emitEvent: false });
+            }
         }
       });
 
@@ -286,6 +299,7 @@ private loadOptionData(params: any): Observable<any> {
         const control = this.orderForm.get(`field_${field.fieldid}`);
 
         if (control) {
+          console.log(`field_${field.fieldid}`);
           let valueToSet: any;
           if (field.fieldtypeid === 3 && field.selection == 1) {
             valueToSet = field.optiondefault
@@ -524,6 +538,7 @@ private loadOptionData(params: any): Observable<any> {
   }
 
   onFormChanges(values: any, params: any): void {
+    console.log(values);
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;
@@ -533,16 +548,19 @@ private loadOptionData(params: any): Observable<any> {
       if (values[key] !== this.previousFormValue[key] && key.startsWith('field_')) {
         const fieldId = parseInt(key.replace('field_', ''), 10);
         const field = this.parameters_data.find(f => f.fieldid === fieldId);
+
         if (field && [3, 5, 20].includes(field.fieldtypeid)) {
           this.handleOptionSelectionChange(params, field, values[key]);
+        } else if (field && field.fieldtypeid === 34) {
+          this.handleUnitTypeChange(values, params);
         }
       }
     }
-
     this.previousFormValue = { ...values };
   }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    console.log(unitValue);
     this.showFractions = (unitValue === 4);
 
     this.apiService.getFractionData(params, unitValue).pipe(
