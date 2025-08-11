@@ -173,8 +173,11 @@ export class ApiService {
       productionformulalist: [],
       productid: product_id || null,
     };
+   
+   
+   
     const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
-    
+
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
@@ -212,9 +215,9 @@ export class ApiService {
       fabriccolor: fabriccolor,
       fieldid: fieldid
     };
-    
+   
     const passData = `products/fields/filterbasedongeneraldata`;
-  
+   
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
   
@@ -225,10 +228,11 @@ export class ApiService {
     optionlinkid:any,
     selectedvalue:any,
     masterparentfieldid: any,
+    supplierid: any,
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, recipeid,product_id } = params;
       const payload = {
-      supplierid: 1,
+      supplierid: supplierid,
       productid:product_id, 
       optionid: [selectedvalue],
       subfieldoptionlinkid: [optionlinkid],
@@ -238,7 +242,7 @@ export class ApiService {
       }
     };
     const passData = `products/fields/list/0/${recipeid}/${level}/${fieldtype}/${masterparentfieldid}`;
-
+    
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }
