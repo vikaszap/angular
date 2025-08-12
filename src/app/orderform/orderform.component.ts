@@ -29,6 +29,8 @@ interface ProductField {
   parentFieldId?: number;
   masterparentfieldid?: number;
   allparentFieldId?: string;
+  field_has_sub_option?: boolean;
+  optionvalue?: any[];
 }
 
 interface ProductOption {
@@ -170,6 +172,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
       switchMap((data: any) => {
         if (data && data[0]?.data) {
           this.parameters_data = data[0].data;
+          console.log('Initial parameters_data from API:', JSON.parse(JSON.stringify(this.parameters_data)));
           this.apiUrl = params.api_url;
           this.routeParams = params;
           this.initializeFormControls();
@@ -213,7 +216,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
-
+    console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(values => {
@@ -421,7 +424,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
         // filter to only fields that we know how to handle
         const relevant = sublist.filter((subfield: ProductField) =>
-          [3, 5, 20, 21].includes(subfield.fieldtypeid)
+          [3, 5, 20, 21,18,6].includes(subfield.fieldtypeid)
         );
 
         if (relevant.length === 0) return of(null);
@@ -459,6 +462,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
       } else {
         this.parameters_data.push(subfield);
       }
+      console.log('Added subfield:', subfield.fieldid, 'to parameters_data. Current state:', JSON.parse(JSON.stringify(this.parameters_data)));
     } else {
       // Update existing entry's relational properties to be safe
       const existing = this.parameters_data.find(f => f.fieldid === subfield.fieldid);
@@ -473,17 +477,22 @@ export class OrderformComponent implements OnInit, OnDestroy {
     // Add the control if not present
     this.addSubfieldFormControlSafe(subfield);
 
-    // Load options for this subfield (if applicable)
-    return this.loadSubfieldOptions(params, subfield).pipe(
-      // ensure we always return an observable even if loadSubfieldOptions results in null
-      map(res => res || null),
-      catchError(err => {
-        console.error('Error in processSubfield:', err);
-        // if anything goes wrong, remove this subfield to keep UI consistent
-        this.removeFieldSafely(subfield.fieldid);
+      // Load options for this subfield (if applicable)
+      if(subfield.field_has_sub_option){
+        return this.loadSubfieldOptions(params, subfield).pipe(
+        // ensure we always return an observable even if loadSubfieldOptions results in null
+        map(res => res || null),
+        catchError(err => {
+          console.error('Error in processSubfield:', err);
+          // if anything goes wrong, remove this subfield to keep UI consistent
+          this.removeFieldSafely(subfield.fieldid);
+          return of(null);
+        })
+      );
+    }else {
         return of(null);
-      })
-    );
+    }
+    
   }
 
   /**
@@ -638,6 +647,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     if (removeSet.size === 0) return;
 
+    console.log('Removing subfields:', Array.from(removeSet), 'from parameters_data. Current state before removal:', JSON.parse(JSON.stringify(this.parameters_data)));
     // remove from parameters_data
     this.parameters_data = this.parameters_data.filter(f => !removeSet.has(f.fieldid));
 
@@ -663,11 +673,11 @@ export class OrderformComponent implements OnInit, OnDestroy {
     if (Array.isArray(selectedOption)) {
       field.value = selectedOption.map(opt => opt.optionname).join(', ');
       field.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      field.optionsvalue = selectedOption;
+      field.optionvalue = selectedOption;
     } else {
       field.value = selectedOption.optionname;
       field.valueid = String(selectedOption.optionid);
-      field.optionsvalue = [selectedOption];
+      field.optionvalue = [selectedOption];
     }
     field.optionid = field.valueid;
   }
