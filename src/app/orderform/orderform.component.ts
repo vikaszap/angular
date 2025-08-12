@@ -555,9 +555,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
                 control.setValue(valueToSet, { emitEvent: false });
 
-                // We want to trigger sub-subfields for this subfield's default value only once.
-                // Ensure subfield already present (we added it in processSubfield) and call handler.
-                // Because processSubfield uses duplication-guards, repeated calls won't create duplicates.
                 if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
                   // small microtask to avoid synchronous reentrancy issues
                   setTimeout(() => this.handleOptionSelectionChange(params, subfield, valueToSet), 0);
