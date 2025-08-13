@@ -31,6 +31,7 @@ interface ProductField {
   allparentFieldId?: string;
   field_has_sub_option?: boolean;
   optionvalue?: any[];
+  subchild?: ProductField[];
 }
 
 interface ProductOption {
@@ -162,6 +163,21 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
+  private findFieldById(fields: ProductField[], fieldId: number): ProductField | null {
+    for (const field of fields) {
+        if (field.fieldid === fieldId) {
+            return field;
+        }
+        if (field.subchild) {
+            const found = this.findFieldById(field.subchild, fieldId);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    return null;
+  }
+
 
   private fetchInitialData(params: any): void {
     this.isLoading = true;
@@ -444,56 +460,86 @@ export class OrderformComponent implements OnInit, OnDestroy {
   /**
    * Insert subfield into parameters_data (if not already present), add form control, and load its options.
    */
-  private processSubfield(params: any, subfield: ProductField, parentField: ProductField, level: number): Observable<any> {
-    // set relationships and level
-    subfield.parentFieldId = parentField.fieldid;
-    subfield.level = level;
-    subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-    subfield.allparentFieldId = parentField.allparentFieldId
-      ? `${parentField.allparentFieldId},${subfield.fieldid}`
-      : `${parentField.fieldid},${subfield.fieldid}`;
+private processSubfield(
+  params: any,
+  subfield: ProductField,
+  parentField: ProductField,
+  level: number
+): Observable<any> {
+  subfield.parentFieldId = parentField.fieldid;
+  subfield.level = level;
+  subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
+  subfield.allparentFieldId = parentField.allparentFieldId
+    ? `${parentField.allparentFieldId},${subfield.fieldid}`
+    : `${parentField.fieldid},${subfield.fieldid}`;
 
-    // Prevent duplicate insertion — if already present, update relationships and skip re-insertion
-    const alreadyExists = this.parameters_data.some(f => f.fieldid === subfield.fieldid);
-    if (!alreadyExists) {
-      const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
-      if (parentIndex !== -1) {
-        this.parameters_data.splice(parentIndex + 1, 0, subfield);
-      } else {
-        this.parameters_data.push(subfield);
-      }
-      console.log('Added subfield:', subfield.fieldid, 'to parameters_data. Current state:', JSON.parse(JSON.stringify(this.parameters_data)));
+  // --- parameters_data (flat list) ---
+  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+  if (!alreadyExistsFlat) {
+    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
+    if (parentIndex !== -1) {
+      this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
     } else {
-      // Update existing entry's relational properties to be safe
-      const existing = this.parameters_data.find(f => f.fieldid === subfield.fieldid);
-      if (existing) {
-        existing.parentFieldId = subfield.parentFieldId;
-        existing.level = subfield.level;
-        existing.masterparentfieldid = subfield.masterparentfieldid;
-        existing.allparentFieldId = subfield.allparentFieldId;
-      }
+      this.parameters_data.push({ ...subfield });
     }
+    console.log('Added subfield to parameters_data:', subfield.fieldid);
+  } else {
+    const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+    if (existingFlat) {
+      existingFlat.parentFieldId = subfield.parentFieldId;
+      existingFlat.level = subfield.level;
+      existingFlat.masterparentfieldid = subfield.masterparentfieldid;
+      existingFlat.allparentFieldId = subfield.allparentFieldId;
+    }
+  }
 
-    // Add the control if not present
-    this.addSubfieldFormControlSafe(subfield);
+  // --- parentField.subchild (nested list) ---
+  if (!parentField.subchild) {
+    parentField.subchild = [];
+  }
 
-      // Load options for this subfield (if applicable)
-      if(subfield.field_has_sub_option){
-        return this.loadSubfieldOptions(params, subfield).pipe(
-        // ensure we always return an observable even if loadSubfieldOptions results in null
-        map(res => res || null),
-        catchError(err => {
+  const alreadyExistsNested = parentField.subchild.some(
+    f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
+  );
+
+  if (!alreadyExistsNested) {
+    parentField.subchild.push({ ...subfield });
+    console.log(
+      'Added subfield:',
+      subfield.fieldid,
+      'to parent:',
+      parentField.fieldid,
+      '. Current state:',
+      JSON.parse(JSON.stringify(this.parameters_data))
+    );
+  } else {
+    const existingNested = parentField.subchild.find(
+      f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
+    );
+    if (existingNested) {
+      existingNested.parentFieldId = subfield.parentFieldId;
+      existingNested.level = subfield.level;
+      existingNested.masterparentfieldid = subfield.masterparentfieldid;
+      existingNested.allparentFieldId = subfield.allparentFieldId;
+    }
+  }
+
+  // --- Form control ---
+  this.addSubfieldFormControlSafe(subfield);
+
+  if (subfield.field_has_sub_option) {
+    return this.loadSubfieldOptions(params, subfield).pipe(
+      map(res => res || null),
+      catchError(err => {
           console.error('Error in processSubfield:', err);
-          // if anything goes wrong, remove this subfield to keep UI consistent
-          this.removeFieldSafely(subfield.fieldid);
+          this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
           return of(null);
         })
-      );
-    }else {
-        return of(null);
-    }
-    
+    );
+  } else {
+    return of(null);
   }
+}
 
   /**
    * Load options for a subfield using filterbasedlist + getOptionlist
@@ -612,59 +658,71 @@ export class OrderformComponent implements OnInit, OnDestroy {
   /**
    * Remove a field from parameters_data and the form safely.
    */
-  private removeFieldSafely(fieldId: number): void {
-    this.parameters_data = this.parameters_data.filter(f => f.fieldid !== fieldId);
-
-    const controlName = `field_${fieldId}`;
-    if (this.orderForm.contains(controlName)) {
-      this.orderForm.removeControl(controlName);
-    }
-
-    if (this.option_data[fieldId]) {
-      delete this.option_data[fieldId];
-    }
+private removeFieldSafely(fieldId: number, fieldPath?: string): void {
+  if (!fieldPath) {
+    const field = this.parameters_data.find(f => f.fieldid === fieldId);
+    if (!field) return;
+    fieldPath = field.allparentFieldId || fieldId.toString();
   }
+
+  this.parameters_data = this.parameters_data.filter(
+    f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
+  );
+
+  const controlName = `field_${fieldId}`;
+  if (this.orderForm.contains(controlName)) {
+    this.orderForm.removeControl(controlName);
+  }
+
+  if (this.option_data[fieldId]) {
+    delete this.option_data[fieldId];
+  }
+
+  this.cd.markForCheck();
+}
+
 
   /**
    * Clear all descendant subfields of a given parentFieldId (recursive).
    */
-  private clearExistingSubfields(parentFieldId: number): void {
-    const removeSet = new Set<number>();
+private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
+  const removeSet = new Set<number>();
 
-    const collectDescendants = (pId: number) => {
-      // iterate over a copy to avoid mutation issues while collecting
-      [...this.parameters_data].forEach(f => {
-        if (f.parentFieldId === pId) {
-          if (!removeSet.has(f.fieldid)) {
-            removeSet.add(f.fieldid);
-            collectDescendants(f.fieldid);
-          }
-        }
-      });
-    };
-
-    collectDescendants(parentFieldId);
-
-    if (removeSet.size === 0) return;
-
-    console.log('Removing subfields:', Array.from(removeSet), 'from parameters_data. Current state before removal:', JSON.parse(JSON.stringify(this.parameters_data)));
-    // remove from parameters_data
-    this.parameters_data = this.parameters_data.filter(f => !removeSet.has(f.fieldid));
-
-    // remove controls & option_data
-    removeSet.forEach(fieldId => {
-      const controlName = `field_${fieldId}`;
-      if (this.orderForm.contains(controlName)) {
-        this.orderForm.removeControl(controlName);
-      }
-      if (this.option_data[fieldId]) {
-        delete this.option_data[fieldId];
-      }
-    });
-
-    // mark for check after structural changes
-    this.cd.markForCheck();
+  if (!parentPath) {
+    const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
+    if (!parent) return;
+    parentPath = parent.allparentFieldId || parent.fieldid.toString();
   }
+
+  [...this.parameters_data].forEach(f => {
+    if (f.allparentFieldId && f.allparentFieldId.startsWith(`${parentPath},`)) {
+      removeSet.add(f.fieldid);
+    }
+  });
+
+  if (removeSet.size === 0) return;
+
+  console.log('Removing subfields from path:', parentPath, 'Fields:', Array.from(removeSet));
+    console.log(
+      JSON.parse(JSON.stringify(this.parameters_data))
+    );
+  this.parameters_data = this.parameters_data.filter(
+    f => !(f.allparentFieldId && f.allparentFieldId.startsWith(`${parentPath},`))
+  );
+
+  removeSet.forEach(fieldId => {
+    const controlName = `field_${fieldId}`;
+    if (this.orderForm.contains(controlName)) {
+      this.orderForm.removeControl(controlName);
+    }
+    if (this.option_data[fieldId]) {
+      delete this.option_data[fieldId];
+    }
+  });
+
+  this.cd.markForCheck();
+}
+
 
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
