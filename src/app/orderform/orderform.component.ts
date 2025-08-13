@@ -832,12 +832,22 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     this.previousFormValue = { ...values };
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
-    const fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+    let fractionValue = 0;
+
+    if (this.showFractions) {
+      fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+    }
+
     const totalWidth = Number(value) + fractionValue;
     this.updateFieldValues(field, totalWidth);
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
-    const fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+    let fractionValue = 0;
+    
+    if (this.showFractions) {
+      fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+    }
+
     const totalDrop = Number(value) + fractionValue;
     this.updateFieldValues(field, totalDrop);
   }
@@ -862,7 +872,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.showFractions = (unitValue === 4);
-
+    
     this.apiService.getFractionData(params, unitValue).pipe(
       takeUntil(this.destroy$),
       catchError(err => {
