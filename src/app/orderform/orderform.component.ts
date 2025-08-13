@@ -381,11 +381,11 @@ export class OrderformComponent implements OnInit, OnDestroy {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
-      this.clearExistingSubfields(field.fieldid);
+      this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
       return;
     }
 
-    this.clearExistingSubfields(field.fieldid);
+    this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
 
     const options = this.option_data[field.fieldid];
     if (!options || options.length === 0) return;
@@ -681,48 +681,87 @@ private removeFieldSafely(fieldId: number, fieldPath?: string): void {
   this.cd.markForCheck();
 }
 
-
-  /**
-   * Clear all descendant subfields of a given parentFieldId (recursive).
-   */
 private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
-  const removeSet = new Set<number>();
-
+  // 1. Determine the parent path
   if (!parentPath) {
     const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
     if (!parent) return;
     parentPath = parent.allparentFieldId || parent.fieldid.toString();
   }
 
-  [...this.parameters_data].forEach(f => {
-    if (f.allparentFieldId && f.allparentFieldId.startsWith(`${parentPath},`)) {
-      removeSet.add(f.fieldid);
+  // 2. Special handling for main field (has no parentFieldId)
+  const isMainField = !this.parameters_data.some(f => 
+    f.fieldid === parentFieldId && f.parentFieldId
+  );
+
+  // 3. Find fields to remove - different matching for main vs nested fields
+  const fieldsToRemove = this.parameters_data.filter(f => {
+    if (!f.allparentFieldId) return false;
+    
+    if (isMainField) {
+      // For main field, match either:
+      // - Direct children: allparentFieldId === "mainId"
+      // - Descendants: allparentFieldId.startsWith("mainId,")
+      return f.allparentFieldId === parentPath || 
+             f.allparentFieldId.startsWith(`${parentPath},`);
+    } else {
+      // For nested fields, only match proper descendants
+      return f.allparentFieldId.startsWith(`${parentPath},`);
     }
   });
 
-  if (removeSet.size === 0) return;
+  if (fieldsToRemove.length === 0) return;
 
-  console.log('Removing subfields from path:', parentPath, 'Fields:', Array.from(removeSet));
-    console.log(
-      JSON.parse(JSON.stringify(this.parameters_data))
-    );
-  this.parameters_data = this.parameters_data.filter(
-    f => !(f.allparentFieldId && f.allparentFieldId.startsWith(`${parentPath},`))
+  // 4. Remove from flat list
+  this.parameters_data = this.parameters_data.filter(f => 
+    !fieldsToRemove.some(toRemove => 
+      toRemove.fieldid === f.fieldid && 
+      toRemove.allparentFieldId === f.allparentFieldId
+    )
   );
 
-  removeSet.forEach(fieldId => {
-    const controlName = `field_${fieldId}`;
+  // 5. Clean nested structure
+  this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
+
+  // 6. Remove form controls and clean up
+  fieldsToRemove.forEach(field => {
+    const controlName = `field_${field.fieldid}`;
     if (this.orderForm.contains(controlName)) {
       this.orderForm.removeControl(controlName);
     }
-    if (this.option_data[fieldId]) {
-      delete this.option_data[fieldId];
-    }
+    delete this.option_data[field.fieldid];
   });
 
   this.cd.markForCheck();
 }
 
+private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
+  const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
+
+  // Handle main field specially
+  if (isMainField) {
+    const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
+    if (mainField?.subchild) {
+      mainField.subchild = mainField.subchild.filter(child => 
+        !fieldsToRemoveSet.has(child.fieldid)
+      );
+    }
+    return;
+  }
+
+  // Recursive cleaner for nested fields
+  const cleanSubchild = (field: ProductField) => {
+    if (!field.subchild) return;
+    
+    field.subchild = field.subchild.filter(child => 
+      !fieldsToRemoveSet.has(child.fieldid)
+    );
+    
+    field.subchild.forEach(cleanSubchild);
+  };
+
+  this.parameters_data.forEach(cleanSubchild);
+}
 
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
