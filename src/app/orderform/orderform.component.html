@@ -197,7 +197,9 @@
                             [id]="'field_' + field.fieldid"
                              [min]="min_width" 
                              [max]="max_width"
+                             [placeholder]="'Between ' + min_width + ' and ' + max_width"
                              aria-label="Width">
+                        <mat-hint *ngIf="min_width && max_width">Min: {{min_width}}, Max: {{max_width}}</mat-hint>
                     </mat-form-field>
                     <mat-form-field *ngIf="showFractions" class="fraction-select" >
                       <mat-label>Fraction</mat-label>
@@ -221,7 +223,9 @@
                              [id]="'field_' + field.fieldid"
                              [min]="min_drop" 
                              [max]="max_drop"
+                             [placeholder]="'Between ' + min_drop + ' and ' + max_drop"
                              aria-label="Drop">
+                        <mat-hint *ngIf="min_drop && max_drop">Min: {{min_drop}}, Max: {{max_drop}}</mat-hint>
                     </mat-form-field>
                     <mat-form-field *ngIf="showFractions" class="fraction-select">
                       <mat-label>Fraction</mat-label>

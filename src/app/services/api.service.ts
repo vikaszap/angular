@@ -105,7 +105,30 @@ export class ApiService {
     const passData = `products/fields/withdefault/list/${recipeid}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
+  getminandmax(params: ApiCommonParams,colorid:string,unittype:number,pricegroup:number): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, recipeid,product_id } = params;
+    if (!recipeid) {
+      return throwError(() => new Error('recipeid is required'));
+    }
+    const payload = {
+      width: "0",
+      drop: "0",
+      unittype: unittype,
+      mode: "width",
+      pricegroup: pricegroup,
+      colorid: colorid,
+      fieldtypeid: "",
+      fabriciddual: "",
+      coloriddual: "",
+      pricegroupdual: "",
+      productid: product_id
+    };
 
+    const passData = `orderitems/check/widthdrop/minandmax/`;
+    console.log(passData);
+    console.log(payload);
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
   getFractionData(params: ApiCommonParams,faction_value: any): Observable<ApiResponse> {
     const { api_url, api_key, api_name, recipeid,product_id, ...payload } = params;
     if (!recipeid) {

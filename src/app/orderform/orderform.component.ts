@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
+import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
 interface ProductField {
@@ -133,7 +133,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   routeParams: any;
-
+  unittype: number = 1;
+  pricegroup: number = 1;
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -164,23 +165,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  private findFieldById(fields: ProductField[], fieldId: number): ProductField | null {
-    for (const field of fields) {
-        if (field.fieldid === fieldId) {
-            return field;
-        }
-        if (field.subchild) {
-            const found = this.findFieldById(field.subchild, fieldId);
-            if (found) {
-                return found;
-            }
-        }
-    }
-    return null;
-  }
-
-
-  private fetchInitialData(params: any): void {
+  
+ private fetchInitialData(params: any): void {
     this.isLoading = true;
     this.errorMessage = null;
 
@@ -189,14 +175,35 @@ export class OrderformComponent implements OnInit, OnDestroy {
       switchMap((data: any) => {
         if (data && data[0]?.data) {
           this.parameters_data = data[0].data;
-          console.log('Initial parameters_data from API:', JSON.parse(JSON.stringify(this.parameters_data)));
           this.apiUrl = params.api_url;
           this.routeParams = params;
+          
           this.initializeFormControls();
-          return this.loadOptionData(params);
+          
+          return forkJoin([
+            this.loadOptionData(params),
+            this.apiService.getminandmax(
+              this.routeParams,
+              this.routeParams.color_id,
+              this.unittype,
+              this.routeParams.pricing_group
+            )
+          ]);
         }
         this.errorMessage = 'Invalid product data received';
         return of(null);
+      }),
+      tap((results) => {
+        if (results) {
+          const [_, minmaxdata] = results;
+          if (minmaxdata?.data) {
+            
+            this.min_width = minmaxdata.data.widthminmax.min;
+            this.min_drop = minmaxdata.data.dropminmax.min;
+            this.max_width = minmaxdata.data.widthminmax.max;
+            this.max_drop = minmaxdata.data.dropminmax.max;
+          }
+        }
       }),
       catchError(err => {
         console.error('Error fetching product data:', err);
@@ -208,9 +215,10 @@ export class OrderformComponent implements OnInit, OnDestroy {
         this.cd.markForCheck();
       })
     ).subscribe();
-  }
+}
 
   private initializeFormControls(): void {
+   
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
       width: ['', [Validators.required, Validators.min(this.min_width), Validators.max(this.max_width)]],
@@ -233,7 +241,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
-    console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
+    //console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(values => {
@@ -307,6 +315,11 @@ export class OrderformComponent implements OnInit, OnDestroy {
               }
 
               control.setValue(valueToSet, { emitEvent: false });
+              if (field.fieldtypeid === 34) {
+                 this.unittype = valueToSet;
+              }else if(field.fieldtypeid === 13){
+                this.pricegroup = valueToSet;
+              }
             }
           }
         });
@@ -483,7 +496,7 @@ private processSubfield(
     } else {
       this.parameters_data.push({ ...subfield });
     }
-    console.log('Added subfield to parameters_data:', subfield.fieldid);
+    //console.log('Added subfield to parameters_data:', subfield.fieldid);
   } else {
     const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
     if (existingFlat) {
@@ -505,6 +518,7 @@ private processSubfield(
 
   if (!alreadyExistsNested) {
     parentField.subchild.push({ ...subfield });
+    /*
     console.log(
       'Added subfield:',
       subfield.fieldid,
@@ -513,6 +527,7 @@ private processSubfield(
       '. Current state:',
       JSON.parse(JSON.stringify(this.parameters_data))
     );
+    */
   } else {
     const existingNested = parentField.subchild.find(
       f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
@@ -827,7 +842,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-     console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }
@@ -871,6 +886,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    this.unittype =  unitValue;
     this.showFractions = (unitValue === 4);
     
     this.apiService.getFractionData(params, unitValue).pipe(
