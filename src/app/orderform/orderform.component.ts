@@ -32,6 +32,7 @@ interface ProductField {
   field_has_sub_option?: boolean;
   optionvalue?: any[];
   subchild?: ProductField[];
+  optionquantity?: string;
 }
 
 interface ProductOption {
@@ -766,17 +767,32 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
-  private updateFieldValues(field: ProductField, selectedOption: any): void {
+
+  private updateFieldValues(field: ProductField, selectedOption: any =[]): void {
+    const fieldInState = this.parameters_data.find(f => 
+        f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
+    );
+  
+    const targetField = fieldInState || field; 
+
     if (Array.isArray(selectedOption)) {
-      field.value = selectedOption.map(opt => opt.optionname).join(', ');
-      field.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      field.optionvalue = selectedOption;
+      targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
+      targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.optionvalue = selectedOption;
+      targetField.optionquantity = targetField.optionquantity = selectedOption.map(() => '1').join(',');
     } else {
-      field.value = selectedOption.optionname;
-      field.valueid = String(selectedOption.optionid);
-      field.optionvalue = [selectedOption];
+      if(selectedOption.optionname){
+          targetField.value = selectedOption.optionname;
+          targetField.valueid = String(selectedOption.optionid);
+          targetField.optionvalue = [selectedOption];
+          targetField.optionquantity = "1";
+      }else{
+        targetField.value = selectedOption;
+        targetField.valueid = "";
+        targetField.optionvalue = [];
+      }
     }
-    field.optionid = field.valueid;
+    
   }
 
   /**
@@ -800,13 +816,49 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
           this.handleOptionSelectionChange(params, field, values[key]);
         } else if (field && field.fieldtypeid === 34) {
           this.handleUnitTypeChange(values[key], params);
+          this.handleRestOptionChange(params, field, values[key]);
+        }else if(field  && [14, 18, 6].includes(field.fieldtypeid)){
+           this.handleRestChange(params, field, values[key]);
+        }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
+           this.handleWidthChange(params, field, values[key]);
+        }if(field  && [9,12,32].includes(field.fieldtypeid)){
+           this.handleDropChange(params, field, values[key]);
+        }else if(field) {
+         this.handleRestOptionChange(params, field, values[key]);
         }
       }
+     console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
-
     this.previousFormValue = { ...values };
   }
+  private handleWidthChange(params: any, field: ProductField, value: any): void {
+    const fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+    const totalWidth = Number(value) + fractionValue;
+    this.updateFieldValues(field, totalWidth);
+  }
+  private handleDropChange(params: any, field: ProductField, value: any): void {
+    const fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+    const totalDrop = Number(value) + fractionValue;
+    this.updateFieldValues(field, totalDrop);
+  }
+  
+  private handleRestOptionChange(params: any, field: ProductField, value: any): void {
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
 
+    const options = field.optionsvalue;
+    if (!options || options.length === 0) return;
+
+    const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
+     
+    if (!selectedOption) return;
+
+    this.updateFieldValues(field, [selectedOption]);
+  }
+  private handleRestChange(params: any, field: ProductField, value: any): void {
+      this.updateFieldValues(field, value);
+  }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.showFractions = (unitValue === 4);
