@@ -33,6 +33,7 @@ interface ProductField {
   optionvalue?: any[];
   subchild?: ProductField[];
   optionquantity?: string;
+  fieldlevel?: number;
 }
 
 interface ProductOption {
@@ -237,9 +238,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
    
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
-      width: ['', [Validators.required, Validators.min(this.min_width), Validators.max(this.max_width)]],
+       width: ['', [
+        Validators.required,
+        Validators.min(this.min_width),
+        ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
+      ]],
       widthfraction: [''],
-      drop: ['', [Validators.required, Validators.min(this.min_drop), Validators.max(this.max_drop)]],
+       drop: ['', [
+        Validators.required,
+        Validators.min(this.min_drop),
+        ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
+      ]],
       dropfraction: [''],
       qty: [1, [Validators.required, Validators.min(1)]]
     };
@@ -440,21 +449,43 @@ export class OrderformComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       ).subscribe(() => {
         this.updateFieldValues(field, selectedOption);
-        if (field.fieldtypeid === 5){
-          console.log(field);
+        if ((field.fieldtypeid === 5 &&  field.level == 1 && selectedOption.optionid_pricegroupid) || (field.fieldtypeid === 20)){
+          this.pricegroup = selectedOption.optionid_pricegroupid.split('_')[1];
         }
-        if (field.fieldtypeid === 5 && field.level == 2 && selectedOption.optionid_pricegroupid) {
-          this.pricegroup =  selectedOption.optionid_pricegroupid.split('_')[1];
-           console.log(this.pricegroup);
-        } else if (field.fieldtypeid === 20 && selectedOption.optionid_pricegroupid) {
-           this.pricegroup =  selectedOption.optionid_pricegroupid.split('_')[1];
-           console.log(this.pricegroup);
+        if ((field.fieldtypeid === 5 &&  field.level == 2) ||  (field.fieldtypeid === 20)) {
+            this.colorid = value;
+            this.updateMinMaxValidators();
         }
         this.cd.markForCheck();
       });
     }
   }
+    private updateMinMaxValidators(): void {
+    this.apiService.getminandmax(this.routeParams, String(this.colorid), this.unittype, Number(this.pricegroup))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(minmaxdata => {
+        if (minmaxdata?.data) {
+          this.min_width = minmaxdata.data.widthminmax.min;
+          this.min_drop = minmaxdata.data.dropminmax.min;
+          this.max_width = minmaxdata.data.widthminmax.max;
+          this.max_drop = minmaxdata.data.dropminmax.max;
 
+          this.orderForm.controls['width'].setValidators([
+            Validators.required,
+            Validators.min(this.min_width),
+            ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
+          ]);
+          this.orderForm.controls['width'].updateValueAndValidity();
+
+          this.orderForm.controls['drop'].setValidators([
+            Validators.required,
+            Validators.min(this.min_drop),
+            ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
+          ]);
+          this.orderForm.controls['drop'].updateValueAndValidity();
+        }
+      });
+  }
   /**
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */
@@ -913,8 +944,9 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.unittype =  unitValue;
+    console.log(this.unittype);
     this.showFractions = (unitValue === 4);
-    
+    this.updateMinMaxValidators();
     this.apiService.getFractionData(params, unitValue).pipe(
       takeUntil(this.destroy$),
       catchError(err => {

@@ -106,7 +106,7 @@ export class ApiService {
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
   getminandmax(params: ApiCommonParams,colorid:string,unittype:number,pricegroup:number): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid,product_id } = params;
+    const { api_url, api_key, api_name, recipeid,product_id,category } = params;
     if (!recipeid) {
       return throwError(() => new Error('recipeid is required'));
     }
@@ -117,7 +117,7 @@ export class ApiService {
       mode: "both",
       pricegroup: pricegroup,
       colorid: colorid,
-      fieldtypeid: "",
+      fieldtypeid: category,
       fabriciddual: "",
       coloriddual: "",
       pricegroupdual: "",
