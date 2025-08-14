@@ -7,15 +7,37 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
-import { Subject, forkJoin, Observable, of, from } from 'rxjs';
+import { Subject, forkJoin, Observable, of, from, Subscription } from 'rxjs';
 import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
+
+export const FieldType = {
+  LIST: 3,
+  MATERIALS: 5,
+  NUMBER: 6,
+  X_FOOTAGE: 7,
+  NUMBER_8: 8,
+  Y_FOOTAGE: 9,
+  HEIGHT: 10,
+  WIDTH_WITH_FRACTION: 11,
+  DROP_WITH_FRACTION: 12,
+  PRICE_GROUP: 13,
+  QTY: 14,
+  SUPPLIER: 17,
+  TEXT: 18,
+  MATERIALS_20: 20,
+  MATERIALS_21: 21,
+  ACCESSORIES_LIST: 25,
+  X_SQUARE_YARD: 31,
+  Y_SQUARE_YARD: 32,
+  UNIT_TYPE: 34,
+} as const;
 
 // Interfaces (kept as you had them)
 interface ProductField {
   fieldid: number;
   fieldname: string;
   labelnamecode: string;
-  fieldtypeid: number;
+  fieldtypeid: (typeof FieldType)[keyof typeof FieldType];
   showfieldonjob: number;
   showfieldecomonjob: number;
   optiondefault?: string;
@@ -129,7 +151,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
   // Form controls
   orderForm: FormGroup;
-  previousFormValue: any;
+  private fieldSubscriptions: { [key: string]: Subscription } = {};
   apiUrl = '';
 
   // Data arrays
@@ -167,7 +189,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
         dropfraction: [''],
         qty: [1, [Validators.required, Validators.min(1)]]
       });
-    this.previousFormValue = this.orderForm.value;
   }
 
   ngOnInit(): void {
@@ -181,47 +202,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    Object.values(this.fieldSubscriptions).forEach(sub => sub.unsubscribe());
   }
   
- private fetchInitialData(params: any): void {
+  private fetchInitialData(params: any): void {
     this.isLoading = true;
     this.errorMessage = null;
 
     this.apiService.getProductData(params).pipe(
       takeUntil(this.destroy$),
-      switchMap((data: any) => {
-        if (data && data[0]?.data) {
-          this.parameters_data = data[0].data;
-          this.apiUrl = params.api_url;
-          this.routeParams = params;
-          
-          this.initializeFormControls();
-          
-          return forkJoin([
-            this.loadOptionData(params),
-            this.apiService.getminandmax(
-              this.routeParams,
-              this.routeParams.color_id,
-              this.unittype,
-              this.routeParams.pricing_group
-            )
-          ]);
-        }
-        this.errorMessage = 'Invalid product data received';
-        return of(null);
-      }),
-      tap((results) => {
-        if (results) {
-          const [_, minmaxdata] = results;
-          if (minmaxdata?.data) {
-            
-            this.min_width = minmaxdata.data.widthminmax.min;
-            this.min_drop = minmaxdata.data.dropminmax.min;
-            this.max_width = minmaxdata.data.widthminmax.max;
-            this.max_drop = minmaxdata.data.dropminmax.max;
-          }
-        }
-      }),
+      switchMap((data: any) => this.handleInitialDataResponse(data, params)),
+      tap((results) => this.handleMinMaxResponse(results)),
       catchError(err => {
         console.error('Error fetching product data:', err);
         this.errorMessage = 'Failed to load product data. Please try again.';
@@ -232,7 +223,41 @@ export class OrderformComponent implements OnInit, OnDestroy {
         this.cd.markForCheck();
       })
     ).subscribe();
-}
+  }
+
+  private handleInitialDataResponse(data: any, params: any): Observable<any> {
+    if (data && data[0]?.data) {
+      this.parameters_data = data[0].data;
+      this.apiUrl = params.api_url;
+      this.routeParams = params;
+
+      this.initializeFormControls();
+
+      return forkJoin([
+        this.loadOptionData(params),
+        this.apiService.getminandmax(
+          this.routeParams,
+          this.routeParams.color_id,
+          this.unittype,
+          this.routeParams.pricing_group
+        )
+      ]);
+    }
+    this.errorMessage = 'Invalid product data received';
+    return of(null);
+  }
+
+  private handleMinMaxResponse(results: any): void {
+    if (!results) return;
+
+    const [_, minmaxdata] = results;
+    if (minmaxdata?.data) {
+      this.min_width = minmaxdata.data.widthminmax.min;
+      this.min_drop = minmaxdata.data.dropminmax.min;
+      this.max_width = minmaxdata.data.widthminmax.max;
+      this.max_drop = minmaxdata.data.dropminmax.max;
+    }
+  }
 
   private initializeFormControls(): void {
    
@@ -265,12 +290,13 @@ export class OrderformComponent implements OnInit, OnDestroy {
     });
 
     this.orderForm = this.fb.group(formControls);
-    this.previousFormValue = this.orderForm.value;
     //console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
-    this.orderForm.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(values => {
-      this.onFormChanges(values, this.routeParams);
+
+    // Setup individual listeners for each control
+    this.parameters_data.forEach(field => {
+      if (field.showfieldecomonjob == 1) {
+        this.setupValueChangeListener(field);
+      }
     });
   }
 
@@ -281,71 +307,16 @@ export class OrderformComponent implements OnInit, OnDestroy {
     return this.apiService.filterbasedlist(params, '').pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
-        // if no optionarray, return empty responses
         if (!filterData?.[0]?.data?.optionarray) return of([]);
 
         const filterresponseData = filterData[0].data;
         const optionRequests: Observable<any>[] = [];
 
         this.parameters_data.forEach((field: ProductField) => {
-          // top-level select-like fields that need optionlist fetch
-          if ([3, 5, 20].includes(field.fieldtypeid)) {
-            let matrial = 0;
-            let filter = '';
-
-            if (field.fieldtypeid === 3) {
-              matrial = 0;
-              filter = filterresponseData.optionarray[field.fieldid];
-            } else if (field.fieldtypeid === 5) {
-              matrial = 1;
-              filter = filterresponseData.coloridsarray;
-            } else if (field.fieldtypeid === 20) {
-              matrial = 2;
-              filter = filterresponseData.coloridsarray;
-            }
-
-            optionRequests.push(
-              this.apiService.getOptionlist(
-                params,
-                1,
-                field.fieldtypeid,
-                matrial,
-                field.fieldid,
-                filter
-              ).pipe(
-                map((optionData: any) => ({ fieldId: field.fieldid, optionData })),
-                catchError(err => {
-                  console.error(`Error loading options for field ${field.fieldid}:`, err);
-                  return of(null);
-                })
-              )
-            );
-          } else if ([14, 34, 17, 13].includes(field.fieldtypeid)) {
-            // fields that don't need external option fetch but need default value set
-            const control = this.orderForm.get(`field_${field.fieldid}`);
-            if (control) {
-              let valueToSet: any = '';
-
-              if (field.fieldtypeid === 14) {
-                valueToSet = 1;
-              } else if (field.fieldtypeid === 17) {
-                this.supplier_id = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
-                  ? Number(field.optiondefault)
-                  : (Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0 ? Number(field.optionsvalue[0].id || field.optionsvalue[0].optionid || 0) : null);
-                valueToSet = this.supplier_id ?? '';
-              } else {
-                valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
-                  ? Number(field.optiondefault)
-                  : '';
-              }
-
-              control.setValue(valueToSet, { emitEvent: false });
-              if (field.fieldtypeid === 34) {
-                 this.unittype = valueToSet;
-              }else if(field.fieldtypeid === 13){
-                this.pricegroup = valueToSet;
-              }
-            }
+          if (([FieldType.LIST, FieldType.MATERIALS, FieldType.MATERIALS_20] as number[]).includes(field.fieldtypeid)) {
+            optionRequests.push(this.createOptionRequest(field, params, filterresponseData));
+          } else if (([FieldType.QTY, FieldType.UNIT_TYPE, FieldType.SUPPLIER, FieldType.PRICE_GROUP] as number[]).includes(field.fieldtypeid)) {
+            this.setDefaultValueForSimpleField(field);
           }
         });
 
@@ -353,63 +324,118 @@ export class OrderformComponent implements OnInit, OnDestroy {
           ? forkJoin(optionRequests).pipe(map(responses => responses.filter(r => r !== null)))
           : of([]);
       }),
-      map((responses: any[]) => {
-        responses.forEach((response: { fieldId: number, optionData: any }) => {
-          const field = this.parameters_data.find(f => f.fieldid === response.fieldId);
-          if (!field) return;
-
-          const options = response.optionData?.[0]?.data?.[0]?.optionsvalue;
-          const filteredOptions = Array.isArray(options)
-            ? options.filter((option: any) => option.availableForEcommerce !== 0)
-            : [];
-
-          if (filteredOptions.length === 0) {
-            // remove control if no options available
-            if (this.orderForm.contains(`field_${field.fieldid}`)) {
-              this.orderForm.removeControl(`field_${field.fieldid}`);
-            }
-            return;
-          }
-
-          this.option_data[field.fieldid] = filteredOptions;
-          const control = this.orderForm.get(`field_${field.fieldid}`);
-
-          if (control) {
-            let valueToSet: any;
-
-            if (field.fieldtypeid === 3 && field.selection == 1) {
-              valueToSet = field.optiondefault
-                ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
-                : [];
-            } else if (field.fieldtypeid === 20) {
-              valueToSet = +params.color_id || '';
-            } else if (field.fieldtypeid === 5) {
-              valueToSet = +params.fabric_id || '';
-            } else {
-              valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
-                ? Number(field.optiondefault)
-                : '';
-            }
-            control.setValue(valueToSet, { emitEvent: false });
-          }
-        });
-
-        this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-          if ([34, 17, 13].includes(field.fieldtypeid)) {
-            return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
-          } else if ([3, 5, 20].includes(field.fieldtypeid)) {
-            return this.option_data[field.fieldid]?.length > 0;
-          }
-          return true;
-        });
-
-        return true;
-      }),
+      map((responses: any[]) => this.processOptionResponses(responses, params)),
       catchError(err => {
         console.error('Error in option data loading:', err);
         return of(null);
       })
     );
+  }
+
+  private setDefaultValueForSimpleField(field: ProductField): void {
+    const control = this.orderForm.get(`field_${field.fieldid}`);
+    if (!control) return;
+
+    let valueToSet: any = '';
+    if (field.fieldtypeid === FieldType.QTY) {
+      valueToSet = 1;
+    } else if (field.fieldtypeid === FieldType.SUPPLIER) {
+      this.supplier_id = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
+        ? Number(field.optiondefault)
+        : (Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0 ? Number(field.optionsvalue[0].id || field.optionsvalue[0].optionid || 0) : null);
+      valueToSet = this.supplier_id ?? '';
+    } else { // This covers UNIT_TYPE and PRICE_GROUP
+      valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
+        ? Number(field.optiondefault)
+        : '';
+    }
+
+    control.setValue(valueToSet, { emitEvent: false });
+    if (field.fieldtypeid === FieldType.UNIT_TYPE) {
+      this.unittype = valueToSet;
+    } else if (field.fieldtypeid === FieldType.PRICE_GROUP) {
+      this.pricegroup = valueToSet;
+    }
+  }
+
+  private createOptionRequest(field: ProductField, params: any, filterresponseData: any): Observable<any> {
+    let matrial = 0;
+    let filter = '';
+
+    if (field.fieldtypeid === FieldType.LIST) {
+      matrial = 0;
+      filter = filterresponseData.optionarray[field.fieldid];
+    } else if (field.fieldtypeid === FieldType.MATERIALS) {
+      matrial = 1;
+      filter = filterresponseData.coloridsarray;
+    } else if (field.fieldtypeid === FieldType.MATERIALS_20) {
+      matrial = 2;
+      filter = filterresponseData.coloridsarray;
+    }
+
+    return this.apiService.getOptionlist(
+      params, 1, field.fieldtypeid, matrial, field.fieldid, filter
+    ).pipe(
+      map((optionData: any) => ({ fieldId: field.fieldid, optionData })),
+      catchError(err => {
+        console.error(`Error loading options for field ${field.fieldid}:`, err);
+        return of(null); // Return null to not break forkJoin
+      })
+    );
+  }
+
+  private processOptionResponses(responses: any[], params: any): boolean {
+    responses.forEach((response: { fieldId: number, optionData: any }) => {
+      const field = this.parameters_data.find(f => f.fieldid === response.fieldId);
+      if (!field) return;
+
+      const options = response.optionData?.[0]?.data?.[0]?.optionsvalue;
+      const filteredOptions = Array.isArray(options)
+        ? options.filter((option: any) => option.availableForEcommerce !== 0)
+        : [];
+
+      if (filteredOptions.length === 0) {
+        if (this.orderForm.contains(`field_${field.fieldid}`)) {
+          this.orderForm.removeControl(`field_${field.fieldid}`);
+        }
+        return;
+      }
+
+      this.option_data[field.fieldid] = filteredOptions;
+      this.setControlValueForComplexField(field, params);
+    });
+
+    this.parameters_data = this.parameters_data.filter((field: ProductField) => {
+      if (([FieldType.UNIT_TYPE, FieldType.SUPPLIER, FieldType.PRICE_GROUP] as number[]).includes(field.fieldtypeid)) {
+        return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
+      } else if (([FieldType.LIST, FieldType.MATERIALS, FieldType.MATERIALS_20] as number[]).includes(field.fieldtypeid)) {
+        return this.option_data[field.fieldid]?.length > 0;
+      }
+      return true;
+    });
+
+    return true;
+  }
+
+  private setControlValueForComplexField(field: ProductField, params: any): void {
+    const control = this.orderForm.get(`field_${field.fieldid}`);
+    if (!control) return;
+
+    let valueToSet: any;
+    if (field.fieldtypeid === FieldType.LIST && field.selection == 1) {
+      valueToSet = field.optiondefault
+        ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
+        : [];
+    } else if (field.fieldtypeid === FieldType.MATERIALS_20) {
+      valueToSet = +params.color_id || '';
+    } else if (field.fieldtypeid === FieldType.MATERIALS) {
+      valueToSet = +params.fabric_id || '';
+    } else {
+      valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
+        ? Number(field.optiondefault)
+        : '';
+    }
+    control.setValue(valueToSet, { emitEvent: false });
   }
 
   /**
@@ -419,12 +445,12 @@ export class OrderformComponent implements OnInit, OnDestroy {
   private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
     if (!field) return;
 
+    // This is now much simpler.
+    this.clearExistingSubfields(field.fieldid);
+
     if (value === null || value === undefined || value === '') {
-      this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
       return;
     }
-
-    this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
 
     const options = this.option_data[field.fieldid];
     if (!options || options.length === 0) return;
@@ -449,10 +475,10 @@ export class OrderformComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       ).subscribe(() => {
         this.updateFieldValues(field, selectedOption);
-        if ((field.fieldtypeid === 5 &&  field.level == 1 && selectedOption.optionid_pricegroupid) || (field.fieldtypeid === 20)){
+        if ((field.fieldtypeid === FieldType.MATERIALS &&  field.level == 1 && selectedOption.optionid_pricegroupid) || (field.fieldtypeid === FieldType.MATERIALS_20)){
           this.pricegroup = selectedOption.optionid_pricegroupid.split('_')[1];
         }
-        if ((field.fieldtypeid === 5 &&  field.level == 2) ||  (field.fieldtypeid === 20)) {
+        if ((field.fieldtypeid === FieldType.MATERIALS &&  field.level == 2) ||  (field.fieldtypeid === FieldType.MATERIALS_20)) {
             this.colorid = value;
             this.updateMinMaxValidators();
         }
@@ -511,7 +537,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
         // filter to only fields that we know how to handle
         const relevant = sublist.filter((subfield: ProductField) =>
-          [3, 5, 20, 21,18,6].includes(subfield.fieldtypeid)
+          ([FieldType.LIST, FieldType.MATERIALS, FieldType.MATERIALS_20, FieldType.MATERIALS_21,FieldType.TEXT,FieldType.NUMBER] as number[]).includes(subfield.fieldtypeid)
         );
 
         if (relevant.length === 0) return of(null);
@@ -531,83 +557,78 @@ export class OrderformComponent implements OnInit, OnDestroy {
   /**
    * Insert subfield into parameters_data (if not already present), add form control, and load its options.
    */
+private setupValueChangeListener(field: ProductField): void {
+    const controlName = `field_${field.fieldid}`;
+    const control = this.orderForm.get(controlName);
+    if (!control) return;
+
+    if (this.fieldSubscriptions[controlName]) {
+      this.fieldSubscriptions[controlName].unsubscribe();
+    }
+
+    this.fieldSubscriptions[controlName] = control.valueChanges.subscribe(value => {
+      const params = this.routeParams;
+
+      if (([FieldType.LIST, FieldType.MATERIALS, FieldType.MATERIALS_20] as number[]).includes(field.fieldtypeid)) {
+        // This handler is complex (clears children, fetches sub-options) and remains separate.
+        this.handleOptionSelectionChange(params, field, value);
+      } else if (field.fieldtypeid === FieldType.UNIT_TYPE) {
+        // This has a side-effect (fetching fraction data) and also updates the field value.
+        this.handleUnitTypeChange(value, params);
+        const selectedOption = field.optionsvalue?.find(opt => `${opt.optionid}` === `${value}`);
+        if(selectedOption) this.updateFieldValues(field, selectedOption);
+      } else if (([FieldType.X_FOOTAGE, FieldType.WIDTH_WITH_FRACTION, FieldType.X_SQUARE_YARD] as number[]).includes(field.fieldtypeid)) {
+        const fractionValue = this.showFractions ? (Number(this.orderForm.get('widthfraction')?.value) || 0) : 0;
+        this.updateFieldValues(field, Number(value) + fractionValue);
+      } else if (([FieldType.Y_FOOTAGE, FieldType.DROP_WITH_FRACTION, FieldType.Y_SQUARE_YARD] as number[]).includes(field.fieldtypeid)) {
+        const fractionValue = this.showFractions ? (Number(this.orderForm.get('dropfraction')?.value) || 0) : 0;
+        this.updateFieldValues(field, Number(value) + fractionValue);
+      } else if (field.optionsvalue && field.optionsvalue.length > 0) {
+        // For any other field that has an options list (e.g., supplier, pricegroup)
+        const selectedOption = field.optionsvalue.find(opt => `${opt.optionid}` === `${value}`);
+        if(selectedOption) this.updateFieldValues(field, selectedOption);
+      } else {
+        // For simple fields without options (e.g., text, number, qty)
+        this.updateFieldValues(field, value);
+      }
+    });
+  }
 private processSubfield(
   params: any,
   subfield: ProductField,
   parentField: ProductField,
   level: number
 ): Observable<any> {
+  // SIMPLIFIED LOGIC: No longer interacts with the flat parameters_data array.
+  // It only works with the nested subchild property.
   subfield.parentFieldId = parentField.fieldid;
   subfield.level = level;
   subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-  subfield.allparentFieldId = parentField.allparentFieldId
-    ? `${parentField.allparentFieldId},${subfield.fieldid}`
-    : `${parentField.fieldid},${subfield.fieldid}`;
+  // The 'allparentFieldId' property is no longer needed.
 
-  // --- parameters_data (flat list) ---
-  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-  if (!alreadyExistsFlat) {
-    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
-    if (parentIndex !== -1) {
-      this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
-    } else {
-      this.parameters_data.push({ ...subfield });
-    }
-    //console.log('Added subfield to parameters_data:', subfield.fieldid);
-  } else {
-    const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-    if (existingFlat) {
-      existingFlat.parentFieldId = subfield.parentFieldId;
-      existingFlat.level = subfield.level;
-      existingFlat.masterparentfieldid = subfield.masterparentfieldid;
-      existingFlat.allparentFieldId = subfield.allparentFieldId;
-    }
-  }
-
-  // --- parentField.subchild (nested list) ---
   if (!parentField.subchild) {
     parentField.subchild = [];
   }
 
-  const alreadyExistsNested = parentField.subchild.some(
-    f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-  );
+  // Add the new subfield to its parent's subchild array.
+  // We don't check for existence because clearExistingSubfields now wipes the array.
+  parentField.subchild.push({ ...subfield });
 
-  if (!alreadyExistsNested) {
-    parentField.subchild.push({ ...subfield });
-    /*
-    console.log(
-      'Added subfield:',
-      subfield.fieldid,
-      'to parent:',
-      parentField.fieldid,
-      '. Current state:',
-      JSON.parse(JSON.stringify(this.parameters_data))
-    );
-    */
-  } else {
-    const existingNested = parentField.subchild.find(
-      f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-    );
-    if (existingNested) {
-      existingNested.parentFieldId = subfield.parentFieldId;
-      existingNested.level = subfield.level;
-      existingNested.masterparentfieldid = subfield.masterparentfieldid;
-      existingNested.allparentFieldId = subfield.allparentFieldId;
-    }
-  }
-
-  // --- Form control ---
+  // Add the form control and set up its listener.
   this.addSubfieldFormControlSafe(subfield);
+  this.setupValueChangeListener(subfield);
 
+  // Load options if necessary.
   if (subfield.field_has_sub_option) {
     return this.loadSubfieldOptions(params, subfield).pipe(
       map(res => res || null),
       catchError(err => {
-          console.error('Error in processSubfield:', err);
-          this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
-          return of(null);
-        })
+        console.error('Error in processSubfield:', err);
+        // Simplified error handling: just remove the control.
+        // The field itself will be removed the next time clearExistingSubfields is called.
+        this.recursivelyRemoveControls([{...subfield}]);
+        return of(null);
+      })
     );
   } else {
     return of(null);
@@ -625,17 +646,17 @@ private processSubfield(
 
         const filterresponseData = filterData[0].data;
 
-        if ([3, 5, 20].includes(subfield.fieldtypeid)) {
+        if (([FieldType.LIST, FieldType.MATERIALS, FieldType.MATERIALS_20] as number[]).includes(subfield.fieldtypeid)) {
           let matrial = 0;
           let filter = '';
 
-          if (subfield.fieldtypeid === 3) {
+          if (subfield.fieldtypeid === FieldType.LIST) {
             matrial = 0;
             filter = filterresponseData.optionarray[subfield.fieldid];
-          } else if (subfield.fieldtypeid === 5) {
+          } else if (subfield.fieldtypeid === FieldType.MATERIALS) {
             matrial = 2;
             filter = filterresponseData.coloridsarray;
-          } else if (subfield.fieldtypeid === 20) {
+          } else if (subfield.fieldtypeid === FieldType.MATERIALS_20) {
             matrial = 2;
             filter = filterresponseData.coloridsarray;
           }
@@ -659,7 +680,7 @@ private processSubfield(
 
               if (filteredOptions.length === 0) {
                 // If no options, remove the subfield and return null
-                this.removeFieldSafely(subfield.fieldid);
+                this.recursivelyRemoveControls([{...subfield}]);
                 return null;
               }
 
@@ -669,11 +690,11 @@ private processSubfield(
               const control = this.orderForm.get(`field_${subfield.fieldid}`);
               if (control) {
                 let valueToSet: any;
-                if (subfield.fieldtypeid === 3 && subfield.selection == 1) {
+                if (subfield.fieldtypeid === FieldType.LIST && subfield.selection == 1) {
                   valueToSet = subfield.optiondefault
                     ? subfield.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
                     : [];
-                } else if (subfield.fieldtypeid === 5 && subfield.level == 2) {
+                } else if (subfield.fieldtypeid === FieldType.MATERIALS && subfield.level == 2) {
                   valueToSet = +params.color_id || '';
                 } else {
                   valueToSet = (subfield.optiondefault !== undefined && subfield.optiondefault !== null && subfield.optiondefault !== '')
@@ -693,7 +714,7 @@ private processSubfield(
             }),
             catchError(err => {
               console.error('Error loading subfield options:', err);
-              this.removeFieldSafely(subfield.fieldid);
+              this.recursivelyRemoveControls([{...subfield}]);
               return of(null);
             })
           );
@@ -704,7 +725,7 @@ private processSubfield(
       }),
       catchError(err => {
         console.error('Error fetching subfield filter data:', err);
-        this.removeFieldSafely(subfield.fieldid);
+        this.recursivelyRemoveControls([{...subfield}]);
         return of(null);
       })
     );
@@ -731,216 +752,92 @@ private processSubfield(
   /**
    * Remove a field from parameters_data and the form safely.
    */
-private removeFieldSafely(fieldId: number, fieldPath?: string): void {
-  if (!fieldPath) {
-    const field = this.parameters_data.find(f => f.fieldid === fieldId);
-    if (!field) return;
-    fieldPath = field.allparentFieldId || fieldId.toString();
-  }
+private clearExistingSubfields(parentFieldId: number): void {
+    const parentField = this.findFieldByIdRecursive(this.parameters_data, parentFieldId);
+    if (!parentField || !parentField.subchild) {
+        return;
+    }
 
-  this.parameters_data = this.parameters_data.filter(
-    f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
-  );
+    // Recursively clean up all descendants before clearing the array
+    this.recursivelyRemoveControls(parentField.subchild);
 
-  const controlName = `field_${fieldId}`;
-  if (this.orderForm.contains(controlName)) {
-    this.orderForm.removeControl(controlName);
-  }
-
-  if (this.option_data[fieldId]) {
-    delete this.option_data[fieldId];
-  }
-
-  this.cd.markForCheck();
+    // Now, simply clear the children array
+    parentField.subchild = [];
+    
+    this.cd.markForCheck();
 }
 
-private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
-  // 1. Determine the parent path
-  if (!parentPath) {
-    const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (!parent) return;
-    parentPath = parent.allparentFieldId || parent.fieldid.toString();
-  }
+private recursivelyRemoveControls(fields: ProductField[]): void {
+    if (!fields) return;
 
-  // 2. Special handling for main field (has no parentFieldId)
-  const isMainField = !this.parameters_data.some(f => 
-    f.fieldid === parentFieldId && f.parentFieldId
-  );
+    for (const field of fields) {
+        // 1. Recurse to children first
+        if (field.subchild && field.subchild.length > 0) {
+            this.recursivelyRemoveControls(field.subchild);
+        }
 
-  // 3. Find fields to remove - different matching for main vs nested fields
-  const fieldsToRemove = this.parameters_data.filter(f => {
-    if (!f.allparentFieldId) return false;
-    
-    if (isMainField) {
-      // For main field, match either:
-      // - Direct children: allparentFieldId === "mainId"
-      // - Descendants: allparentFieldId.startsWith("mainId,")
-      return f.allparentFieldId === parentPath || 
-             f.allparentFieldId.startsWith(`${parentPath},`);
-    } else {
-      // For nested fields, only match proper descendants
-      return f.allparentFieldId.startsWith(`${parentPath},`);
+        // 2. Clean up the current field's dependencies
+        const controlName = `field_${field.fieldid}`;
+        if (this.orderForm.contains(controlName)) {
+            this.orderForm.removeControl(controlName);
+        }
+        if (this.fieldSubscriptions[controlName]) {
+            this.fieldSubscriptions[controlName].unsubscribe();
+            delete this.fieldSubscriptions[controlName];
+        }
+        if (this.option_data[field.fieldid]) {
+            delete this.option_data[field.fieldid];
+        }
     }
-  });
-
-  if (fieldsToRemove.length === 0) return;
-
-  // 4. Remove from flat list
-  this.parameters_data = this.parameters_data.filter(f => 
-    !fieldsToRemove.some(toRemove => 
-      toRemove.fieldid === f.fieldid && 
-      toRemove.allparentFieldId === f.allparentFieldId
-    )
-  );
-
-  // 5. Clean nested structure
-  this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
-
-  // 6. Remove form controls and clean up
-  fieldsToRemove.forEach(field => {
-    const controlName = `field_${field.fieldid}`;
-    if (this.orderForm.contains(controlName)) {
-      this.orderForm.removeControl(controlName);
-    }
-    delete this.option_data[field.fieldid];
-  });
-
-  this.cd.markForCheck();
 }
 
-private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
-  const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
-
-  // Handle main field specially
-  if (isMainField) {
-    const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (mainField?.subchild) {
-      mainField.subchild = mainField.subchild.filter(child => 
-        !fieldsToRemoveSet.has(child.fieldid)
-      );
+private findFieldByIdRecursive(fields: ProductField[], fieldId: number): ProductField | null {
+    for (const field of fields) {
+        if (field.fieldid === fieldId) {
+            return field;
+        }
+        if (field.subchild) {
+            const found = this.findFieldByIdRecursive(field.subchild, fieldId);
+            if (found) {
+                return found;
+            }
+        }
     }
-    return;
-  }
-
-  // Recursive cleaner for nested fields
-  const cleanSubchild = (field: ProductField) => {
-    if (!field.subchild) return;
-    
-    field.subchild = field.subchild.filter(child => 
-      !fieldsToRemoveSet.has(child.fieldid)
-    );
-    
-    field.subchild.forEach(cleanSubchild);
-  };
-
-  this.parameters_data.forEach(cleanSubchild);
+    return null;
 }
 
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
 
-  private updateFieldValues(field: ProductField, selectedOption: any =[]): void {
-    const fieldInState = this.parameters_data.find(f => 
-        f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
-    );
-  
-    const targetField = fieldInState || field; 
+  private updateFieldValues(field: ProductField, selectedOption: any = []): void {
+    // The `field` object passed to this function is the direct reference
+    // to the field in the nested parameters_data structure, so we can mutate it directly.
+    const targetField = field;
 
     if (Array.isArray(selectedOption)) {
+      // Handle an array of selected option objects (for multi-select)
       targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
       targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
       targetField.optionvalue = selectedOption;
-      targetField.optionquantity = targetField.optionquantity = selectedOption.map(() => '1').join(',');
+      targetField.optionquantity = selectedOption.map(() => '1').join(',');
+    } else if (selectedOption && typeof selectedOption === 'object' && selectedOption.optionname) {
+      // Handle a single selected option object
+      targetField.value = selectedOption.optionname;
+      targetField.valueid = String(selectedOption.optionid);
+      targetField.optionvalue = [selectedOption];
+      targetField.optionquantity = "1";
     } else {
-      if(selectedOption.optionname){
-          targetField.value = selectedOption.optionname;
-          targetField.valueid = String(selectedOption.optionid);
-          targetField.optionvalue = [selectedOption];
-          targetField.optionquantity = "1";
-      }else{
-        targetField.value = selectedOption;
-        targetField.valueid = "";
-        targetField.optionvalue = [];
-      }
+      // Handle a primitive value (e.g., from a text input, number input)
+      targetField.value = String(selectedOption);
+      targetField.valueid = ""; // Primitives don't have a separate valueid
+      targetField.optionvalue = []; // No option object associated
     }
-    
   }
 
   /**
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
    */
-  onFormChanges(values: any, params: any): void {
-    if (!this.previousFormValue) {
-      this.previousFormValue = { ...values };
-      return;
-    }
-
-    for (const key in values) {
-      if (!key.startsWith('field_')) continue;
-
-      if (values[key] !== this.previousFormValue[key]) {
-        const fieldId = parseInt(key.replace('field_', ''), 10);
-        const field = this.parameters_data.find(f => f.fieldid === fieldId);
-
-        if (field && [3, 5, 20].includes(field.fieldtypeid)) {
-          // Trigger selection change handler
-          this.handleOptionSelectionChange(params, field, values[key]);
-        } else if (field && field.fieldtypeid === 34) {
-          this.handleUnitTypeChange(values[key], params);
-          this.handleRestOptionChange(params, field, values[key]);
-        }else if(field  && [14, 18, 6].includes(field.fieldtypeid)){
-           this.handleRestChange(params, field, values[key]);
-        }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
-           this.handleWidthChange(params, field, values[key]);
-        }if(field  && [9,12,32].includes(field.fieldtypeid)){
-           this.handleDropChange(params, field, values[key]);
-        }else if(field) {
-         this.handleRestOptionChange(params, field, values[key]);
-        }
-      }
-     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
-    }
-    this.previousFormValue = { ...values };
-  }
-  private handleWidthChange(params: any, field: ProductField, value: any): void {
-    let fractionValue = 0;
-
-    if (this.showFractions) {
-      fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
-    }
-
-    const totalWidth = Number(value) + fractionValue;
-    this.updateFieldValues(field, totalWidth);
-  }
-  private handleDropChange(params: any, field: ProductField, value: any): void {
-    let fractionValue = 0;
-    
-    if (this.showFractions) {
-      fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
-    }
-
-    const totalDrop = Number(value) + fractionValue;
-    this.updateFieldValues(field, totalDrop);
-  }
-  
-  private handleRestOptionChange(params: any, field: ProductField, value: any): void {
-    if (value === null || value === undefined || value === '') {
-      return;
-    }
-
-    const options = field.optionsvalue;
-    if (!options || options.length === 0) return;
-
-    const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
-     
-    if (!selectedOption) return;
-
-    this.updateFieldValues(field, [selectedOption]);
-  }
-  private handleRestChange(params: any, field: ProductField, value: any): void {
-      this.updateFieldValues(field, value);
-  }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.unittype =  unitValue;
@@ -1025,25 +922,25 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
 
   public get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
-      '3': 'list',
-      '5': 'materials',
-      '6': 'number',
-      '7': 'x_footage',
-      '8': 'number',
-      '9': 'y_footage',
-      '10': 'height',
-      '11': 'width_with_fraction',
-      '12': 'drop_with_fraction',
-      '13': 'pricegroup',
-      '14': 'qty',
-      '17': 'supplier',
-      '18': 'text',
-      '31': 'x_square_yard',
-      '32': 'y_square_yard',
-      '34': 'unit_type',
-      '21': 'materials',
-      '25': 'accessories_list',
-      '20': 'materials',
+      [FieldType.LIST]: 'list',
+      [FieldType.MATERIALS]: 'materials',
+      [FieldType.NUMBER]: 'number',
+      [FieldType.X_FOOTAGE]: 'x_footage',
+      [FieldType.NUMBER_8]: 'number',
+      [FieldType.Y_FOOTAGE]: 'y_footage',
+      [FieldType.HEIGHT]: 'height',
+      [FieldType.WIDTH_WITH_FRACTION]: 'width_with_fraction',
+      [FieldType.DROP_WITH_FRACTION]: 'drop_with_fraction',
+      [FieldType.PRICE_GROUP]: 'pricegroup',
+      [FieldType.QTY]: 'qty',
+      [FieldType.SUPPLIER]: 'supplier',
+      [FieldType.TEXT]: 'text',
+      [FieldType.X_SQUARE_YARD]: 'x_square_yard',
+      [FieldType.Y_SQUARE_YARD]: 'y_square_yard',
+      [FieldType.UNIT_TYPE]: 'unit_type',
+      [FieldType.MATERIALS_21]: 'materials',
+      [FieldType.ACCESSORIES_LIST]: 'accessories_list',
+      [FieldType.MATERIALS_20]: 'materials',
     };
 
     return field_types[chosen_field_type_id] || '';

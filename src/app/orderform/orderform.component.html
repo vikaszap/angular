@@ -76,8 +76,9 @@
               <!-- Form fields will be rendered here -->
             </div>
 
-            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
-              <div *ngIf="field.showfieldecomonjob == 1">
+            <!-- Define the recursive template for rendering form fields -->
+            <ng-template #fieldTemplate let-field>
+              <div [ngSwitch]="get_field_type_name(field.fieldtypeid)" *ngIf="field.showfieldecomonjob == 1">
                 <!-- Unit Type -->
                 <div *ngSwitchCase="'unit_type'">
                   <div class="parameter-wrapper">
@@ -110,63 +111,59 @@
                   </div>
                 </div>
 
-           <div *ngSwitchCase="'list'">
-                <div class="parameter-wrapper">
-                  <mat-form-field>
-                    <mat-label>{{ field.fieldname }}</mat-label>
-                    <mat-select
-                      [formControlName]="'field_' + field.fieldid"
-                      [id]="'field_' + field.fieldid"
-                      [multiple]="field.selection == 1"
-                      [attr.aria-label]="field.fieldname">
-                      <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                      <mat-option *ngFor="let option of option_data[field.fieldid]"
-                                  [value]="option.optionid">
-                        
-                        <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                          <img [src]="apiUrl + '/api/public' + option.optionimage"
-                              alt="{{ option.optionname }}"
-                              width="24"
-                              height="24"
-                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                        </ng-container>
-
-                        {{ option.optionname }}
-                      </mat-option>
-
-                    </mat-select>
-                  </mat-form-field>
+                <!-- List / Dropdown -->
+                <div *ngSwitchCase="'list'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>{{ field.fieldname }}</mat-label>
+                      <mat-select
+                        [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid"
+                        [multiple]="field.selection == 1"
+                        [attr.aria-label]="field.fieldname">
+                        <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of option_data[field.fieldid]"
+                                    [value]="option.optionid">
+                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                            <img [src]="apiUrl + '/api/public' + option.optionimage"
+                                 alt="{{ option.optionname }}"
+                                 width="24"
+                                 height="24"
+                                 style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                          </ng-container>
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
                 </div>
-              </div>
-               <div *ngSwitchCase="'materials'">
-                <div class="parameter-wrapper">
-                  <mat-form-field>
-                    <mat-label>{{ field.fieldname }}</mat-label>
-                    <mat-select
-                      [formControlName]="'field_' + field.fieldid"
-                      [id]="'field_' + field.fieldid"
-                      [multiple]="field.selection == 1"
-                      [attr.aria-label]="field.fieldname">
-                      <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                      <mat-option *ngFor="let option of option_data[field.fieldid]"
-                                  [value]="option.optionid">
-                        
-                        <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                          <img [src]="apiUrl + '/api/public' + option.optionimage"
-                              alt="{{ option.optionname }}"
-                              width="24"
-                              height="24"
-                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                        </ng-container>
 
-                        {{ option.optionname }}
-                      </mat-option>
-
-                    </mat-select>
-                  </mat-form-field>
+                <!-- Materials (same as list) -->
+                <div *ngSwitchCase="'materials'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>{{ field.fieldname }}</mat-label>
+                      <mat-select
+                        [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid"
+                        [multiple]="field.selection == 1"
+                        [attr.aria-label]="field.fieldname">
+                        <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of option_data[field.fieldid]"
+                                    [value]="option.optionid">
+                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                            <img [src]="apiUrl + '/api/public' + option.optionimage"
+                                 alt="{{ option.optionname }}"
+                                 width="24"
+                                 height="24"
+                                 style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                          </ng-container>
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
                 </div>
-              </div>
-              
 
                 <!-- Number Input -->
                 <div *ngSwitchCase="'number'">
@@ -213,6 +210,7 @@
                   </div>
                 </div>
 
+                <!-- Drop with Fraction -->
                 <div *ngSwitchCase="'drop_with_fraction'">
                   <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
                     <mat-form-field class="fraction-field">
@@ -238,57 +236,76 @@
                     </mat-form-field>
                   </div>
                 </div>
-                 <div *ngSwitchCase="'qty'">
+
+                <!-- Quantity -->
+                <div *ngSwitchCase="'qty'">
                   <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>{{field.fieldname}}</mat-label>
                       <input matInput
                              type="text"
                              [formControlName]="'field_' + field.fieldid"
-                             [id]="'field_' + field.fieldid"
-                            >
+                             [id]="'field_' + field.fieldid">
                     </mat-form-field>
                   </div>
                 </div>
+
+                <!-- Supplier -->
                 <div *ngSwitchCase="'supplier'">
                     <div class="parameter-wrapper">
-                    <mat-form-field>
-                      <mat-label>{{ field.fieldname }}</mat-label>
-                      <mat-select
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid">
-                        <mat-option  value="">Select Option</mat-option>
-                        <mat-option *ngFor="let option of field.optionsvalue"
-                                    [value]="option.optionid">
-                          {{ option.optionname }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
+                      <mat-form-field>
+                        <mat-label>{{ field.fieldname }}</mat-label>
+                        <mat-select
+                          [formControlName]="'field_' + field.fieldid"
+                          [id]="'field_' + field.fieldid">
+                          <mat-option  value="">Select Option</mat-option>
+                          <mat-option *ngFor="let option of field.optionsvalue"
+                                      [value]="option.optionid">
+                            {{ option.optionname }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                 </div>
+
+                <!-- Price Group -->
                 <div *ngSwitchCase="'pricegroup'">
                     <div class="parameter-wrapper">
-                    <mat-form-field>
-                      <mat-label>{{ field.fieldname }}</mat-label>
-                      <mat-select
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid">
-                        <mat-option  value="">Select Option</mat-option>
-                        <mat-option *ngFor="let option of field.optionsvalue"
-                                    [value]="option.optionid">
-                          {{ option.optionname }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
+                      <mat-form-field>
+                        <mat-label>{{ field.fieldname }}</mat-label>
+                        <mat-select
+                          [formControlName]="'field_' + field.fieldid"
+                          [id]="'field_' + field.fieldid">
+                          <mat-option  value="">Select Option</mat-option>
+                          <mat-option *ngFor="let option of field.optionsvalue"
+                                      [value]="option.optionid">
+                            {{ option.optionname }}
+                          </option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                 </div>
+
+                <!-- Hidden Input -->
                 <div *ngSwitchCase="'hidden'">
                   <input type="hidden" 
                          [formControlName]="'field_' + field.fieldid" 
                          [id]="'field_' + field.fieldid">
                 </div>
+
+                <!-- Recursive call for sub-fields -->
+                <div *ngIf="field.subchild && field.subchild.length > 0" class="sub-fields-container" [style.padding-left.px]="field.level * 25">
+                  <ng-container *ngFor="let subfield of field.subchild; trackBy: trackByFieldId">
+                    <ng-container *ngTemplateOutlet="fieldTemplate; context: {$implicit: subfield}"></ng-container>
+                  </ng-container>
+                </div>
               </div>
-            </div>
+            </ng-template>
+
+            <!-- Initial invocation of the recursive template for top-level fields -->
+            <ng-container *ngFor="let field of parameters_data; trackBy: trackByFieldId">
+              <ng-container *ngTemplateOutlet="fieldTemplate; context: {$implicit: field}"></ng-container>
+            </ng-container>
 
             <div class="price_wrapper">
               <div class="price_text">Your Price</div>
