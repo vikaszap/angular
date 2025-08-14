@@ -944,7 +944,6 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.unittype =  unitValue;
-    console.log(this.unittype);
     this.showFractions = (unitValue === 4);
     this.updateMinMaxValidators();
     this.apiService.getFractionData(params, unitValue).pipe(
