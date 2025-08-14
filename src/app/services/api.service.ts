@@ -114,7 +114,7 @@ export class ApiService {
       width: "0",
       drop: "0",
       unittype: unittype,
-      mode: "width",
+      mode: "both",
       pricegroup: pricegroup,
       colorid: colorid,
       fieldtypeid: "",

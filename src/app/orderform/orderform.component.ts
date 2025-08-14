@@ -43,6 +43,8 @@ interface ProductOption {
   optionsvalue: any;
   fieldoptionlinkid: number;
   availableForEcommerce?: number;
+  pricegroups: string;
+  optionid_pricegroupid:string;
 }
 
 interface FractionOption {
@@ -134,7 +136,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   option_data: Record<number, ProductOption[]> = {};
   routeParams: any;
   unittype: number = 1;
-  pricegroup: number = 1;
+  pricegroup: string = "";
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -143,13 +145,27 @@ export class OrderformComponent implements OnInit, OnDestroy {
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
-      unit: ['', Validators.required],
-      width: ['', [Validators.required, Validators.min(this.min_width), Validators.max(this.max_width)]],
-      widthfraction: [''],
-      drop: ['', [Validators.required, Validators.min(this.min_drop), Validators.max(this.max_drop)]],
-      dropfraction: [''],
-      qty: [1, [Validators.required, Validators.min(1)]]
-    });
+        unit: ['', Validators.required],
+        width: [
+          '',
+          [
+            Validators.required,
+            Validators.min(this.min_width),
+            ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
+          ]
+        ],
+        widthfraction: [''],
+        drop: [
+          '',
+          [
+            Validators.required,
+            Validators.min(this.min_drop),
+            ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
+          ]
+        ],
+        dropfraction: [''],
+        qty: [1, [Validators.required, Validators.min(1)]]
+      });
     this.previousFormValue = this.orderForm.value;
   }
 
@@ -424,6 +440,16 @@ export class OrderformComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       ).subscribe(() => {
         this.updateFieldValues(field, selectedOption);
+        if (field.fieldtypeid === 5){
+          console.log(field);
+        }
+        if (field.fieldtypeid === 5 && field.level == 2 && selectedOption.optionid_pricegroupid) {
+          this.pricegroup =  selectedOption.optionid_pricegroupid.split('_')[1];
+           console.log(this.pricegroup);
+        } else if (field.fieldtypeid === 20 && selectedOption.optionid_pricegroupid) {
+           this.pricegroup =  selectedOption.optionid_pricegroupid.split('_')[1];
+           console.log(this.pricegroup);
+        }
         this.cd.markForCheck();
       });
     }
