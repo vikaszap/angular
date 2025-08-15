@@ -391,6 +391,10 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 : '';
             }
             control.setValue(valueToSet, { emitEvent: false });
+            if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
+              setTimeout(() => this.handleOptionSelectionChange(params, field, valueToSet), 0);
+            }
+            
           }
         });
 
@@ -490,6 +494,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */
   private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): Observable<any> {
+    console.log('cxvcxvxcv');
     if (!option?.subdatacount || option.subdatacount <= 0) return of(null);
 
     const parentLevel = parentField.level || 1;
