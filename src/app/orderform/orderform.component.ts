@@ -466,43 +466,48 @@ export class OrderformComponent implements OnInit, OnDestroy {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
 
-      this.processSelectedOption(params, field, selectedOption).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe(() => {
-        this.updateFieldValues(field, selectedOption);
+      let supplierUpdate$: Observable<any>;
 
-        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
+      if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
           this.pricegroup = selectedOption.pricegroupid;
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe((filterData: any) => {
-            if(filterData[0].data.selectsupplierid){
-              this.supplier_id = filterData[0].data.selectsupplierid;
-               this.parameters_data.forEach(pField => {
-                 if (pField.fieldtypeid === 17) {
-                   const control = this.orderForm.get(`field_${pField.fieldid}`);
-                  if (control) {
-                    control.setValue(this.supplier_id, { emitEvent: false });
-                  }
-                }
-              });
-            }
-          });
+          // update pricegroup form control
           this.parameters_data.forEach(pField => {
-            if (pField.fieldtypeid === 13) {
-              const control = this.orderForm.get(`field_${pField.fieldid}`);
-              if (control) {
-                control.setValue(this.pricegroup, { emitEvent: false });
+              if (pField.fieldtypeid === 13) {
+                  const control = this.orderForm.get(`field_${pField.fieldid}`);
+                  if (control) {
+                      control.setValue(this.pricegroup, { emitEvent: false });
+                  }
               }
-            }
           });
-        }
-        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
-          this.colorid = value;
-          this.updateMinMaxValidators();
-        }
 
-        this.cd.markForCheck();
+          supplierUpdate$ = this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup).pipe(
+              tap((filterData: any) => {
+                  this.supplier_id = filterData[0].data.selectsupplierid;
+                  // update supplier form control
+                  this.parameters_data.forEach(pField => {
+                      if (pField.fieldtypeid === 17) {
+                          const control = this.orderForm.get(`field_${pField.fieldid}`);
+                          if (control) {
+                              control.setValue(this.supplier_id, { emitEvent: false });
+                          }
+                      }
+                  });
+              })
+          );
+      } else {
+          supplierUpdate$ = of(null); // No supplier update needed, continue
+      }
+
+      supplierUpdate$.pipe(
+          switchMap(() => this.processSelectedOption(params, field, selectedOption)),
+          takeUntil(this.destroy$)
+      ).subscribe(() => {
+          this.updateFieldValues(field, selectedOption);
+          if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+            this.colorid = value;
+            this.updateMinMaxValidators();
+          }
+          this.cd.markForCheck();
       });
     }
   }
