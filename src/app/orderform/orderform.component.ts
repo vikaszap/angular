@@ -436,15 +436,15 @@ export class OrderformComponent implements OnInit, OnDestroy {
    * Called whenever a field's option selection changes (top-level or subfield).
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
-  private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
+ private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
-      this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
+      this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
     }
 
-    this.clearExistingSubfields(field.fieldid,field.allparentFieldId);
+    this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
 
     const options = this.option_data[field.fieldid];
     if (!options || options.length === 0) return;
@@ -461,26 +461,49 @@ export class OrderformComponent implements OnInit, OnDestroy {
         this.updateFieldValues(field, selectedOptions);
         this.cd.markForCheck();
       });
+
     } else {
-      const selectedOption = options.find(opt => `${opt.optionid}` == `${value}`);
+      const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
 
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
         this.updateFieldValues(field, selectedOption);
-        if ((field.fieldtypeid === 5 &&  field.level == 1 && selectedOption.pricegroupid) || (field.fieldtypeid === 20)){
 
+        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
           this.pricegroup = selectedOption.pricegroupid;
+          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((filterData: any) => {
+              this.supplier_id = filterData[0].data.selectsupplierid;
+              console.log(this.supplier_id);
+          });
+          this.parameters_data.forEach(pField => {
+            if (pField.fieldtypeid === 13) {
+              const control = this.orderForm.get(`field_${pField.fieldid}`);
+              if (control) {
+                control.setValue(this.pricegroup, { emitEvent: false });
+              }
+            }else if (pField.fieldtypeid === 17) {
+               console.log(this.supplier_id+ ' asdsadsa' );
+               const control = this.orderForm.get(`field_${pField.fieldid}`);
+              if (control) {
+                control.setValue(this.supplier_id, { emitEvent: false });
+              }
+            }
+          });
         }
-        if ((field.fieldtypeid === 5 &&  field.level == 2) ||  (field.fieldtypeid === 20)) {
-            this.colorid = value;
-            this.updateMinMaxValidators();
+        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+          this.colorid = value;
+          this.updateMinMaxValidators();
         }
+
         this.cd.markForCheck();
       });
     }
   }
+
     private updateMinMaxValidators(): void {
     this.apiService.getminandmax(this.routeParams, String(this.colorid), this.unittype, Number(this.pricegroup))
       .pipe(takeUntil(this.destroy$))
@@ -990,7 +1013,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-    console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+    //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }

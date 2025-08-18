@@ -206,7 +206,8 @@ export class ApiService {
     params: ApiCommonParams,
     level: string = "",
     fabriccolor: string = "",
-    fieldid: string = ""
+    fieldid: string = "",
+    pricegroup: any = ""
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id,category } = params;
     const payload = {
@@ -222,11 +223,14 @@ export class ApiService {
       numFraction: null,
       orderItemId: "",
       orderitemselectedvalues: "",
-      pricegroup: "",
+      pricegroup: pricegroup,
       pricegroupdual: "",
       productid: product_id,
       selectedfieldids: "",
-      selectedvalues: "",
+      selectedvalues: {
+        supplierarray: [],
+        pricegrouparray: []
+      },
       subcolorid: "",
       subfabricid: "",
       supplier: "",
@@ -238,7 +242,6 @@ export class ApiService {
     };
    
     const passData = `products/fields/filterbasedongeneraldata`;
-   
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
   
