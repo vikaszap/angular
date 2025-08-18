@@ -90,6 +90,8 @@ interface FractionOption {
 export class OrderformComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
+  private priceGroupField?: ProductField;
+  private supplierField?: ProductField;
 
   // Form / UI state
   isLoading = false;
@@ -213,7 +215,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.routeParams = params;
           
           this.initializeFormControls();
-          
+          this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
+          this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
           return forkJoin([
             this.loadOptionData(params),
             this.apiService.getminandmax(
@@ -473,25 +476,22 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
         if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
           this.pricegroup = selectedOption.pricegroupid;
+          if (this.priceGroupField) {
+            const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
+            if (control) {
+               control.setValue(this.pricegroup, { emitEvent: false});
+            }
+          }
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
           .pipe(takeUntil(this.destroy$))
           .subscribe((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
-              console.log(this.supplier_id);
-          });
-          this.parameters_data.forEach(pField => {
-            if (pField.fieldtypeid === 13) {
-              const control = this.orderForm.get(`field_${pField.fieldid}`);
-              if (control) {
-                control.setValue(this.pricegroup, { emitEvent: false });
+              if (this.supplierField) {
+                const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
+                if (control) {
+                  control.setValue(Number(this.supplier_id), { emitEvent: false });
+                }
               }
-            }else if (pField.fieldtypeid === 17) {
-               console.log(this.supplier_id+ ' asdsadsa' );
-               const control = this.orderForm.get(`field_${pField.fieldid}`);
-              if (control) {
-                control.setValue(this.supplier_id, { emitEvent: false });
-              }
-            }
           });
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
