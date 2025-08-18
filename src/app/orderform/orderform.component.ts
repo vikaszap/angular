@@ -34,6 +34,22 @@ interface ProductField {
   subchild?: ProductField[];
   optionquantity?: string;
   fieldlevel?: number;
+  id?: string;
+  labelname?: string;
+  type?: number;
+  // extras from PHP structure
+  issubfabric?: any;
+  fabricorcolor?: any;
+  widthfraction?: string;
+  widthfractiontext?: string;
+  dropfractiontext?: string;
+  dropfraction?: string;
+  showFieldOnCustomerPortal?: any;
+  globaledit?: boolean;
+  numberfraction?: any;
+  numberfractiontext?: string;
+  fieldInformation?: any;
+  editruleoverride?: any;
 }
 
 interface ProductOption {
@@ -46,6 +62,7 @@ interface ProductOption {
   availableForEcommerce?: number;
   pricegroups: string;
   optionid_pricegroupid:string;
+  pricegroupid:string;
 }
 
 interface FractionOption {
@@ -391,10 +408,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 : '';
             }
             control.setValue(valueToSet, { emitEvent: false });
-            if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
+             if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
               setTimeout(() => this.handleOptionSelectionChange(params, field, valueToSet), 0);
             }
-            
           }
         });
 
@@ -453,8 +469,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       ).subscribe(() => {
         this.updateFieldValues(field, selectedOption);
-        if ((field.fieldtypeid === 5 &&  field.level == 1 && selectedOption.optionid_pricegroupid) || (field.fieldtypeid === 20)){
-          this.pricegroup = selectedOption.optionid_pricegroupid.split('_')[1];
+        if ((field.fieldtypeid === 5 &&  field.level == 1 && selectedOption.pricegroupid) || (field.fieldtypeid === 20)){
+
+          this.pricegroup = selectedOption.pricegroupid;
         }
         if ((field.fieldtypeid === 5 &&  field.level == 2) ||  (field.fieldtypeid === 20)) {
             this.colorid = value;
@@ -494,7 +511,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */
   private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): Observable<any> {
-    console.log('cxvcxvxcv');
     if (!option?.subdatacount || option.subdatacount <= 0) return of(null);
 
     const parentLevel = parentField.level || 1;
@@ -853,22 +869,92 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     const targetField = fieldInState || field; 
 
     if (Array.isArray(selectedOption)) {
+      targetField.id = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
       targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
       targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.type = targetField.fieldtypeid;
+      targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
       targetField.optionvalue = selectedOption;
-      targetField.optionquantity = targetField.optionquantity = selectedOption.map(() => '1').join(',');
+      targetField.issubfabric = targetField.issubfabric ?? '';
+      targetField.labelnamecode = targetField.labelnamecode ?? '';
+      targetField.fabricorcolor = targetField.fabricorcolor ?? '';
+      targetField.widthfraction = "";
+      targetField.widthfractiontext = "";
+      targetField.dropfractiontext = "";
+      targetField.dropfraction = "";
+      targetField.showfieldonjob = targetField.showfieldonjob ?? '';
+      targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
+      targetField.optionquantity = selectedOption.map(() => '1').join(',');
+      targetField.globaledit = false;
+      targetField.numberfraction = targetField.numberfraction ?? '';
+      targetField.numberfractiontext = "";
+      targetField.mandatory = targetField.mandatory ?? '';
+      targetField.fieldname = targetField.fieldname ?? '';
+      targetField.fieldid = targetField.fieldid ?? '';
+      targetField.fieldInformation = targetField.fieldInformation ?? '';
+      targetField.optiondefault = targetField.optiondefault ?? '';
+      targetField.editruleoverride = targetField.editruleoverride ?? '';
+} else {
+    if (selectedOption && selectedOption.optionname) {
+        targetField.id = String(selectedOption.optionid);
+        targetField.labelname = selectedOption.optionname;
+        targetField.value = selectedOption.optionname;
+        targetField.valueid = String(selectedOption.optionid);
+        targetField.type = targetField.fieldtypeid;
+        targetField.optionid = String(selectedOption.optionid);
+        targetField.optionvalue = [selectedOption];
+        targetField.issubfabric = targetField.issubfabric ?? '';
+        targetField.labelnamecode = targetField.labelnamecode ?? '';
+        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
+        targetField.widthfraction = "";
+        targetField.widthfractiontext = "";
+        targetField.dropfractiontext = "";
+        targetField.dropfraction = "";
+        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
+        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
+        targetField.optionquantity = "1";
+        targetField.globaledit = false;
+        targetField.numberfraction = targetField.numberfraction ?? '';
+        targetField.numberfractiontext = "";
+        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
+        targetField.mandatory = targetField.mandatory ?? '';
+        targetField.fieldname = targetField.fieldname ?? '';
+        targetField.fieldid = targetField.fieldid ?? '';
+        targetField.fieldInformation = targetField.fieldInformation ?? '';
+        targetField.optiondefault = targetField.optiondefault ?? '';
+        targetField.editruleoverride = targetField.editruleoverride ?? '';
     } else {
-      if(selectedOption.optionname){
-          targetField.value = selectedOption.optionname;
-          targetField.valueid = String(selectedOption.optionid);
-          targetField.optionvalue = [selectedOption];
-          targetField.optionquantity = "1";
-      }else{
-        targetField.value = selectedOption;
+        targetField.id = selectedOption ?? '';
+        targetField.labelname = "";
+        targetField.value = selectedOption ?? '';
         targetField.valueid = "";
+        targetField.type = targetField.fieldtypeid;
+        targetField.optionid = "";
         targetField.optionvalue = [];
-      }
+        targetField.issubfabric = targetField.issubfabric ?? '';
+        targetField.labelnamecode = targetField.labelnamecode ?? '';
+        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
+        targetField.widthfraction = "";
+        targetField.widthfractiontext = "";
+        targetField.dropfractiontext = "";
+        targetField.dropfraction = "";
+        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
+        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
+        targetField.optionquantity = "";
+        targetField.globaledit = false;
+        targetField.numberfraction = targetField.numberfraction ?? '';
+        targetField.numberfractiontext = "";
+        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
+        targetField.mandatory = targetField.mandatory ?? '';
+        targetField.fieldname = targetField.fieldname ?? '';
+        targetField.fieldid = targetField.fieldid ?? '';
+        targetField.fieldInformation = targetField.fieldInformation ?? '';
+        targetField.optiondefault = targetField.optiondefault ?? '';
+        targetField.editruleoverride = targetField.editruleoverride ?? '';
     }
+}
+
     
   }
 
@@ -904,7 +990,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+    console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }
