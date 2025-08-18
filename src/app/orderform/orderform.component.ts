@@ -476,20 +476,23 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
           .pipe(takeUntil(this.destroy$))
           .subscribe((filterData: any) => {
+            if(filterData[0].data.selectsupplierid){
               this.supplier_id = filterData[0].data.selectsupplierid;
-              console.log(this.supplier_id);
+               this.parameters_data.forEach(pField => {
+                 if (pField.fieldtypeid === 17) {
+                   const control = this.orderForm.get(`field_${pField.fieldid}`);
+                  if (control) {
+                    control.setValue(this.supplier_id, { emitEvent: false });
+                  }
+                }
+              });
+            }
           });
           this.parameters_data.forEach(pField => {
             if (pField.fieldtypeid === 13) {
               const control = this.orderForm.get(`field_${pField.fieldid}`);
               if (control) {
                 control.setValue(this.pricegroup, { emitEvent: false });
-              }
-            }else if (pField.fieldtypeid === 17) {
-               console.log(this.supplier_id+ ' asdsadsa' );
-               const control = this.orderForm.get(`field_${pField.fieldid}`);
-              if (control) {
-                control.setValue(this.supplier_id, { emitEvent: false });
               }
             }
           });
