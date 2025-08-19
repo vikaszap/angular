@@ -92,7 +92,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   private readonly MAX_NESTING_LEVEL = 8;
   private priceGroupField?: ProductField;
   private supplierField?: ProductField;
-
+  private qtyField?: ProductField;
   // Form / UI state
   isLoading = false;
   isSubmitting = false;
@@ -217,6 +217,14 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.initializeFormControls();
           this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
           this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
+          this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
+          if (this.qtyField) {
+            const control = this.orderForm.get(`field_${this.qtyField.fieldid}`);
+            if (control) {
+               control.setValue(1, { emitEvent: false});
+               this.updateFieldValues(this.qtyField, 1);
+            }
+          }
           return forkJoin([
             this.loadOptionData(params),
             this.apiService.getminandmax(
@@ -226,6 +234,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
               this.routeParams.pricing_group
             )
           ]);
+       
         }
         this.errorMessage = 'Invalid product data received';
         return of(null);
@@ -480,6 +489,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
             const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
             if (control) {
                control.setValue(this.pricegroup, { emitEvent: false});
+               this.updateFieldValues(this.priceGroupField, this.pricegroup);
             }
           }
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
@@ -490,6 +500,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
                 if (control) {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
+                  this.updateFieldValues(this.supplierField, this.supplier_id);
                 }
               }
           });
@@ -1003,7 +1014,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
         } else if (field && field.fieldtypeid === 34) {
           this.handleUnitTypeChange(values[key], params);
           this.handleRestOptionChange(params, field, values[key]);
-        }else if(field  && [14, 18, 6].includes(field.fieldtypeid)){
+        }else if(field  && [14, 18, 6,29].includes(field.fieldtypeid)){
            this.handleRestChange(params, field, values[key]);
         }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
            this.handleWidthChange(params, field, values[key]);
@@ -1013,7 +1024,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-    //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+    console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }
@@ -1025,6 +1036,8 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     }
 
     const totalWidth = Number(value) + fractionValue;
+    console.log(totalWidth);
+     console.log(field);
     this.updateFieldValues(field, totalWidth);
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {

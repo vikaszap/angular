@@ -238,7 +238,7 @@
                     </mat-form-field>
                   </div>
                 </div>
-                 <div *ngSwitchCase="'qty'">
+                 <div *ngSwitchCase="'qty'" style="display: none;">
                   <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>{{field.fieldname}}</mat-label>
@@ -251,7 +251,7 @@
                   </div>
                 </div>
                 <div *ngSwitchCase="'supplier'">
-                    <div class="parameter-wrapper">
+                    <div class="parameter-wrapper" style="display: none;">
                     <mat-form-field>
                       <mat-label>{{ field.fieldname }}</mat-label>
                       <mat-select
@@ -266,7 +266,7 @@
                     </mat-form-field>
                   </div>
                 </div>
-                <div *ngSwitchCase="'pricegroup'">
+                <div *ngSwitchCase="'pricegroup'" style="display: none;">
                     <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>{{ field.fieldname }}</mat-label>
