@@ -10,7 +10,39 @@ import { ApiService } from '../services/api.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
 
-// Interfaces (kept as you had them)
+// Interfaces
+interface JsonDataItem {
+  id: number;
+  labelname: string;
+  value: string;
+  valueid: string;
+  type: number;
+  optionid: any;
+  optionvalue: any[];
+  issubfabric: any;
+  labelnamecode: string;
+  fabricorcolor: any;
+  widthfraction: string;
+  widthfractiontext: string;
+  dropfractiontext: string;
+  dropfraction: string;
+  showfieldonjob: any;
+  showFieldOnCustomerPortal: any;
+  optionquantity: string;
+  globaledit: boolean;
+  numberfraction: any;
+  numberfractiontext: string;
+  fieldInformation: any;
+  editruleoverride: any;
+  fieldid: number;
+  mandatory: any;
+  fieldlevel?: number;
+  fieldname: string;
+  subchild?: ProductField[];
+  optiondefault: any;
+  optionsvalue?: any[];
+}
+
 interface ProductField {
   fieldid: number;
   fieldname: string;
@@ -97,6 +129,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
+  jsondata: JsonDataItem[] = [];
 
   // Product data
   showFractions = false;
@@ -900,101 +933,68 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
 
-  private updateFieldValues(field: ProductField, selectedOption: any =[]): void {
-    const fieldInState = this.parameters_data.find(f => 
-        f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
+  private updateFieldValues(field: ProductField, selectedOption: any = []): void {
+    const fieldInState = this.parameters_data.find(f =>
+      f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
     );
-  
-    const targetField = fieldInState || field; 
+    const targetField = fieldInState || field;
+
+    const baseData: Partial<JsonDataItem> = {
+      id: targetField.fieldid,
+      labelname: targetField.fieldname,
+      type: targetField.fieldtypeid,
+      optionid: '',
+      value: '',
+      valueid: '',
+      optionvalue: [],
+      issubfabric: targetField.issubfabric ?? '',
+      labelnamecode: targetField.labelnamecode ?? '',
+      fabricorcolor: targetField.fabricorcolor ?? '',
+      widthfraction: "",
+      widthfractiontext: "",
+      dropfractiontext: "",
+      dropfraction: "",
+      showfieldonjob: targetField.showfieldonjob ?? '',
+      showFieldOnCustomerPortal: targetField.showFieldOnCustomerPortal ?? '',
+      optionquantity: "1",
+      globaledit: false,
+      numberfraction: targetField.numberfraction ?? '',
+      numberfractiontext: "",
+      fieldInformation: targetField.fieldInformation ?? '',
+      editruleoverride: targetField.editruleoverride ?? '',
+      fieldid: targetField.fieldid,
+      mandatory: targetField.mandatory,
+      fieldlevel: targetField.level,
+      fieldname: targetField.fieldname,
+      subchild: targetField.subchild,
+      optiondefault: targetField.optiondefault,
+      optionsvalue: targetField.optionsvalue
+    };
 
     if (Array.isArray(selectedOption)) {
-      targetField.id = targetField.fieldid ?? '';
-      targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.type = targetField.fieldtypeid;
-      targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.optionvalue = selectedOption;
-      targetField.issubfabric = targetField.issubfabric ?? '';
-      targetField.labelnamecode = targetField.labelnamecode ?? '';
-      targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-      targetField.widthfraction = "";
-      targetField.widthfractiontext = "";
-      targetField.dropfractiontext = "";
-      targetField.dropfraction = "";
-      targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-      targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-      targetField.optionquantity = selectedOption.map(() => '1').join(',');
-      targetField.globaledit = false;
-      targetField.numberfraction = targetField.numberfraction ?? '';
-      targetField.numberfractiontext = "";
-      targetField.mandatory = targetField.mandatory ?? '';
-      targetField.fieldname = targetField.fieldname ?? '';
-      targetField.fieldid = targetField.fieldid ?? '';
-      targetField.fieldInformation = targetField.fieldInformation ?? '';
-      targetField.optiondefault = targetField.optiondefault ?? '';
-      targetField.editruleoverride = targetField.editruleoverride ?? '';
-} else {
-    if (selectedOption && selectedOption.optionname) {
-        targetField.id = targetField.fieldid ?? '';
-        targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = selectedOption.optionname;
-        targetField.valueid = String(selectedOption.optionid);
-        targetField.type = targetField.fieldtypeid;
-        targetField.optionid = String(selectedOption.optionid);
-        targetField.optionvalue = [selectedOption];
-        targetField.issubfabric = targetField.issubfabric ?? '';
-        targetField.labelnamecode = targetField.labelnamecode ?? '';
-        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-        targetField.widthfraction = "";
-        targetField.widthfractiontext = "";
-        targetField.dropfractiontext = "";
-        targetField.dropfraction = "";
-        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-        targetField.optionquantity = "1";
-        targetField.globaledit = false;
-        targetField.numberfraction = targetField.numberfraction ?? '';
-        targetField.numberfractiontext = "";
-        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
-        targetField.mandatory = targetField.mandatory ?? '';
-        targetField.fieldname = targetField.fieldname ?? '';
-        targetField.fieldid = targetField.fieldid ?? '';
-        targetField.fieldInformation = targetField.fieldInformation ?? '';
-        targetField.optiondefault = targetField.optiondefault ?? '';
-        targetField.editruleoverride = targetField.editruleoverride ?? '';
+      baseData.value = selectedOption.map(opt => opt.optionname).join(', ');
+      baseData.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      baseData.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      baseData.optionvalue = selectedOption;
+      baseData.optionquantity = selectedOption.map(() => '1').join(',');
+    } else if (selectedOption && selectedOption.optionname) {
+      baseData.value = selectedOption.optionname;
+      baseData.valueid = String(selectedOption.optionid);
+      baseData.optionid = String(selectedOption.optionid);
+      baseData.optionvalue = [selectedOption];
     } else {
-        targetField.id =  targetField.fieldid ?? '';
-        targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = selectedOption ?? '';
-        targetField.valueid = "";
-        targetField.type = targetField.fieldtypeid;
-        targetField.optionid = "";
-        targetField.optionvalue = [];
-        targetField.issubfabric = targetField.issubfabric ?? '';
-        targetField.labelnamecode = targetField.labelnamecode ?? '';
-        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-        targetField.widthfraction = "";
-        targetField.widthfractiontext = "";
-        targetField.dropfractiontext = "";
-        targetField.dropfraction = "";
-        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-        targetField.optionquantity = "";
-        targetField.globaledit = false;
-        targetField.numberfraction = targetField.numberfraction ?? '';
-        targetField.numberfractiontext = "";
-        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
-        targetField.mandatory = targetField.mandatory ?? '';
-        targetField.fieldname = targetField.fieldname ?? '';
-        targetField.fieldid = targetField.fieldid ?? '';
-        targetField.fieldInformation = targetField.fieldInformation ?? '';
-        targetField.optiondefault = targetField.optiondefault ?? '';
-        targetField.editruleoverride = targetField.editruleoverride ?? '';
+      baseData.value = String(selectedOption ?? '');
     }
-}
 
-    
+    const index = this.jsondata.findIndex(item => item.id === targetField.fieldid);
+
+    if (index > -1) {
+      this.jsondata[index] = { ...this.jsondata[index], ...baseData as JsonDataItem };
+    } else {
+      this.jsondata.push(baseData as JsonDataItem);
+    }
+
+    Object.assign(targetField, baseData);
   }
 
   /**
@@ -1107,7 +1107,12 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     this.isSubmitting = true;
     this.errorMessage = null;
 
-    this.apiService.addToCart(this.orderForm.value).pipe(
+    const payload = {
+      ...this.orderForm.value,
+      jsondata: this.jsondata
+    };
+
+    this.apiService.addToCart(payload).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
         this.isSubmitting = false;
