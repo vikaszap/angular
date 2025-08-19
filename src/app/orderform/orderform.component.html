@@ -120,7 +120,7 @@
                       [multiple]="field.selection == 1"
                       [attr.aria-label]="field.fieldname">
                       <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                      <mat-option *ngFor="let option of option_data[field.fieldid]"
+                      <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
                                   [value]="option.optionid">
                         
                         <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
