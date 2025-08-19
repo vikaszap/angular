@@ -34,7 +34,7 @@ interface ProductField {
   subchild?: ProductField[];
   optionquantity?: string;
   fieldlevel?: number;
-  id?: string;
+  id?: number;
   labelname?: string;
   type?: number;
   // extras from PHP structure
@@ -218,13 +218,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
           this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
           this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
-          if (this.qtyField) {
-            const control = this.orderForm.get(`field_${this.qtyField.fieldid}`);
-            if (control) {
-               control.setValue(1, { emitEvent: false});
-               this.updateFieldValues(this.qtyField, 1);
-            }
-          }
+         
           return forkJoin([
             this.loadOptionData(params),
             this.apiService.getminandmax(
@@ -241,6 +235,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
       }),
       tap((results) => {
         if (results) {
+            this.parameters_data.forEach(field => {
+                const control = this.orderForm.get(`field_${field.fieldid}`);
+                if (control) {
+                  if (this.qtyField && field.fieldid === this.qtyField.fieldid) {
+                    this.updateFieldValues(this.qtyField, 1);
+                    control.setValue(1, { emitEvent: false});
+                  } else {
+                    this.updateFieldValues(field, '');
+                  }
+                }
+              });
           const [_, minmaxdata] = results;
           if (minmaxdata?.data) {
             
@@ -349,7 +354,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 })
               )
             );
-          } else if ([14, 34, 17, 13].includes(field.fieldtypeid)) {
+          } else if ([14, 34, 17, 13,4].includes(field.fieldtypeid)) {
             // fields that don't need external option fetch but need default value set
             const control = this.orderForm.get(`field_${field.fieldid}`);
             if (control) {
@@ -427,7 +432,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
         });
 
         this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-          if ([34, 17, 13].includes(field.fieldtypeid)) {
+          if ([34, 17, 13,4].includes(field.fieldtypeid)) {
             return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
           } else if ([3, 5, 20].includes(field.fieldtypeid)) {
             return this.option_data[field.fieldid]?.length > 0;
@@ -903,7 +908,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     const targetField = fieldInState || field; 
 
     if (Array.isArray(selectedOption)) {
-      targetField.id = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.id = targetField.fieldid ?? '';
       targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
       targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
       targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
@@ -931,8 +936,8 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       targetField.editruleoverride = targetField.editruleoverride ?? '';
 } else {
     if (selectedOption && selectedOption.optionname) {
-        targetField.id = String(selectedOption.optionid);
-        targetField.labelname = selectedOption.optionname;
+        targetField.id = targetField.fieldid ?? '';
+        targetField.labelname = targetField.fieldname ?? '';
         targetField.value = selectedOption.optionname;
         targetField.valueid = String(selectedOption.optionid);
         targetField.type = targetField.fieldtypeid;
@@ -959,8 +964,8 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
         targetField.optiondefault = targetField.optiondefault ?? '';
         targetField.editruleoverride = targetField.editruleoverride ?? '';
     } else {
-        targetField.id = selectedOption ?? '';
-        targetField.labelname = "";
+        targetField.id =  targetField.fieldid ?? '';
+        targetField.labelname = targetField.fieldname ?? '';
         targetField.value = selectedOption ?? '';
         targetField.valueid = "";
         targetField.type = targetField.fieldtypeid;
@@ -1171,6 +1176,8 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       '21': 'materials',
       '25': 'accessories_list',
       '20': 'materials',
+      '4' : 'list',
+      '29' : 'text'
     };
 
     return field_types[chosen_field_type_id] || '';
