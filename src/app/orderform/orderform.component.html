@@ -251,7 +251,7 @@
                   </div>
                 </div>
                 <div *ngSwitchCase="'supplier'">
-                    <div class="parameter-wrapper" style="display: none;">
+                    <div class="parameter-wrapper" >
                     <mat-form-field>
                       <mat-label>{{ field.fieldname }}</mat-label>
                       <mat-select
@@ -266,7 +266,7 @@
                     </mat-form-field>
                   </div>
                 </div>
-                <div *ngSwitchCase="'pricegroup'" style="display: none;">
+                <div *ngSwitchCase="'pricegroup'" >
                     <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>{{ field.fieldname }}</mat-label>
@@ -311,7 +311,7 @@
                       name="submit-btn" 
                       value="Submit" 
                       class="add_to_cart_button" 
-                      [disabled]="!orderForm.valid || isSubmitting">
+                      >
                 <i class="fa-solid fa-cart-shopping"></i> 
                 {{ isSubmitting ? 'Adding...' : 'Add to cart' }}
               </button>

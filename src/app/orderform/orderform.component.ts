@@ -946,7 +946,6 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       optionid: '',
       value: '',
       valueid: '',
-      optionvalue: [],
       issubfabric: targetField.issubfabric ?? '',
       labelnamecode: targetField.labelnamecode ?? '',
       fabricorcolor: targetField.fabricorcolor ?? '',
@@ -968,20 +967,19 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       fieldname: targetField.fieldname,
       subchild: targetField.subchild,
       optiondefault: targetField.optiondefault,
-      optionsvalue: targetField.optionsvalue
+      optionsvalue: targetField.optionsvalue,
+      optionvalue: targetField.optionvalue
     };
 
     if (Array.isArray(selectedOption)) {
       baseData.value = selectedOption.map(opt => opt.optionname).join(', ');
       baseData.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
       baseData.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      baseData.optionvalue = selectedOption;
       baseData.optionquantity = selectedOption.map(() => '1').join(',');
     } else if (selectedOption && selectedOption.optionname) {
       baseData.value = selectedOption.optionname;
       baseData.valueid = String(selectedOption.optionid);
       baseData.optionid = String(selectedOption.optionid);
-      baseData.optionvalue = [selectedOption];
     } else {
       baseData.value = String(selectedOption ?? '');
     }
@@ -1099,6 +1097,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   }
 
   onSubmit(): void {
+    console.log(this.jsondata);
     if (this.orderForm.invalid || this.isSubmitting) {
       this.markFormGroupTouched(this.orderForm);
       return;
