@@ -14,28 +14,29 @@ import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray 
 interface JsonDataItem {
   id: number;
   labelname: string;
-  value: string;
-  valueid: string;
+  value: any;
+  valueid: any;
   type: number;
   optionid: any;
   optionvalue: any[];
-  issubfabric: any;
+  issubfabric: number;
+  fieldtypeid: any;
   labelnamecode: string;
-  fabricorcolor: any;
-  widthfraction: string;
-  widthfractiontext: string;
-  dropfractiontext: string;
-  dropfraction: string;
-  showfieldonjob: any;
-  showFieldOnCustomerPortal: any;
-  optionquantity: string;
+  fabricorcolor: number;
+  widthfraction: any;
+  widthfractiontext: any;
+  dropfractiontext: any;
+  dropfraction: any;
+  showfieldonjob: number;
+  showFieldOnCustomerPortal: number;
+  optionquantity: any;
   globaledit: boolean;
   numberfraction: any;
-  numberfractiontext: string;
+  numberfractiontext: any;
   fieldInformation: any;
   editruleoverride: any;
   fieldid: number;
-  mandatory: any;
+  mandatory: number;
   fieldlevel?: number;
   fieldname: string;
   subchild?: ProductField[];
@@ -47,21 +48,21 @@ interface ProductField {
   fieldid: number;
   fieldname: string;
   labelnamecode: string;
-  fieldtypeid: number;
+  fieldtypeid: any;
   showfieldonjob: number;
   showfieldecomonjob: number;
   optiondefault?: string;
   optionsvalue?: any[];
   value?: string;
   selection?: any;
-  mandatory?: any;
+  mandatory?: number;
   valueid?: string;
   optionid?: any;
   level?: number;
   parentFieldId?: number;
   masterparentfieldid?: number;
   allparentFieldId?: string;
-  field_has_sub_option?: boolean;
+  field_has_sub_option?: number;
   optionvalue?: any[];
   subchild?: ProductField[];
   optionquantity?: string;
@@ -70,18 +71,19 @@ interface ProductField {
   labelname?: string;
   type?: number;
   // extras from PHP structure
-  issubfabric?: any;
-  fabricorcolor?: any;
-  widthfraction?: string;
-  widthfractiontext?: string;
-  dropfractiontext?: string;
-  dropfraction?: string;
-  showFieldOnCustomerPortal?: any;
+  issubfabric?: number;
+  fabricorcolor?: number;
+  widthfraction?: any;
+  widthfractiontext?: any;
+  dropfractiontext?: any;
+  dropfraction?: any;
+  showFieldOnCustomerPortal?: number;
   globaledit?: boolean;
   numberfraction?: any;
-  numberfractiontext?: string;
+  numberfractiontext?: any;
   fieldInformation?: any;
   editruleoverride?: any;
+  ruleoverride?:any;
 }
 
 interface ProductOption {
@@ -93,8 +95,11 @@ interface ProductOption {
   fieldoptionlinkid: number;
   availableForEcommerce?: number;
   pricegroups: string;
-  optionid_pricegroupid:string;
-  pricegroupid:string;
+  optionid_pricegroupid: string;
+  pricegroupid: string;
+  optioncode?: string;
+  optionquantity?: number;
+  forchildfieldoptionlinkid?: string;
 }
 
 interface FractionOption {
@@ -190,6 +195,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
+
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -235,7 +241,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
   
- private fetchInitialData(params: any): void {
+  private fetchInitialData(params: any): void {
     this.isLoading = true;
     this.errorMessage = null;
 
@@ -299,7 +305,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
         this.cd.markForCheck();
       })
     ).subscribe();
-}
+  }
 
   private initializeFormControls(): void {
    
@@ -333,7 +339,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
-    //console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(values => {
@@ -486,7 +491,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
    * Called whenever a field's option selection changes (top-level or subfield).
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
- private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
+  private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
@@ -553,7 +558,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
     }
   }
 
-    private updateMinMaxValidators(): void {
+  private updateMinMaxValidators(): void {
     this.apiService.getminandmax(this.routeParams, String(this.colorid), this.unittype, Number(this.pricegroup))
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
@@ -579,6 +584,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
         }
       });
   }
+
   /**
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */
@@ -624,88 +630,77 @@ export class OrderformComponent implements OnInit, OnDestroy {
   /**
    * Insert subfield into parameters_data (if not already present), add form control, and load its options.
    */
-private processSubfield(
-  params: any,
-  subfield: ProductField,
-  parentField: ProductField,
-  level: number
-): Observable<any> {
-  subfield.parentFieldId = parentField.fieldid;
-  subfield.level = level;
-  subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-  subfield.allparentFieldId = parentField.allparentFieldId
-    ? `${parentField.allparentFieldId},${subfield.fieldid}`
-    : `${parentField.fieldid},${subfield.fieldid}`;
+  private processSubfield(
+    params: any,
+    subfield: ProductField,
+    parentField: ProductField,
+    level: number
+  ): Observable<any> {
+    subfield.parentFieldId = parentField.fieldid;
+    subfield.level = level;
+    subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
+    subfield.allparentFieldId = parentField.allparentFieldId
+      ? `${parentField.allparentFieldId},${subfield.fieldid}`
+      : `${parentField.fieldid},${subfield.fieldid}`;
 
-  // --- parameters_data (flat list) ---
-  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-  if (!alreadyExistsFlat) {
-    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
-    if (parentIndex !== -1) {
-      this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
+    // --- parameters_data (flat list) ---
+    const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+    if (!alreadyExistsFlat) {
+      const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
+      if (parentIndex !== -1) {
+        this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
+      } else {
+        this.parameters_data.push({ ...subfield });
+      }
     } else {
-      this.parameters_data.push({ ...subfield });
+      const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+      if (existingFlat) {
+        existingFlat.parentFieldId = subfield.parentFieldId;
+        existingFlat.level = subfield.level;
+        existingFlat.masterparentfieldid = subfield.masterparentfieldid;
+        existingFlat.allparentFieldId = subfield.allparentFieldId;
+      }
     }
-    //console.log('Added subfield to parameters_data:', subfield.fieldid);
-  } else {
-    const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-    if (existingFlat) {
-      existingFlat.parentFieldId = subfield.parentFieldId;
-      existingFlat.level = subfield.level;
-      existingFlat.masterparentfieldid = subfield.masterparentfieldid;
-      existingFlat.allparentFieldId = subfield.allparentFieldId;
+
+    // --- parentField.subchild (nested list) ---
+    if (!parentField.subchild) {
+      parentField.subchild = [];
     }
-  }
 
-  // --- parentField.subchild (nested list) ---
-  if (!parentField.subchild) {
-    parentField.subchild = [];
-  }
-
-  const alreadyExistsNested = parentField.subchild.some(
-    f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-  );
-
-  if (!alreadyExistsNested) {
-    parentField.subchild.push({ ...subfield });
-    /*
-    console.log(
-      'Added subfield:',
-      subfield.fieldid,
-      'to parent:',
-      parentField.fieldid,
-      '. Current state:',
-      JSON.parse(JSON.stringify(this.parameters_data))
-    );
-    */
-  } else {
-    const existingNested = parentField.subchild.find(
+    const alreadyExistsNested = parentField.subchild.some(
       f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
     );
-    if (existingNested) {
-      existingNested.parentFieldId = subfield.parentFieldId;
-      existingNested.level = subfield.level;
-      existingNested.masterparentfieldid = subfield.masterparentfieldid;
-      existingNested.allparentFieldId = subfield.allparentFieldId;
+
+    if (!alreadyExistsNested) {
+      parentField.subchild.push({ ...subfield });
+    } else {
+      const existingNested = parentField.subchild.find(
+        f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
+      );
+      if (existingNested) {
+        existingNested.parentFieldId = subfield.parentFieldId;
+        existingNested.level = subfield.level;
+        existingNested.masterparentfieldid = subfield.masterparentfieldid;
+        existingNested.allparentFieldId = subfield.allparentFieldId;
+      }
+    }
+
+    // --- Form control ---
+    this.addSubfieldFormControlSafe(subfield);
+
+    if (subfield.field_has_sub_option) {
+      return this.loadSubfieldOptions(params, subfield).pipe(
+        map(res => res || null),
+        catchError(err => {
+            console.error('Error in processSubfield:', err);
+            this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
+            return of(null);
+          })
+      );
+    } else {
+      return of(null);
     }
   }
-
-  // --- Form control ---
-  this.addSubfieldFormControlSafe(subfield);
-
-  if (subfield.field_has_sub_option) {
-    return this.loadSubfieldOptions(params, subfield).pipe(
-      map(res => res || null),
-      catchError(err => {
-          console.error('Error in processSubfield:', err);
-          this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
-          return of(null);
-        })
-    );
-  } else {
-    return of(null);
-  }
-}
 
   /**
    * Load options for a subfield using filterbasedlist + getOptionlist
@@ -824,176 +819,219 @@ private processSubfield(
   /**
    * Remove a field from parameters_data and the form safely.
    */
-private removeFieldSafely(fieldId: number, fieldPath?: string): void {
-  if (!fieldPath) {
-    const field = this.parameters_data.find(f => f.fieldid === fieldId);
-    if (!field) return;
-    fieldPath = field.allparentFieldId || fieldId.toString();
-  }
-
-  this.parameters_data = this.parameters_data.filter(
-    f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
-  );
-
-  const controlName = `field_${fieldId}`;
-  if (this.orderForm.contains(controlName)) {
-    this.orderForm.removeControl(controlName);
-  }
-
-  if (this.option_data[fieldId]) {
-    delete this.option_data[fieldId];
-  }
-
-  this.cd.markForCheck();
-}
-
-private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
-  // 1. Determine the parent path
-  if (!parentPath) {
-    const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (!parent) return;
-    parentPath = parent.allparentFieldId || parent.fieldid.toString();
-  }
-
-  // 2. Special handling for main field (has no parentFieldId)
-  const isMainField = !this.parameters_data.some(f => 
-    f.fieldid === parentFieldId && f.parentFieldId
-  );
-
-  // 3. Find fields to remove - different matching for main vs nested fields
-  const fieldsToRemove = this.parameters_data.filter(f => {
-    if (!f.allparentFieldId) return false;
-    
-    if (isMainField) {
-      // For main field, match either:
-      // - Direct children: allparentFieldId === "mainId"
-      // - Descendants: allparentFieldId.startsWith("mainId,")
-      return f.allparentFieldId === parentPath || 
-             f.allparentFieldId.startsWith(`${parentPath},`);
-    } else {
-      // For nested fields, only match proper descendants
-      return f.allparentFieldId.startsWith(`${parentPath},`);
+  private removeFieldSafely(fieldId: number, fieldPath?: string): void {
+    if (!fieldPath) {
+      const field = this.parameters_data.find(f => f.fieldid === fieldId);
+      if (!field) return;
+      fieldPath = field.allparentFieldId || fieldId.toString();
     }
-  });
 
-  if (fieldsToRemove.length === 0) return;
+    this.parameters_data = this.parameters_data.filter(
+      f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
+    );
 
-  // 4. Remove from flat list
-  this.parameters_data = this.parameters_data.filter(f => 
-    !fieldsToRemove.some(toRemove => 
-      toRemove.fieldid === f.fieldid && 
-      toRemove.allparentFieldId === f.allparentFieldId
-    )
-  );
-
-  // 5. Clean nested structure
-  this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
-
-  // 6. Remove form controls and clean up
-  fieldsToRemove.forEach(field => {
-    const controlName = `field_${field.fieldid}`;
+    const controlName = `field_${fieldId}`;
     if (this.orderForm.contains(controlName)) {
       this.orderForm.removeControl(controlName);
     }
-    delete this.option_data[field.fieldid];
-  });
 
-  this.cd.markForCheck();
-}
-
-private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
-  const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
-
-  // Handle main field specially
-  if (isMainField) {
-    const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (mainField?.subchild) {
-      mainField.subchild = mainField.subchild.filter(child => 
-        !fieldsToRemoveSet.has(child.fieldid)
-      );
+    if (this.option_data[fieldId]) {
+      delete this.option_data[fieldId];
     }
-    return;
+
+    this.cd.markForCheck();
   }
 
-  // Recursive cleaner for nested fields
-  const cleanSubchild = (field: ProductField) => {
-    if (!field.subchild) return;
-    
-    field.subchild = field.subchild.filter(child => 
-      !fieldsToRemoveSet.has(child.fieldid)
-    );
-    
-    field.subchild.forEach(cleanSubchild);
-  };
+  private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
+    // 1. Determine the parent path
+    if (!parentPath) {
+      const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
+      if (!parent) return;
+      parentPath = parent.allparentFieldId || parent.fieldid.toString();
+    }
 
-  this.parameters_data.forEach(cleanSubchild);
-}
+    // 2. Special handling for main field (has no parentFieldId)
+    const isMainField = !this.parameters_data.some(f => 
+      f.fieldid === parentFieldId && f.parentFieldId
+    );
+
+    // 3. Find fields to remove - different matching for main vs nested fields
+    const fieldsToRemove = this.parameters_data.filter(f => {
+      if (!f.allparentFieldId) return false;
+      
+      if (isMainField) {
+        // For main field, match either:
+        // - Direct children: allparentFieldId === "mainId"
+        // - Descendants: allparentFieldId.startsWith("mainId,")
+        return f.allparentFieldId === parentPath || 
+               f.allparentFieldId.startsWith(`${parentPath},`);
+      } else {
+        // For nested fields, only match proper descendants
+        return f.allparentFieldId.startsWith(`${parentPath},`);
+      }
+    });
+
+    if (fieldsToRemove.length === 0) return;
+
+    // 4. Remove from flat list
+    this.parameters_data = this.parameters_data.filter(f => 
+      !fieldsToRemove.some(toRemove => 
+        toRemove.fieldid === f.fieldid && 
+        toRemove.allparentFieldId === f.allparentFieldId
+      )
+    );
+
+    // 5. Clean nested structure
+    this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
+
+    // 6. Remove form controls and clean up
+    fieldsToRemove.forEach(field => {
+      const controlName = `field_${field.fieldid}`;
+      if (this.orderForm.contains(controlName)) {
+        this.orderForm.removeControl(controlName);
+      }
+      delete this.option_data[field.fieldid];
+    });
+
+    this.cd.markForCheck();
+  }
+
+  private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
+    const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
+
+    // Handle main field specially
+    if (isMainField) {
+      const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
+      if (mainField?.subchild) {
+        mainField.subchild = mainField.subchild.filter(child => 
+          !fieldsToRemoveSet.has(child.fieldid)
+        );
+      }
+      return;
+    }
+
+    // Recursive cleaner for nested fields
+    const cleanSubchild = (field: ProductField) => {
+      if (!field.subchild) return;
+      
+      field.subchild = field.subchild.filter(child => 
+        !fieldsToRemoveSet.has(child.fieldid)
+      );
+      
+      field.subchild.forEach(cleanSubchild);
+    };
+
+    this.parameters_data.forEach(cleanSubchild);
+  }
 
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
+   * This is the main fix for the JSON structure issue.
    */
+private updateFieldValues(field: ProductField, selectedOption: any = []): void {
+  const fieldInState = this.parameters_data.find(f =>
+    f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
+  );
+  const targetField = fieldInState || field;
 
-  private updateFieldValues(field: ProductField, selectedOption: any = []): void {
-    const fieldInState = this.parameters_data.find(f =>
-      f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
-    );
-    const targetField = fieldInState || field;
+  // ✅ Prepare optlinkarray and optqtyarray safely
+  const optlinkarray = Array.isArray(selectedOption)
+    ? selectedOption.map((opt: any) => opt.optionid)
+    : selectedOption && selectedOption.optionid
+      ? [selectedOption.optionid]
+      : [];
 
-    const baseData: Partial<JsonDataItem> = {
-      id: targetField.fieldid,
-      labelname: targetField.fieldname,
-      type: targetField.fieldtypeid,
-      optionid: '',
-      value: '',
-      valueid: '',
-      issubfabric: targetField.issubfabric ?? '',
-      labelnamecode: targetField.labelnamecode ?? '',
-      fabricorcolor: targetField.fabricorcolor ?? '',
-      widthfraction: "",
-      widthfractiontext: "",
-      dropfractiontext: "",
-      dropfraction: "",
-      showfieldonjob: targetField.showfieldonjob ?? '',
-      showFieldOnCustomerPortal: targetField.showFieldOnCustomerPortal ?? '',
-      optionquantity: "1",
-      globaledit: false,
-      numberfraction: targetField.numberfraction ?? '',
-      numberfractiontext: "",
-      fieldInformation: targetField.fieldInformation ?? '',
-      editruleoverride: targetField.editruleoverride ?? '',
-      fieldid: targetField.fieldid,
-      mandatory: targetField.mandatory,
-      fieldlevel: targetField.level,
-      fieldname: targetField.fieldname,
-      subchild: targetField.subchild,
-      optiondefault: targetField.optiondefault,
-      optionsvalue: targetField.optionsvalue,
-      optionvalue: targetField.optionvalue
-    };
+  const optqtyarray = Array.isArray(selectedOption)
+    ? selectedOption.map((opt: any) => opt.quantity ?? 1)
+    : selectedOption && selectedOption.quantity
+      ? [selectedOption.quantity]
+      : [];
 
-    if (Array.isArray(selectedOption)) {
-      baseData.value = selectedOption.map(opt => opt.optionname).join(', ');
-      baseData.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      baseData.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      baseData.optionquantity = selectedOption.map(() => '1').join(',');
-    } else if (selectedOption && selectedOption.optionname) {
-      baseData.value = selectedOption.optionname;
-      baseData.valueid = String(selectedOption.optionid);
-      baseData.optionid = String(selectedOption.optionid);
-    } else {
-      baseData.value = String(selectedOption ?? '');
-    }
+  // ✅ Safe filter function for optionvalue / optionsvalue
+const filterOptions = (optiondefault: any, options?: any[]) => {
+  const optDefaultStr = String(optiondefault ?? '');
+  return (options ?? []).filter(el => optDefaultStr.includes(String(el.optionid ?? '')));
+};
 
-    const index = this.jsondata.findIndex(item => item.id === targetField.fieldid);
+  // Handle number fraction & width/drop fractions if defined
+  const numberFraction = targetField.numberfraction ?? null;
+  const numberFractionText = targetField.numberfractiontext ?? null;
+  const widthfraction = targetField.widthfraction ?? null;
+  const widthfractiontext = targetField.widthfractiontext ?? null;
+  const dropfraction = targetField.dropfraction ?? null;
+  const dropfractiontext = targetField.dropfractiontext ?? null;
 
-    if (index > -1) {
-      this.jsondata[index] = { ...this.jsondata[index], ...baseData as JsonDataItem };
-    } else {
-      this.jsondata.push(baseData as JsonDataItem);
-    }
+  // ✅ Base formatted object
+  const formattedData: any = {
+    id: +targetField.fieldid,
+    labelname: targetField.fieldname,
+    value: this.orderForm.value[targetField.fieldid.toString()] || '',
+    valueid: targetField.optiondefault ?  [...new Set(optlinkarray.toString().split(','))].join(',') : '',
+    type: targetField.fieldtypeid,
+    optionid: targetField.optiondefault ? targetField.optiondefault : '',
+    optionvalue: [],
+    issubfabric: targetField.issubfabric ?? 0,
+    labelnamecode: targetField.labelnamecode,
+    fabricorcolor: targetField.fabricorcolor,
+    widthfraction,
+    widthfractiontext,
+    dropfraction,
+    dropfractiontext,
+    showfieldonjob: targetField.showfieldonjob,
+    showFieldOnCustomerPortal: targetField.showFieldOnCustomerPortal,
+    optionquantity: targetField.optionquantity,
+    globaledit: false,
+    numberfraction: numberFraction,
+    numberfractiontext: numberFractionText,
+    fieldlevel: targetField.fieldlevel,
+    fieldtypeid: targetField.fieldtypeid,
+    mandatory: targetField.mandatory,
+    fieldname: targetField.fieldname,
+    fieldid: targetField.fieldid,
+    subchild: targetField.subchild,
+    fieldInformation: targetField.fieldInformation,
+    ruleoverride: targetField.ruleoverride,
+    optiondefault: targetField.optiondefault || '',
+    optionsvalue: filterOptions(targetField.optiondefault, targetField.optionsvalue),
+    editruleoverride: targetField.editruleoverride === 1 ? 1 : 0
+  };
 
-    Object.assign(targetField, baseData);
+  // ✅ Handle selectedOption based on type
+  if (Array.isArray(selectedOption)) {
+    // Multiple selection
+    formattedData.value = selectedOption.map(opt => opt.optionname).join(', ');
+    formattedData.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+    formattedData.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
+    formattedData.optionvalue = selectedOption;
+    formattedData.optionquantity = selectedOption.map(opt => String(opt.quantity ?? 1)).join(',');
+  } else if (selectedOption && typeof selectedOption === 'object' && selectedOption.optionid) {
+    // Single object selection
+    formattedData.value = selectedOption.optionid;
+    formattedData.valueid = String(selectedOption.optionid);
+    formattedData.optionid = String(selectedOption.optionid);
+    formattedData.optionvalue = [selectedOption];
+    formattedData.optionquantity = String(selectedOption.quantity ?? 1);
+  } else if (selectedOption !== null && selectedOption !== undefined && selectedOption !== '') {
+    // Primitive value (string, number, etc.)
+    formattedData.value = String(selectedOption);
+    formattedData.valueid = String(selectedOption);
+    formattedData.optionid = String(selectedOption);
+  } else {
+    // Fall back to optiondefault if nothing selected
+    formattedData.optionvalue = filterOptions(targetField.optiondefault, targetField.optionsvalue);
+    formattedData.optionid = String(targetField.optiondefault ?? '');
+    formattedData.valueid = String(targetField.optiondefault ?? '');
   }
+  
+  // ✅ Update or add in jsondata array
+  const index = this.jsondata.findIndex(item => item.id === targetField.fieldid);
+  if (index > -1) {
+    this.jsondata[index] = { ...this.jsondata[index], ...formattedData };
+  } else {
+    this.jsondata.push(formattedData);
+  }
+
+}
 
   /**
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
@@ -1017,20 +1055,20 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
         } else if (field && field.fieldtypeid === 34) {
           this.handleUnitTypeChange(values[key], params);
           this.handleRestOptionChange(params, field, values[key]);
-        }else if(field  && [14, 18, 6,29].includes(field.fieldtypeid)){
+        } else if(field  && [14, 18, 6,29].includes(field.fieldtypeid)){
            this.handleRestChange(params, field, values[key]);
-        }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
+        } else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
            this.handleWidthChange(params, field, values[key]);
-        }if(field  && [9,12,32].includes(field.fieldtypeid)){
+        } else if(field  && [9,12,32].includes(field.fieldtypeid)){
            this.handleDropChange(params, field, values[key]);
-        }else if(field) {
+        } else if(field) {
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-    console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }
+
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
 
@@ -1039,10 +1077,9 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     }
 
     const totalWidth = Number(value) + fractionValue;
-    console.log(totalWidth);
-     console.log(field);
     this.updateFieldValues(field, totalWidth);
   }
+
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
     
@@ -1068,9 +1105,11 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
 
     this.updateFieldValues(field, [selectedOption]);
   }
+
   private handleRestChange(params: any, field: ProductField, value: any): void {
-      this.updateFieldValues(field, value);
+    this.updateFieldValues(field, value);
   }
+
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.unittype =  unitValue;
