@@ -253,32 +253,10 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.apiUrl = params.api_url;
           this.routeParams = params;
           this.parameters_data.forEach(field => {
-              if (!field.subchild) {
-                field.subchild = [];
-              } else {
-                if (!Array.isArray(field.subchild)) {
-                  field.subchild = [];
-                }
-                field.subchild.forEach((subchildField: ProductField) => {
-                    if (!subchildField.allparentFieldId) {
-                      subchildField.allparentFieldId = `${field.fieldid},${subchildField.fieldid}`;
-                    }
-                    if (!subchildField.masterparentfieldid) {
-                      subchildField.masterparentfieldid = field.masterparentfieldid || field.fieldid;
-                    }
-                    if (!subchildField.level) {
-                      subchildField.level = (field.level || 1) + 1;
-                    }
-                    if (!subchildField.parentFieldId) {
-                      subchildField.parentFieldId = field.fieldid;
-                    }
-                    if (!subchildField.subchild) {
-                      subchildField.subchild = [];
-                    }
-                  });
-                }
-            });
+            this.initializeSubfieldProperties(field, 1);
+          });
           this.initializeFormControls();
+           
           this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
           this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
           this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
@@ -516,6 +494,23 @@ export class OrderformComponent implements OnInit, OnDestroy {
    * Called whenever a field's option selection changes (top-level or subfield).
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
+  private initializeSubfieldProperties(field: ProductField, level: number, parent?: ProductField): void {
+    field.level = level;
+    if (parent) {
+      const parentPath = parent.allparentFieldId || String(parent.fieldid);
+      field.parentFieldId = parent.fieldid;
+      field.masterparentfieldid = parent.masterparentfieldid || parent.fieldid;
+      field.allparentFieldId = `${parentPath},${field.fieldid}`;
+    }
+
+    if (!field.subchild) {
+      field.subchild = [];
+    } else if (Array.isArray(field.subchild)) {
+      field.subchild.forEach(child => {
+        this.initializeSubfieldProperties(child, level + 1, field);
+      });
+    }
+  }
   private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
     if (!field) return;
 
