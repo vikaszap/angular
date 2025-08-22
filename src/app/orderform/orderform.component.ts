@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
 interface ProductField {
@@ -597,81 +597,71 @@ private processSubfield(
   parentField: ProductField,
   level: number
 ): Observable<any> {
-  subfield.parentFieldId = parentField.fieldid;
-  subfield.level = level;
-  subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-  subfield.allparentFieldId = parentField.allparentFieldId
-    ? `${parentField.allparentFieldId},${subfield.fieldid}`
-    : `${parentField.fieldid},${subfield.fieldid}`;
+  const apiChildren = subfield.subchild;
+  const subfieldForState = { ...subfield, subchild: [] as ProductField[] };
 
-  // --- parameters_data (flat list) ---
-  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+  subfieldForState.parentFieldId = parentField.fieldid;
+  subfieldForState.level = level;
+  subfieldForState.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
+  subfieldForState.allparentFieldId = parentField.allparentFieldId
+    ? `${parentField.allparentFieldId},${subfieldForState.fieldid}`
+    : `${parentField.fieldid},${subfieldForState.fieldid}`;
+
+  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
   if (!alreadyExistsFlat) {
-    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
+    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
     if (parentIndex !== -1) {
-      this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
+      this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
     } else {
-      this.parameters_data.push({ ...subfield });
+      this.parameters_data.push(subfieldForState);
     }
-    //console.log('Added subfield to parameters_data:', subfield.fieldid);
   } else {
-    const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
+    const existingFlat = this.parameters_data.find(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
     if (existingFlat) {
-      existingFlat.parentFieldId = subfield.parentFieldId;
-      existingFlat.level = subfield.level;
-      existingFlat.masterparentfieldid = subfield.masterparentfieldid;
-      existingFlat.allparentFieldId = subfield.allparentFieldId;
+      existingFlat.parentFieldId = subfieldForState.parentFieldId;
+      existingFlat.level = subfieldForState.level;
+      existingFlat.masterparentfieldid = subfieldForState.masterparentfieldid;
+      existingFlat.allparentFieldId = subfieldForState.allparentFieldId;
     }
   }
 
-  // --- parentField.subchild (nested list) ---
   if (!parentField.subchild) {
     parentField.subchild = [];
   }
-
-  const alreadyExistsNested = parentField.subchild.some(
-    f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-  );
-
+  const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
   if (!alreadyExistsNested) {
-    parentField.subchild.push({ ...subfield });
-    /*
-    console.log(
-      'Added subfield:',
-      subfield.fieldid,
-      'to parent:',
-      parentField.fieldid,
-      '. Current state:',
-      JSON.parse(JSON.stringify(this.parameters_data))
-    );
-    */
+    parentField.subchild.push(subfieldForState);
   } else {
-    const existingNested = parentField.subchild.find(
-      f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-    );
+    const existingNested = parentField.subchild.find(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
     if (existingNested) {
-      existingNested.parentFieldId = subfield.parentFieldId;
-      existingNested.level = subfield.level;
-      existingNested.masterparentfieldid = subfield.masterparentfieldid;
-      existingNested.allparentFieldId = subfield.allparentFieldId;
+      existingNested.parentFieldId = subfieldForState.parentFieldId;
+      existingNested.level = subfieldForState.level;
+      existingNested.masterparentfieldid = subfieldForState.masterparentfieldid;
+      existingNested.allparentFieldId = subfieldForState.allparentFieldId;
     }
   }
 
-  // --- Form control ---
-  this.addSubfieldFormControlSafe(subfield);
+  this.addSubfieldFormControlSafe(subfieldForState);
 
-  if (subfield.field_has_sub_option) {
-    return this.loadSubfieldOptions(params, subfield).pipe(
-      map(res => res || null),
-      catchError(err => {
-          console.error('Error in processSubfield:', err);
-          this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
-          return of(null);
-        })
-    );
-  } else {
-    return of(null);
-  }
+  const children$: Observable<any> = (Array.isArray(apiChildren) && apiChildren.length > 0)
+    ? from(apiChildren).pipe(
+        concatMap((child: ProductField) => this.processSubfield(params, child, subfieldForState, level + 1)),
+        toArray()
+      )
+    : of(null);
+
+  const options$: Observable<any> = subfieldForState.field_has_sub_option
+    ? this.loadSubfieldOptions(params, subfieldForState)
+    : of(null);
+
+  return children$.pipe(
+    switchMap(() => options$),
+    catchError(err => {
+      console.error('Error in processSubfield:', err);
+      this.removeFieldSafely(subfieldForState.fieldid, subfieldForState.allparentFieldId);
+      return of(null);
+    })
+  );
 }
 
   /**
