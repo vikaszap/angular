@@ -608,38 +608,21 @@ private processSubfield(
     : `${parentField.fieldid},${subfieldForState.fieldid}`;
 
   const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-  if (!alreadyExistsFlat) {
-    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
-    if (parentIndex !== -1) {
-      this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
-    } else {
-      this.parameters_data.push(subfieldForState);
-    }
+  if (alreadyExistsFlat) {
+    return of(null);
+  }
+
+  const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
+  if (parentIndex !== -1) {
+    this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
   } else {
-    const existingFlat = this.parameters_data.find(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-    if (existingFlat) {
-      existingFlat.parentFieldId = subfieldForState.parentFieldId;
-      existingFlat.level = subfieldForState.level;
-      existingFlat.masterparentfieldid = subfieldForState.masterparentfieldid;
-      existingFlat.allparentFieldId = subfieldForState.allparentFieldId;
-    }
+    this.parameters_data.push(subfieldForState);
   }
 
   if (!parentField.subchild) {
     parentField.subchild = [];
   }
-  const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-  if (!alreadyExistsNested) {
-    parentField.subchild.push(subfieldForState);
-  } else {
-    const existingNested = parentField.subchild.find(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-    if (existingNested) {
-      existingNested.parentFieldId = subfieldForState.parentFieldId;
-      existingNested.level = subfieldForState.level;
-      existingNested.masterparentfieldid = subfieldForState.masterparentfieldid;
-      existingNested.allparentFieldId = subfieldForState.allparentFieldId;
-    }
-  }
+  parentField.subchild.push(subfieldForState);
 
   this.addSubfieldFormControlSafe(subfieldForState);
 
