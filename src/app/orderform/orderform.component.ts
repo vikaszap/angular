@@ -252,7 +252,32 @@ export class OrderformComponent implements OnInit, OnDestroy {
           this.parameters_data = data[0].data;
           this.apiUrl = params.api_url;
           this.routeParams = params;
-          
+          this.parameters_data.forEach(field => {
+              if (!field.subchild) {
+                field.subchild = [];
+              } else {
+                if (!Array.isArray(field.subchild)) {
+                  field.subchild = [];
+                }
+                field.subchild.forEach((subchildField: ProductField) => {
+                    if (!subchildField.allparentFieldId) {
+                      subchildField.allparentFieldId = `${field.fieldid},${subchildField.fieldid}`;
+                    }
+                    if (!subchildField.masterparentfieldid) {
+                      subchildField.masterparentfieldid = field.masterparentfieldid || field.fieldid;
+                    }
+                    if (!subchildField.level) {
+                      subchildField.level = (field.level || 1) + 1;
+                    }
+                    if (!subchildField.parentFieldId) {
+                      subchildField.parentFieldId = field.fieldid;
+                    }
+                    if (!subchildField.subchild) {
+                      subchildField.subchild = [];
+                    }
+                  });
+                }
+            });
           this.initializeFormControls();
           this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
           this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
