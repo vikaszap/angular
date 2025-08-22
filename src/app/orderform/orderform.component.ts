@@ -609,9 +609,10 @@ private processSubfield(
 
   const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
   if (alreadyExistsFlat) {
-    return of(null);
+    return of(null); // Do not process or add if it already exists in the flat list
   }
 
+  // Add to the flat list
   const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
   if (parentIndex !== -1) {
     this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
@@ -619,10 +620,14 @@ private processSubfield(
     this.parameters_data.push(subfieldForState);
   }
 
+  // Add to the nested subchild array of the parent, only if not already present
   if (!parentField.subchild) {
     parentField.subchild = [];
   }
-  parentField.subchild.push(subfieldForState);
+  const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
+  if (!alreadyExistsNested) {
+    parentField.subchild.push(subfieldForState);
+  }
 
   this.addSubfieldFormControlSafe(subfieldForState);
 
