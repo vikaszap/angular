@@ -68,7 +68,7 @@ interface ProductField {
   field_has_sub_option?: boolean;
   optionvalue?: any[];
   subchild?: ProductField[];
-  optionquantity?: string;
+  optionquantity?: any;
   fieldlevel?: number;
   id?: number;
   labelname?: string;
@@ -998,7 +998,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
         targetField.dropfraction = "";
         targetField.showfieldonjob = targetField.showfieldonjob ?? '';
         targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-        targetField.optionquantity = "";
+        targetField.optionquantity = null;
         targetField.globaledit = false;
         targetField.numberfraction = targetField.numberfraction ?? '';
         targetField.numberfractiontext = "";
@@ -1130,35 +1130,31 @@ onSubmit(): void {
     const mappedField = {
       id: +field.fieldid,
       labelname: field.fieldname,
-      value: field.value || '',
-      valueid: field.valueid || '',
+      value: field.value || null,
+      valueid: field.valueid || null,
       type: field.fieldtypeid,
-      optionid: field.optionid || '',
+      optionid: field.optionid || null,
       optionvalue: field.optionvalue || [],
-      optionquantity: field.optionquantity || '',
+      optionquantity: field.optionquantity || null,
       issubfabric: field.issubfabric ?? 0,
       labelnamecode: field.labelnamecode,
-      fabricorcolor: field.fabricorcolor,
-      widthfraction: field.widthfraction,
-      widthfractiontext: field.widthfractiontext,
-      dropfraction: field.dropfraction,
-      dropfractiontext: field.dropfractiontext,
+      fabricorcolor: field.fabricorcolor|| 0,
+      widthfraction: field.widthfraction || null,
+      widthfractiontext: field.widthfractiontext || null,
+      dropfraction: field.dropfraction || null,
+      dropfractiontext: field.dropfractiontext || null,
       showfieldonjob: field.showfieldonjob,
       subchild: field.subchild || [],
       showFieldOnCustomerPortal: field.showFieldOnCustomerPortal,
       globaledit: false,
-      numberfraction: field.numberfraction,
-      numberfractiontext: field.numberfractiontext,
+      numberfraction: field.numberfraction || null,
+      numberfractiontext: field.numberfractiontext || null,
       fieldlevel: field.fieldlevel,
       mandatory: field.mandatory,
-      fieldInformation: field.fieldInformation,
+      fieldInformation: field.fieldInformation || null,
       ruleoverride: field.ruleoverride,
-      optiondefault: field.optiondefault || '',
-      optionsvalue: (field.optiondefault && field.optionsvalue)
-        ? field.optionsvalue.filter(el =>
-            String(field.optiondefault).includes(String(el.optionid))
-          )
-        : [],
+      optiondefault: field.optiondefault || null,
+      optionsvalue: field.optionsvalue,
       editruleoverride: field.editruleoverride === 1 ? 1 : 0,
       fieldtypeid: field.fieldtypeid,
       fieldid: field.fieldid,
