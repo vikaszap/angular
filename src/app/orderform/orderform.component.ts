@@ -1041,7 +1041,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
            this.handleRestChange(params, field, values[key]);
         }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
            this.handleWidthChange(params, field, values[key]);
-        }if(field  && [9,12,32].includes(field.fieldtypeid)){
+        }else if(field  && [9,12,32].includes(field.fieldtypeid)){
            this.handleDropChange(params, field, values[key]);
         }else if(field) {
          this.handleRestOptionChange(params, field, values[key]);
@@ -1115,10 +1115,19 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       this.cd.markForCheck();
     });
   }
-
-  onSubmit(): void {
-    this.jsondata = this.parameters_data.map(field => {
-    return {
+private cleanSubchild(fields: any[]): any[] {
+  return fields
+    .filter(field => !!field.allparentFieldId) // keep only items with allparentFieldId
+    .map(field => ({
+      ...field,
+      subchild: field.subchild && field.subchild.length
+        ? this.cleanSubchild(field.subchild) // recurse deeper
+        : []
+    }));
+}
+onSubmit(): void {
+  this.jsondata = this.parameters_data.map(field => {
+    const mappedField = {
       id: +field.fieldid,
       labelname: field.fieldname,
       value: field.value || '',
@@ -1135,6 +1144,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       dropfraction: field.dropfraction,
       dropfractiontext: field.dropfractiontext,
       showfieldonjob: field.showfieldonjob,
+      subchild: field.subchild || [],
       showFieldOnCustomerPortal: field.showFieldOnCustomerPortal,
       globaledit: false,
       numberfraction: field.numberfraction,
@@ -1145,36 +1155,24 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       ruleoverride: field.ruleoverride,
       optiondefault: field.optiondefault || '',
       optionsvalue: (field.optiondefault && field.optionsvalue)
-        ? field.optionsvalue.filter(el => String(field.optiondefault).includes(String(el.optionid)))
+        ? field.optionsvalue.filter(el =>
+            String(field.optiondefault).includes(String(el.optionid))
+          )
         : [],
-      editruleoverride: field.editruleoverride === 1 ? 1 : 0
+      editruleoverride: field.editruleoverride === 1 ? 1 : 0,
+      fieldtypeid: field.fieldtypeid,
+      fieldid: field.fieldid,
+      fieldname: field.fieldname
     };
+
+    // clean subchild recursively
+    mappedField.subchild = this.cleanSubchild(mappedField.subchild);
+
+    return mappedField;
   });
-    if (this.orderForm.invalid || this.isSubmitting) {
-      this.markFormGroupTouched(this.orderForm);
-      return;
-    }
 
-    this.isSubmitting = true;
-    this.errorMessage = null;
-
-    this.apiService.addToCart(this.orderForm.value).pipe(
-      takeUntil(this.destroy$),
-      finalize(() => {
-        this.isSubmitting = false;
-        this.cd.markForCheck();
-      })
-    ).subscribe({
-      next: (response) => {
-        console.log('Added to cart successfully', response);
-        // Add any success handling here (e.g., show confirmation, navigate)
-      },
-      error: (err) => {
-        console.error('Error adding to cart:', err);
-        this.errorMessage = 'Failed to add to cart. Please try again.';
-      }
-    });
-  }
+  console.log(this.jsondata);
+}
 
   private markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {
