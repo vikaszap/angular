@@ -8,9 +8,45 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map,tap, catchError, takeUntil, finalize, toArray } from 'rxjs/operators';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
+// Interfaces
+
+interface JsonDataItem {
+  id: number;
+  labelname: string;
+  value: any;
+  valueid: any;
+  type: number;
+  optionid: any;
+  optionvalue: any[];
+  issubfabric: number;
+  fieldtypeid: any;
+  labelnamecode: string;
+  fabricorcolor: number;
+  widthfraction: any;
+  widthfractiontext: any;
+  dropfractiontext: any;
+  dropfraction: any;
+  showfieldonjob: number;
+  showFieldOnCustomerPortal: number;
+  optionquantity: any;
+  globaledit: boolean;
+  numberfraction: any;
+  numberfractiontext: any;
+  fieldInformation: any;
+  editruleoverride: any;
+  ruleoverride:any;
+  fieldid: number;
+  mandatory: number;
+  fieldlevel?: number;
+  fieldname: string;
+  subchild?: ProductField[];
+  optiondefault: any;
+  optionsvalue?: any[];
+
+}
 interface ProductField {
   fieldid: number;
   fieldname: string;
@@ -50,6 +86,7 @@ interface ProductField {
   numberfractiontext?: string;
   fieldInformation?: any;
   editruleoverride?: any;
+  ruleoverride?: any;
 }
 
 interface ProductOption {
@@ -63,6 +100,9 @@ interface ProductOption {
   pricegroups: string;
   optionid_pricegroupid:string;
   pricegroupid:string;
+  optioncode?: string;
+  optionquantity?: number;
+  forchildfieldoptionlinkid?: string;
 }
 
 interface FractionOption {
@@ -97,7 +137,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
-
+  jsondata: JsonDataItem[] = [];  
   // Product data
   showFractions = false;
   product_details_arr: Record<string, string> = {};
@@ -597,81 +637,59 @@ private processSubfield(
   parentField: ProductField,
   level: number
 ): Observable<any> {
-  subfield.parentFieldId = parentField.fieldid;
-  subfield.level = level;
-  subfield.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-  subfield.allparentFieldId = parentField.allparentFieldId
-    ? `${parentField.allparentFieldId},${subfield.fieldid}`
-    : `${parentField.fieldid},${subfield.fieldid}`;
+  const apiChildren = subfield.subchild;
+  const subfieldForState = { ...subfield, subchild: [] as ProductField[] };
 
-  // --- parameters_data (flat list) ---
-  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-  if (!alreadyExistsFlat) {
-    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid);
-    if (parentIndex !== -1) {
-      this.parameters_data.splice(parentIndex + 1, 0, { ...subfield });
-    } else {
-      this.parameters_data.push({ ...subfield });
-    }
-    //console.log('Added subfield to parameters_data:', subfield.fieldid);
-  } else {
-    const existingFlat = this.parameters_data.find(f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId);
-    if (existingFlat) {
-      existingFlat.parentFieldId = subfield.parentFieldId;
-      existingFlat.level = subfield.level;
-      existingFlat.masterparentfieldid = subfield.masterparentfieldid;
-      existingFlat.allparentFieldId = subfield.allparentFieldId;
-    }
+  subfieldForState.parentFieldId = parentField.fieldid;
+  subfieldForState.level = level;
+  subfieldForState.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
+  subfieldForState.allparentFieldId = parentField.allparentFieldId
+    ? `${parentField.allparentFieldId},${subfieldForState.fieldid}`
+    : `${parentField.fieldid},${subfieldForState.fieldid}`;
+
+  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
+  if (alreadyExistsFlat) {
+    return of(null); // Do not process or add if it already exists in the flat list
   }
 
-  // --- parentField.subchild (nested list) ---
+  // Add to the flat list
+  const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
+  if (parentIndex !== -1) {
+    this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
+  } else {
+    this.parameters_data.push(subfieldForState);
+  }
+
+  // Add to the nested subchild array of the parent, only if not already present
   if (!parentField.subchild) {
     parentField.subchild = [];
   }
-
-  const alreadyExistsNested = parentField.subchild.some(
-    f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-  );
-
+  const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
   if (!alreadyExistsNested) {
-    parentField.subchild.push({ ...subfield });
-    /*
-    console.log(
-      'Added subfield:',
-      subfield.fieldid,
-      'to parent:',
-      parentField.fieldid,
-      '. Current state:',
-      JSON.parse(JSON.stringify(this.parameters_data))
-    );
-    */
-  } else {
-    const existingNested = parentField.subchild.find(
-      f => f.fieldid === subfield.fieldid && f.allparentFieldId === subfield.allparentFieldId
-    );
-    if (existingNested) {
-      existingNested.parentFieldId = subfield.parentFieldId;
-      existingNested.level = subfield.level;
-      existingNested.masterparentfieldid = subfield.masterparentfieldid;
-      existingNested.allparentFieldId = subfield.allparentFieldId;
-    }
+    parentField.subchild.push(subfieldForState);
   }
 
-  // --- Form control ---
-  this.addSubfieldFormControlSafe(subfield);
+  this.addSubfieldFormControlSafe(subfieldForState);
 
-  if (subfield.field_has_sub_option) {
-    return this.loadSubfieldOptions(params, subfield).pipe(
-      map(res => res || null),
-      catchError(err => {
-          console.error('Error in processSubfield:', err);
-          this.removeFieldSafely(subfield.fieldid, subfield.allparentFieldId);
-          return of(null);
-        })
-    );
-  } else {
-    return of(null);
-  }
+  const children$: Observable<any> = (Array.isArray(apiChildren) && apiChildren.length > 0)
+    ? from(apiChildren).pipe(
+        concatMap((child: ProductField) => this.processSubfield(params, child, subfieldForState, level + 1)),
+        toArray()
+      )
+    : of(null);
+
+  const options$: Observable<any> = subfieldForState.field_has_sub_option
+    ? this.loadSubfieldOptions(params, subfieldForState)
+    : of(null);
+
+  return children$.pipe(
+    switchMap(() => options$),
+    catchError(err => {
+      console.error('Error in processSubfield:', err);
+      this.removeFieldSafely(subfieldForState.fieldid, subfieldForState.allparentFieldId);
+      return of(null);
+    })
+  );
 }
 
   /**
@@ -1023,7 +1041,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
            this.handleRestChange(params, field, values[key]);
         }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
            this.handleWidthChange(params, field, values[key]);
-        }if(field  && [9,12,32].includes(field.fieldtypeid)){
+        }else if(field  && [9,12,32].includes(field.fieldtypeid)){
            this.handleDropChange(params, field, values[key]);
         }else if(field) {
          this.handleRestOptionChange(params, field, values[key]);
@@ -1097,33 +1115,64 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       this.cd.markForCheck();
     });
   }
+private cleanSubchild(fields: any[]): any[] {
+  return fields
+    .filter(field => !!field.allparentFieldId) // keep only items with allparentFieldId
+    .map(field => ({
+      ...field,
+      subchild: field.subchild && field.subchild.length
+        ? this.cleanSubchild(field.subchild) // recurse deeper
+        : []
+    }));
+}
+onSubmit(): void {
+  this.jsondata = this.parameters_data.map(field => {
+    const mappedField = {
+      id: +field.fieldid,
+      labelname: field.fieldname,
+      value: field.value || '',
+      valueid: field.valueid || '',
+      type: field.fieldtypeid,
+      optionid: field.optionid || '',
+      optionvalue: field.optionvalue || [],
+      optionquantity: field.optionquantity || '',
+      issubfabric: field.issubfabric ?? 0,
+      labelnamecode: field.labelnamecode,
+      fabricorcolor: field.fabricorcolor,
+      widthfraction: field.widthfraction,
+      widthfractiontext: field.widthfractiontext,
+      dropfraction: field.dropfraction,
+      dropfractiontext: field.dropfractiontext,
+      showfieldonjob: field.showfieldonjob,
+      subchild: field.subchild || [],
+      showFieldOnCustomerPortal: field.showFieldOnCustomerPortal,
+      globaledit: false,
+      numberfraction: field.numberfraction,
+      numberfractiontext: field.numberfractiontext,
+      fieldlevel: field.fieldlevel,
+      mandatory: field.mandatory,
+      fieldInformation: field.fieldInformation,
+      ruleoverride: field.ruleoverride,
+      optiondefault: field.optiondefault || '',
+      optionsvalue: (field.optiondefault && field.optionsvalue)
+        ? field.optionsvalue.filter(el =>
+            String(field.optiondefault).includes(String(el.optionid))
+          )
+        : [],
+      editruleoverride: field.editruleoverride === 1 ? 1 : 0,
+      fieldtypeid: field.fieldtypeid,
+      fieldid: field.fieldid,
+      fieldname: field.fieldname
+    };
 
-  onSubmit(): void {
-    if (this.orderForm.invalid || this.isSubmitting) {
-      this.markFormGroupTouched(this.orderForm);
-      return;
-    }
+    // clean subchild recursively
+    mappedField.subchild = this.cleanSubchild(mappedField.subchild);
 
-    this.isSubmitting = true;
-    this.errorMessage = null;
+    return mappedField;
+  });
 
-    this.apiService.addToCart(this.orderForm.value).pipe(
-      takeUntil(this.destroy$),
-      finalize(() => {
-        this.isSubmitting = false;
-        this.cd.markForCheck();
-      })
-    ).subscribe({
-      next: (response) => {
-        console.log('Added to cart successfully', response);
-        // Add any success handling here (e.g., show confirmation, navigate)
-      },
-      error: (err) => {
-        console.error('Error adding to cart:', err);
-        this.errorMessage = 'Failed to add to cart. Please try again.';
-      }
-    });
-  }
+  console.log(this.jsondata);
+}
 
   private markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {
