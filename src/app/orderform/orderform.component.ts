@@ -146,6 +146,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
   background_color_image_url = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
+  supplierOption: any;
+  priceGroupOption: any;
   inchfraction_array: FractionOption[] = [
     { value: '0', name: '0"' },
     { value: '0.125', name: '1/8"' },
@@ -281,9 +283,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                   if (this.qtyField && field.fieldid === this.qtyField.fieldid) {
                     this.updateFieldValues(this.qtyField, 1);
                     control.setValue(1, { emitEvent: false});
-                  } else {
-                    this.updateFieldValues(field, '');
-                  }
+                  } 
                 }
               });
           const [_, minmaxdata] = results;
@@ -419,6 +419,15 @@ export class OrderformComponent implements OnInit, OnDestroy {
               }else if(field.fieldtypeid === 13){
                 this.pricegroup = valueToSet;
               }
+              if(field.fieldtypeid === 17){
+                this.supplierOption = field.optionsvalue;
+              }else if(field.fieldtypeid === 13){
+                 this.priceGroupOption =field.optionsvalue;
+              }
+              if(field && field.optionsvalue){
+                const selectedOption = field.optionsvalue.find(opt => `${opt.optionid}` === `${valueToSet}`);
+                this.updateFieldValues(field, selectedOption);
+              }
             }
           }
         });
@@ -534,7 +543,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
             const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
             if (control) {
                control.setValue(this.pricegroup, { emitEvent: false});
-               this.updateFieldValues(this.priceGroupField, this.pricegroup);
+             
+              const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
+              this.updateFieldValues(field, selectedOption);
             }
           }
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
@@ -545,7 +556,9 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
                 if (control) {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
-                  this.updateFieldValues(this.supplierField, this.supplier_id);
+                  const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
+                  this.updateFieldValues(field, selectedOption);
+                  
                 }
               }
           });
@@ -1047,7 +1060,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-    console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+    //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
   }
@@ -1059,8 +1072,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     }
 
     const totalWidth = Number(value) + fractionValue;
-    console.log(totalWidth);
-     console.log(field);
+
     this.updateFieldValues(field, totalWidth);
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
@@ -1153,8 +1165,8 @@ onSubmit(): void {
       mandatory: field.mandatory,
       fieldInformation: field.fieldInformation || null,
       ruleoverride: field.ruleoverride,
-      optiondefault: field.optiondefault || null,
-      optionsvalue: field.optionsvalue,
+      optiondefault: field.optiondefault || field.optionid || null,
+      optionsvalue:  field.optionvalue || [],
       editruleoverride: field.editruleoverride === 1 ? 1 : 0,
       fieldtypeid: field.fieldtypeid,
       fieldid: field.fieldid,
