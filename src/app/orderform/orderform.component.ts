@@ -11,6 +11,42 @@ import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
+// Interfaces
+
+interface JsonDataItem {
+  id: number;
+  labelname: string;
+  value: any;
+  valueid: any;
+  type: number;
+  optionid: any;
+  optionvalue: any[];
+  issubfabric: number;
+  fieldtypeid: any;
+  labelnamecode: string;
+  fabricorcolor: number;
+  widthfraction: any;
+  widthfractiontext: any;
+  dropfractiontext: any;
+  dropfraction: any;
+  showfieldonjob: number;
+  showFieldOnCustomerPortal: number;
+  optionquantity: any;
+  globaledit: boolean;
+  numberfraction: any;
+  numberfractiontext: any;
+  fieldInformation: any;
+  editruleoverride: any;
+  ruleoverride:any;
+  fieldid: number;
+  mandatory: number;
+  fieldlevel?: number;
+  fieldname: string;
+  subchild?: ProductField[];
+  optiondefault: any;
+  optionsvalue?: any[];
+
+}
 interface ProductField {
   fieldid: number;
   fieldname: string;
@@ -50,6 +86,7 @@ interface ProductField {
   numberfractiontext?: string;
   fieldInformation?: any;
   editruleoverride?: any;
+  ruleoverride?: any;
 }
 
 interface ProductOption {
@@ -63,6 +100,9 @@ interface ProductOption {
   pricegroups: string;
   optionid_pricegroupid:string;
   pricegroupid:string;
+  optioncode?: string;
+  optionquantity?: number;
+  forchildfieldoptionlinkid?: string;
 }
 
 interface FractionOption {
@@ -97,7 +137,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
-
+  jsondata: JsonDataItem[] = [];  
   // Product data
   showFractions = false;
   product_details_arr: Record<string, string> = {};
@@ -1077,6 +1117,39 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
   }
 
   onSubmit(): void {
+    this.jsondata = this.parameters_data.map(field => {
+    return {
+      id: +field.fieldid,
+      labelname: field.fieldname,
+      value: field.value || '',
+      valueid: field.valueid || '',
+      type: field.fieldtypeid,
+      optionid: field.optionid || '',
+      optionvalue: field.optionvalue || [],
+      optionquantity: field.optionquantity || '',
+      issubfabric: field.issubfabric ?? 0,
+      labelnamecode: field.labelnamecode,
+      fabricorcolor: field.fabricorcolor,
+      widthfraction: field.widthfraction,
+      widthfractiontext: field.widthfractiontext,
+      dropfraction: field.dropfraction,
+      dropfractiontext: field.dropfractiontext,
+      showfieldonjob: field.showfieldonjob,
+      showFieldOnCustomerPortal: field.showFieldOnCustomerPortal,
+      globaledit: false,
+      numberfraction: field.numberfraction,
+      numberfractiontext: field.numberfractiontext,
+      fieldlevel: field.fieldlevel,
+      mandatory: field.mandatory,
+      fieldInformation: field.fieldInformation,
+      ruleoverride: field.ruleoverride,
+      optiondefault: field.optiondefault || '',
+      optionsvalue: (field.optiondefault && field.optionsvalue)
+        ? field.optionsvalue.filter(el => String(field.optiondefault).includes(String(el.optionid)))
+        : [],
+      editruleoverride: field.editruleoverride === 1 ? 1 : 0
+    };
+  });
     if (this.orderForm.invalid || this.isSubmitting) {
       this.markFormGroupTouched(this.orderForm);
       return;
