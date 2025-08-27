@@ -1157,7 +1157,9 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       if (FractionData?.result?.inchfraction) {
         this.inchfraction_array = FractionData.result.inchfraction.map((item: any) => ({
           name: item.name,
-          value: item.decimalvalue
+          id: item.id,
+          decimalvalue: item.decimalvalue,
+          frac_decimalvalue: item.decimalvalue
         }));
       } else {
         this.inchfraction_array = [];
