@@ -106,8 +106,10 @@ interface ProductOption {
 }
 
 interface FractionOption {
-  value: string;
+  decimalvalue: string;
   name: string;
+  id: number;
+  frac_decimalvalue:string;
 }
 
 @Component({
@@ -148,15 +150,45 @@ export class OrderformComponent implements OnInit, OnDestroy {
   parameters_arr: any[] = [];
   supplierOption: any;
   priceGroupOption: any;
+  unitOption: any;
   inchfraction_array: FractionOption[] = [
-    { value: '0', name: '0"' },
-    { value: '0.125', name: '1/8"' },
-    { value: '0.25', name: '1/4"' },
-    { value: '0.375', name: '3/8"' },
-    { value: '0.5', name: '1/2"' },
-    { value: '0.625', name: '5/8"' },
-    { value: '0.75', name: '3/4"' },
-    { value: '0.875', name: '7/8"' }
+  {
+    "name": "1/32",
+    "id": 1,
+    "decimalvalue": "0.03125",
+    "frac_decimalvalue": "0.03125"
+  },
+  {
+    "name": "1/16",
+    "id": 2,
+    "decimalvalue": "0.0625",
+    "frac_decimalvalue": "0.0625"
+  },
+  {
+    "name": "3/32",
+    "id": 3,
+    "decimalvalue": "0.09375",
+    "frac_decimalvalue": "0.09375"
+  },
+  {
+    "name": "1/8",
+    "id": 4,
+    "decimalvalue": "0.125",
+    "frac_decimalvalue": "0.125"
+  },
+  {
+    "name": "5/32",
+    "id": 5,
+    "decimalvalue": "0.15625",
+    "frac_decimalvalue": "0.15625"
+  },
+  {
+    "name": "3/16",
+    "id": 6,
+    "decimalvalue": "0.1875",
+    "frac_decimalvalue": "0.1875"
+  }
+
   ];
   color_arr: Record<string, any> = {};
   product_minimum_price = 0;
@@ -423,6 +455,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 this.supplierOption = field.optionsvalue;
               }else if(field.fieldtypeid === 13){
                  this.priceGroupOption =field.optionsvalue;
+              }else if(field.fieldtypeid === 34){
+                  this.unitOption =field.optionsvalue;
               }
               if(field && field.optionsvalue){
                 const selectedOption = field.optionsvalue.find(opt => `${opt.optionid}` === `${valueToSet}`);
@@ -931,122 +965,106 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
 
-  private updateFieldValues(field: ProductField, selectedOption: any =[], fundebug: string= "" ): void {
-    const fieldInState = this.parameters_data.find(f => 
-        f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
-    );
+private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug: string = ""): void {
+  const fieldInState = this.parameters_data.find(
+    f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
+  );
+
+  const targetField = fieldInState || field;
+
+  const resetDefaults = () => {
+    targetField.id = targetField.fieldid ?? '';
+    targetField.labelname = targetField.fieldname ?? '';
+    targetField.type = targetField.fieldtypeid ?? '';
+    targetField.optionid = '';
+    targetField.optionvalue = [];
+    targetField.optionquantity = '';
+    targetField.valueid = '';
+    targetField.optiondefault = targetField.optiondefault ?? '';
+    targetField.issubfabric = targetField.issubfabric ?? '';
+    targetField.labelnamecode = targetField.labelnamecode ?? '';
+    targetField.fabricorcolor = targetField.fabricorcolor ?? '';
+    targetField.widthfraction = '';
+    targetField.widthfractiontext = '';
+    targetField.dropfraction = '';
+    targetField.dropfractiontext = '';
+    targetField.showfieldonjob = targetField.showfieldonjob ?? '';
+    targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
+    targetField.globaledit = false;
+    targetField.numberfraction = targetField.numberfraction ?? '';
+    targetField.numberfractiontext = '';
+    targetField.mandatory = targetField.mandatory ?? '';
+    targetField.fieldInformation = targetField.fieldInformation ?? '';
+    targetField.editruleoverride = targetField.editruleoverride ?? '';
+  };
+
+  resetDefaults();
   
-    const targetField = fieldInState || field; 
-
-    if (Array.isArray(selectedOption)) {
-      if ([14, 34, 17, 13,4].includes(field.fieldtypeid)){
-         targetField.value =  selectedOption.map(opt => String(opt.optionid)).join(',');
-         
-         targetField.optiondefault =selectedOption.map(opt => String(opt.optionid)).join(',');
-         targetField.optionquantity = "";
-         if(field.fieldtypeid == 13){
-           targetField.valueid = selectedOption.map(opt => String(opt.id)).join(',');
-         }else if(field.fieldtypeid == 34){
-            targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-         }else{
-           targetField.valueid = "";
-         }
-     }else{
-        targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-        targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-        targetField.optiondefault = targetField.optiondefault ?? '';
-        targetField.optionquantity = selectedOption.map(() => '1').join(',');
-     }
-      //console.log(targetField.fieldtypeid + 'first' + fundebug);
-      targetField.id = targetField.fieldid ?? '';
-      targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
-    
-      targetField.type = targetField.fieldtypeid;
-      targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.optionvalue = selectedOption;
-      targetField.issubfabric = targetField.issubfabric ?? '';
-      targetField.labelnamecode = targetField.labelnamecode ?? '';
-      targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-      targetField.widthfraction = "";
-      targetField.widthfractiontext = "";
-      targetField.dropfractiontext = "";
-      targetField.dropfraction = "";
-      targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-      targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-    
-      targetField.globaledit = false;
-      targetField.numberfraction = targetField.numberfraction ?? '';
-      targetField.numberfractiontext = "";
-      targetField.mandatory = targetField.mandatory ?? '';
-      targetField.fieldname = targetField.fieldname ?? '';
-      targetField.fieldid = targetField.fieldid ?? '';
-      targetField.fieldInformation = targetField.fieldInformation ?? '';
-     
-      targetField.editruleoverride = targetField.editruleoverride ?? '';
-} else {
-    if (selectedOption && selectedOption.optionname) {
-      //console.log(targetField.fieldtypeid + 'second' + fundebug);
-        targetField.id = targetField.fieldid ?? '';
-        targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = String(selectedOption.optionname);
-        targetField.valueid = String(selectedOption.optionid);
-        targetField.type = targetField.fieldtypeid;
-        targetField.optionid = String(selectedOption.optionid);
-        targetField.optionvalue = [selectedOption];
-        targetField.issubfabric = targetField.issubfabric ?? '';
-        targetField.labelnamecode = targetField.labelnamecode ?? '';
-        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-        targetField.widthfraction = "";
-        targetField.widthfractiontext = "";
-        targetField.dropfractiontext = "";
-        targetField.dropfraction = "";
-        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-        targetField.optionquantity = "1";
-        targetField.globaledit = false;
-        targetField.numberfraction = targetField.numberfraction ?? '';
-        targetField.numberfractiontext = "";
-        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
-        targetField.mandatory = targetField.mandatory ?? '';
-        targetField.fieldname = targetField.fieldname ?? '';
-        targetField.fieldid = targetField.fieldid ?? '';
-        targetField.fieldInformation = targetField.fieldInformation ?? '';
-        targetField.optiondefault = targetField.optiondefault ?? '';
-        targetField.editruleoverride = targetField.editruleoverride ?? '';
+  if (Array.isArray(selectedOption)) {
+    if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
+      const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.value = ids;
+      targetField.optiondefault = ids;
+      targetField.optionquantity = '';
+      targetField.valueid =
+        field.fieldtypeid === 13
+          ? selectedOption.map(opt => String(opt.id)).join(',')
+          : field.fieldtypeid === 34
+          ? ids
+          : '';
     } else {
-        // console.log(targetField.fieldtypeid + 'third' + fundebug);
-        targetField.id =  targetField.fieldid ?? '';
-        targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = String(selectedOption) ?? '';
-        targetField.valueid = "";
-        targetField.type = targetField.fieldtypeid;
-        targetField.optionid = "";
-        targetField.optionvalue = [];
-        targetField.issubfabric = targetField.issubfabric ?? '';
-        targetField.labelnamecode = targetField.labelnamecode ?? '';
-        targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-        targetField.widthfraction = "";
-        targetField.widthfractiontext = "";
-        targetField.dropfractiontext = "";
-        targetField.dropfraction = "";
-        targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-        targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-        targetField.optionquantity = null;
-        targetField.globaledit = false;
-        targetField.numberfraction = targetField.numberfraction ?? '';
-        targetField.numberfractiontext = "";
-        targetField.fieldtypeid = targetField.fieldtypeid ?? '';
-        targetField.mandatory = targetField.mandatory ?? '';
-        targetField.fieldname = targetField.fieldname ?? '';
-        targetField.fieldid = targetField.fieldid ?? '';
-        targetField.fieldInformation = targetField.fieldInformation ?? '';
-        targetField.optiondefault = targetField.optiondefault ?? '';
-        targetField.editruleoverride = targetField.editruleoverride ?? '';
+      targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
+      targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.optionquantity = selectedOption.map(() => '1').join(',');
     }
-}
 
-    
+    targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
+    targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
+    targetField.optionvalue = selectedOption;
   }
+
+  else if (selectedOption && selectedOption.optionname) {
+    targetField.labelname = targetField.fieldname ?? '';
+    targetField.value = String(selectedOption.optionname);
+    targetField.valueid = String(selectedOption.optionid);
+    targetField.optionid = String(selectedOption.optionid);
+    targetField.optionvalue = [selectedOption];
+    targetField.optionquantity = '1';
+  }
+  else {
+    targetField.value = String(selectedOption) ?? '';
+  }
+    let fractionValue: any;
+    if([ 7,11,31].includes(targetField.fieldtypeid) && this.showFractions  ){
+      fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+      const selectedInchesOption = this.inchfraction_array.find(
+                                      (opt) => String(opt.decimalvalue) === String(fractionValue)
+                                    );
+      const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
+      targetField.widthfraction = this.unittype+"_"+selectedUnitOption.optionname+"_"+fractionValue+"_"+selectedInchesOption?.id;
+    
+    }else if([ 7,11,31].includes(targetField.fieldtypeid) && !this.showFractions){
+      
+       const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
+      
+        targetField.widthfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
+    }
+      
+    if( [9,12,32].includes(targetField.fieldtypeid)  && this.showFractions  ){
+      fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+   
+      const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
+      const selectedInchesOption = this.inchfraction_array.find(
+                                          (opt) => String(opt.decimalvalue) === String(fractionValue)
+                                        );
+      targetField.dropfraction = this.unittype+"_"+selectedUnitOption.optionname+"_"+fractionValue+"_"+selectedInchesOption?.id;
+    }else if( [9,12,32].includes(targetField.fieldtypeid) && !this.showFractions) {
+       const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
+      
+        targetField.widthfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
+    }
+
+}
 
   /**
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
