@@ -281,7 +281,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 const control = this.orderForm.get(`field_${field.fieldid}`);
                 if (control) {
                   if (this.qtyField && field.fieldid === this.qtyField.fieldid) {
-                    this.updateFieldValues(this.qtyField, 1);
+                    this.updateFieldValues(this.qtyField, 1,'fetchInitialDataqty');
                     control.setValue(1, { emitEvent: false});
                   } 
                 }
@@ -426,7 +426,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
               }
               if(field && field.optionsvalue){
                 const selectedOption = field.optionsvalue.find(opt => `${opt.optionid}` === `${valueToSet}`);
-                this.updateFieldValues(field, selectedOption);
+                this.updateFieldValues(field, selectedOption,' defaultunittpyeprictypesupplier');
               }
             }
           }
@@ -524,7 +524,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
         toArray(),
         takeUntil(this.destroy$)
       ).subscribe(() => {
-        this.updateFieldValues(field, selectedOptions);
+        this.updateFieldValues(field, selectedOptions,'Array.isArrayOptions');
         this.cd.markForCheck();
       });
 
@@ -535,8 +535,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
-        this.updateFieldValues(field, selectedOption);
-
         if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
           this.pricegroup = selectedOption.pricegroupid;
           if (this.priceGroupField) {
@@ -545,7 +543,7 @@ export class OrderformComponent implements OnInit, OnDestroy {
                control.setValue(this.pricegroup, { emitEvent: false});
              
               const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
-              this.updateFieldValues(field, selectedOption);
+              this.updateFieldValues(field, selectedOption,'pricegrouponColor');
             }
           }
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
@@ -557,11 +555,13 @@ export class OrderformComponent implements OnInit, OnDestroy {
                 if (control) {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
                   const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
-                  this.updateFieldValues(field, selectedOption);
+                  this.updateFieldValues(field, selectedOption,'suppieronColor');
                   
                 }
               }
           });
+        }else{
+           this.updateFieldValues(field, selectedOption,'restOption');
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
@@ -931,7 +931,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
 
-  private updateFieldValues(field: ProductField, selectedOption: any =[]): void {
+  private updateFieldValues(field: ProductField, selectedOption: any =[], fundebug: string= "" ): void {
     const fieldInState = this.parameters_data.find(f => 
         f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
     );
@@ -939,10 +939,28 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     const targetField = fieldInState || field; 
 
     if (Array.isArray(selectedOption)) {
+      if ([14, 34, 17, 13,4].includes(field.fieldtypeid)){
+         targetField.value =  selectedOption.map(opt => String(opt.optionid)).join(',');
+         
+         targetField.optiondefault =selectedOption.map(opt => String(opt.optionid)).join(',');
+         targetField.optionquantity = "";
+         if(field.fieldtypeid == 13){
+           targetField.valueid = selectedOption.map(opt => String(opt.id)).join(',');
+         }else if(field.fieldtypeid == 34){
+            targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+         }else{
+           targetField.valueid = "";
+         }
+     }else{
+        targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
+        targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.optiondefault = targetField.optiondefault ?? '';
+        targetField.optionquantity = selectedOption.map(() => '1').join(',');
+     }
+      //console.log(targetField.fieldtypeid + 'first' + fundebug);
       targetField.id = targetField.fieldid ?? '';
       targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+    
       targetField.type = targetField.fieldtypeid;
       targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
       targetField.optionvalue = selectedOption;
@@ -955,7 +973,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       targetField.dropfraction = "";
       targetField.showfieldonjob = targetField.showfieldonjob ?? '';
       targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-      targetField.optionquantity = selectedOption.map(() => '1').join(',');
+    
       targetField.globaledit = false;
       targetField.numberfraction = targetField.numberfraction ?? '';
       targetField.numberfractiontext = "";
@@ -963,13 +981,14 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
       targetField.fieldname = targetField.fieldname ?? '';
       targetField.fieldid = targetField.fieldid ?? '';
       targetField.fieldInformation = targetField.fieldInformation ?? '';
-      targetField.optiondefault = targetField.optiondefault ?? '';
+     
       targetField.editruleoverride = targetField.editruleoverride ?? '';
 } else {
     if (selectedOption && selectedOption.optionname) {
+      //console.log(targetField.fieldtypeid + 'second' + fundebug);
         targetField.id = targetField.fieldid ?? '';
         targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = selectedOption.optionname;
+        targetField.value = String(selectedOption.optionname);
         targetField.valueid = String(selectedOption.optionid);
         targetField.type = targetField.fieldtypeid;
         targetField.optionid = String(selectedOption.optionid);
@@ -995,9 +1014,10 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
         targetField.optiondefault = targetField.optiondefault ?? '';
         targetField.editruleoverride = targetField.editruleoverride ?? '';
     } else {
+        // console.log(targetField.fieldtypeid + 'third' + fundebug);
         targetField.id =  targetField.fieldid ?? '';
         targetField.labelname = targetField.fieldname ?? '';
-        targetField.value = selectedOption ?? '';
+        targetField.value = String(selectedOption) ?? '';
         targetField.valueid = "";
         targetField.type = targetField.fieldtypeid;
         targetField.optionid = "";
@@ -1073,7 +1093,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
 
     const totalWidth = Number(value) + fractionValue;
 
-    this.updateFieldValues(field, totalWidth);
+    this.updateFieldValues(field, totalWidth,'Totalwidth');
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -1083,7 +1103,7 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
     }
 
     const totalDrop = Number(value) + fractionValue;
-    this.updateFieldValues(field, totalDrop);
+    this.updateFieldValues(field, totalDrop,'TotalDrop');
   }
   
   private handleRestOptionChange(params: any, field: ProductField, value: any): void {
@@ -1098,10 +1118,10 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
      
     if (!selectedOption) return;
 
-    this.updateFieldValues(field, [selectedOption]);
+    this.updateFieldValues(field, [selectedOption],'handleRestOptionChange');
   }
   private handleRestChange(params: any, field: ProductField, value: any): void {
-      this.updateFieldValues(field, value);
+      this.updateFieldValues(field, value,'handleRestChange');
   }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
@@ -1139,6 +1159,12 @@ private cleanSubchild(fields: any[]): any[] {
 }
 onSubmit(): void {
   this.jsondata = this.parameters_data.map(field => {
+    /*
+     if ([14, 34, 17, 13,4].includes(field.fieldtypeid)){
+        field.value = field.valueid;
+        field.valueid = "";
+     }
+        */
     const mappedField = {
       id: +field.fieldid,
       labelname: field.fieldname,
