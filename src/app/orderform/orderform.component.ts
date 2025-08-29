@@ -307,18 +307,18 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     this.apiService.getProductData(params).pipe(
       takeUntil(this.destroy$),
       switchMap((data: any) => {
-        if (data && data[0]?.data) {
-          const responseData = data[0].data;
+        if (data && data[0]) {
+          const response = data[0];
           // Assuming product_data is an array with one element
-          if (responseData.product_data && responseData.product_data.length > 0) {
-            const productData = responseData.product_data[0];
+          if (response.product_data && response.product_data.length > 0) {
+            const productData = response.product_data[0];
             this.mainframe = productData.mainframe;
             this.background_color_image_url = productData.background_color_image_url;
             // Now that we have the URLs, set up the visualizer
             setTimeout(() => this.setupVisualizer(), 0);
           }
 
-          this.parameters_data = responseData.parameters_data || [];
+          this.parameters_data = response.data || [];
           this.apiUrl = params.api_url;
           this.routeParams = params;
           
