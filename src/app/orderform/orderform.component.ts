@@ -1061,7 +1061,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }else if( [9,12,32].includes(targetField.fieldtypeid) && !this.showFractions) {
        const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
       
-        targetField.widthfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
+        targetField.dropfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
     }
 
 }
