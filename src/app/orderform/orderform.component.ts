@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,6 +7,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { ThreeService } from '../services/three.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
 
@@ -129,7 +130,13 @@ interface FractionOption {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrderformComponent implements OnInit, OnDestroy {
+export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
+
+  mainframe!: string;
+  background_color_image_url!: string;
+
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
   private priceGroupField?: ProductField;
@@ -145,7 +152,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
   product_details_arr: Record<string, string> = {};
   product_specs = '';
   product_description = '';
-  background_color_image_url = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
   supplierOption: any;
@@ -204,7 +210,6 @@ export class OrderformComponent implements OnInit, OnDestroy {
   product_list_page_link = '';
   fabricname = '';
   hide_frame = false;
-  mainframe = '';
   product_img_array: any[] = [];
   product_deafultimage: Record<string, any> = {};
   fabric_linked_color_data: Record<string, any> = {};
@@ -235,7 +240,8 @@ export class OrderformComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private threeService: ThreeService
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -275,6 +281,24 @@ export class OrderformComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+  ngAfterViewInit(): void {
+    // Intentionally left blank. Initialization is handled by setupVisualizer().
+  }
+
+  private setupVisualizer(): void {
+    if (this.canvasRef && this.containerRef && this.mainframe && this.background_color_image_url) {
+      this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
+      this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.containerRef) {
+      this.threeService.onResize(this.containerRef.nativeElement);
+    }
+  }
   
  private fetchInitialData(params: any): void {
     this.isLoading = true;
@@ -284,7 +308,17 @@ export class OrderformComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
       switchMap((data: any) => {
         if (data && data[0]?.data) {
-          this.parameters_data = data[0].data;
+          const responseData = data[0].data;
+          // Assuming product_data is an array with one element
+          if (responseData.product_data && responseData.product_data.length > 0) {
+            const productData = responseData.product_data[0];
+            this.mainframe = productData.mainframe;
+            this.background_color_image_url = productData.background_color_image_url;
+            // Now that we have the URLs, set up the visualizer
+            setTimeout(() => this.setupVisualizer(), 0);
+          }
+
+          this.parameters_data = responseData.parameters_data || [];
           this.apiUrl = params.api_url;
           this.routeParams = params;
           
@@ -565,6 +599,12 @@ export class OrderformComponent implements OnInit, OnDestroy {
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
+
+      // Update background image URL if a color/fabric is selected
+      if ((field.fieldtypeid === 5 || field.fieldtypeid === 20) && selectedOption.optionimage) {
+          this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
+          this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+      }
 
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
@@ -1292,6 +1332,13 @@ onSubmit(): void {
 
   public getFrameImageUrl(product_img: any): string {
     return product_img?.image_url || '';
+  }
+
+  onFrameChange(newFrameUrl: string): void {
+    this.mainframe = newFrameUrl;
+    if (this.threeService) {
+      this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+    }
   }
 
   public getFreeSampleData(related_product: any = null): string {

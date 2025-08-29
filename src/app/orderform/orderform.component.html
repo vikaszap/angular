@@ -24,25 +24,21 @@
       <div class="visualizer-container">
         <div class="visualizer-main">
           <div class="sticky-container">
-            <div class="product_preview">
+            <div class="product_preview" #visualizerContainer>
               <div id="main-img" class="configuratorpreviewimage">
-                <img *ngIf="!hide_frame" decoding="async" class="configurator-main-headertype" 
-                     [src]="mainframe" 
-                     [style.background-image]="'url(' + background_color_image_url + ')'" 
-                     alt="blinds image">
-                <img *ngIf="hide_frame" decoding="async" class="configurator-main-headertype" 
-                     [src]="background_color_image_url" alt="blinds image">
-                <p class="preview-desc blinds">Diagram is for illustration only.</p>
+                <canvas #visualizerCanvas></canvas>
               </div>
             </div>
 
             <div *ngIf="!hide_frame" class="slider-container">
               <div class="blindmatrix-v4-slider">
                 <div *ngFor="let product_img of product_img_array">
-                  <a class="multiple-frame-list-button" [class.selected_frame]="isSelectedFrame(product_img)">
+                  <button type="button" class="multiple-frame-list-button"
+                          [class.selected_frame]="isSelectedFrame(product_img)"
+                          (click)="onFrameChange(getFrameImageUrl(product_img))">
                     <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" 
                          [style.background-image]="'url(' + background_color_image_url + ')'">
-                  </a>
+                  </button>
                 </div>
               </div>
               <div *ngIf="product_img_array.length > 3" class="prev">
