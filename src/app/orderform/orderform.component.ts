@@ -48,6 +48,31 @@ interface JsonDataItem {
   optionsvalue?: any[];
 
 }
+interface ProductDetails {
+  pei_id: number;
+  pei_productid: number;
+  pei_prospec: string;
+  recipeid: number;
+  pei_ecomProductName: string;
+  pi_productdescription: string;
+  pi_category: string;
+  pi_producttype: string;
+  pi_productgroup: string;
+  pi_qtyperunit: number;
+  pi_deafultimage: string;
+  pi_frameimage: string;
+  pi_productimage: string;
+  pi_backgroundimage: string;
+  pi_prodbannerimage: string;
+  pei_ecommercestatus: number;
+  netpricecomesfrom: string;
+  costpricecomesfrom: string;
+  pei_ecomFreeSample: boolean;
+  pei_ecomsampleprice: number;
+  label: string;
+  minimum_price: number;
+  single_view: boolean;
+}
 interface ProductField {
   fieldid: number;
   fieldname: string;
@@ -136,7 +161,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   mainframe!: string;
   background_color_image_url!: string;
-
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
   private priceGroupField?: ProductField;
@@ -209,6 +233,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   productname = '';
   product_list_page_link = '';
   fabricname = '';
+  frame_default_url ="";
   hide_frame = false;
   product_img_array: any[] = [];
   product_deafultimage: Record<string, any> = {};
@@ -229,7 +254,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   orderForm: FormGroup;
   previousFormValue: any;
   apiUrl = '';
-
+  img_file_path_url = '';
   // Data arrays
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
@@ -241,7 +266,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private cd: ChangeDetectorRef,
-    private threeService: ThreeService
+    private threeService: ThreeService,
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -270,6 +295,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
+    const apiUrl = this.route.snapshot.queryParams['api_url'];
+    this.img_file_path_url = apiUrl + '/api/public/storage/';
+
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
@@ -300,79 +328,98 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
   
- private fetchInitialData(params: any): void {
-    this.isLoading = true;
-    this.errorMessage = null;
+private fetchInitialData(params: any): void {
+  this.isLoading = true;
+  this.errorMessage = null;
 
-    this.apiService.getProductData(params).pipe(
-      takeUntil(this.destroy$),
-      switchMap((data: any) => {
-        if (data && data[0]) {
-          const response = data[0];
-          // Assuming product_data is an array with one element
-          if (response.product_data && response.product_data.length > 0) {
-            const productData = response.product_data[0];
-            this.mainframe = productData.mainframe;
-            this.background_color_image_url = productData.background_color_image_url;
-            // Now that we have the URLs, set up the visualizer
-            setTimeout(() => this.setupVisualizer(), 0);
-          }
-
-          this.parameters_data = response.data || [];
-          this.apiUrl = params.api_url;
-          this.routeParams = params;
-
-          this.initializeFormControls();
-          this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
-          this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
-          this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
-
-          return forkJoin([
-            this.loadOptionData(params),
-            this.apiService.getminandmax(
-              this.routeParams,
-              this.routeParams.color_id,
-              this.unittype,
-              this.routeParams.pricing_group
-            )
-          ]);
-
+  this.apiService.getProductData(params).pipe(
+    takeUntil(this.destroy$),
+    switchMap((productData: any) => {
+       console.log(productData);
+      if (productData.result?.EcomProductlist?.length > 0) {
+        const data: ProductDetails = productData.result.EcomProductlist[0];
+        console.log(data);
+        let productDefaultImage: any = {};
+        try {
+          productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
+        } catch (e) {
+          productDefaultImage = {};
         }
-        this.errorMessage = 'Invalid product data received';
-        return of(null);
-      }),
-      tap((results) => {
-        if (results) {
-            this.parameters_data.forEach(field => {
-                const control = this.orderForm.get(`field_${field.fieldid}`);
-                if (control) {
-                  if (this.qtyField && field.fieldid === this.qtyField.fieldid) {
-                    this.updateFieldValues(this.qtyField, 1,'fetchInitialDataqty');
-                    control.setValue(1, { emitEvent: false});
-                  }
-                }
-              });
-          const [_, minmaxdata] = results;
-          if (minmaxdata?.data) {
 
-            this.min_width = minmaxdata.data.widthminmax.min;
-            this.min_drop = minmaxdata.data.dropminmax.min;
-            this.max_width = minmaxdata.data.widthminmax.max;
-            this.max_drop = minmaxdata.data.dropminmax.max;
-          }
+        const defaultImage = productDefaultImage?.defaultimage || {};
+        const framename      = defaultImage?.backgrounddefault  || '';
+        if( framename){
+              this.frame_default_url = this.img_file_path_url+'attachments/'+params.api_name+'/productbackgroundimages/'+params.product_id+'/'+framename;
         }
-      }),
-      catchError(err => {
-        console.error('Error fetching product data:', err);
-        this.errorMessage = 'Failed to load product data. Please try again.';
-        return of(null);
-      }),
-      finalize(() => {
-        this.isLoading = false;
-        this.cd.markForCheck();
-      })
-    ).subscribe();
+        console.log(this.frame_default_url);
+        this.mainframe =  this.frame_default_url;
+        this.background_color_image_url = 'https://curtainmatrix.co.uk/ecommfinal/api/public/storage/attachments/ECOMMERCE/optionImages/6806_option_290.png?v=1756471475872';
+         this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
+         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+       // setTimeout(() => this.setupVisualizer(), 0);
+      }
+      return this.apiService.getProductParameters(params);
+    }),
+    switchMap((data: any) => {
+      if (data && data[0]) {
+        const response = data[0];
+        this.parameters_data = response.data || [];
+        this.apiUrl = params.api_url;
+        this.routeParams = params;
+
+        this.initializeFormControls();
+        this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
+        this.supplierField   = this.parameters_data.find(f => f.fieldtypeid === 17);
+        this.qtyField        = this.parameters_data.find(f => f.fieldtypeid === 14);
+
+        return forkJoin([
+          this.loadOptionData(params),
+          this.apiService.getminandmax(
+            this.routeParams,
+            this.routeParams.color_id,
+            this.unittype,
+            this.routeParams.pricing_group
+          )
+        ]);
+      }
+
+      this.errorMessage = 'Invalid product data received';
+      return of(null);
+    }),
+    tap((results) => {
+      if (results) {
+        this.parameters_data.forEach(field => {
+          const control = this.orderForm.get(`field_${field.fieldid}`);
+          if (control) {
+            if (this.qtyField && field.fieldid === this.qtyField.fieldid) {
+              this.updateFieldValues(this.qtyField, 1, 'fetchInitialDataqty');
+              control.setValue(1, { emitEvent: false });
+            }
+          }
+        });
+
+        const [_, minmaxdata] = results;
+        if (minmaxdata?.data) {
+          this.min_width = minmaxdata.data.widthminmax.min;
+          this.min_drop  = minmaxdata.data.dropminmax.min;
+          this.max_width = minmaxdata.data.widthminmax.max;
+          this.max_drop  = minmaxdata.data.dropminmax.max;
+        }
+      }
+    }),
+    catchError(err => {
+      console.error('Error fetching product data:', err);
+      this.errorMessage = 'Failed to load product data. Please try again.';
+      return of(null);
+    }),
+    finalize(() => {
+      this.isLoading = false;
+      this.cd.markForCheck();
+    })
+  ).subscribe();
 }
+
+
 
   private initializeFormControls(): void {
    
@@ -601,8 +648,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       if (!selectedOption) return;
 
       // Update background image URL if a color/fabric is selected
-      if ((field.fieldtypeid === 5 || field.fieldtypeid === 20) && selectedOption.optionimage) {
+      if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
+          console.log(this.background_color_image_url);
           this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
       }
 
@@ -1332,18 +1380,6 @@ onSubmit(): void {
 
   public getFrameImageUrl(product_img: any): string {
     return product_img?.image_url || '';
-  }
-
-  zoomIn(): void {
-    this.threeService.zoomIn();
-  }
-
-  zoomOut(): void {
-    this.threeService.zoomOut();
-  }
-
-  onMouseWheel(event: WheelEvent): void {
-    this.threeService.handleMouseWheelZoom(event);
   }
 
   onFrameChange(newFrameUrl: string): void {

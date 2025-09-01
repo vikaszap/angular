@@ -12,7 +12,7 @@ export class ThreeService implements OnDestroy {
   private backgroundMesh!: THREE.Mesh;
   private textureLoader = new THREE.TextureLoader();
 
-  constructor() { }
+  constructor() {}
 
   ngOnDestroy(): void {
     if (this.renderer) {
@@ -27,7 +27,7 @@ export class ThreeService implements OnDestroy {
     // Scene
     this.scene = new THREE.Scene();
 
-    // Camera
+    // Camera (flat 2D view)
     this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     this.camera.position.z = 10;
 
@@ -35,7 +35,6 @@ export class ThreeService implements OnDestroy {
     this.renderer = new THREE.WebGLRenderer({ canvas: canvas.nativeElement, alpha: true, antialias: true });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
   }
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
@@ -54,7 +53,6 @@ export class ThreeService implements OnDestroy {
     // Frame plane
     const frameGeometry = new THREE.PlaneGeometry(width, height);
     const frameTexture = this.textureLoader.load(frameUrl, () => {
-      // Start rendering after the frame (the top layer) has loaded
       this.animate();
     });
     frameTexture.colorSpace = THREE.SRGBColorSpace;
@@ -72,44 +70,15 @@ export class ThreeService implements OnDestroy {
       (this.frameMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
     }
     if (this.backgroundMesh) {
-        (this.backgroundMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(backgroundUrl, () => {
-          this.render();
-        });
-        (this.backgroundMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
-      }
+      (this.backgroundMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(backgroundUrl, () => {
+        this.render();
+      });
+      (this.backgroundMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    }
   }
 
   public animate(): void {
     this.render();
-  }
-
-  public zoomIn(): void {
-    if (this.camera.zoom < 2) { // Max zoom limit
-      this.camera.zoom += 0.1;
-      this.camera.updateProjectionMatrix();
-      this.render();
-    }
-  }
-
-  public zoomOut(): void {
-    if (this.camera.zoom > 0.5) { // Min zoom limit
-      this.camera.zoom -= 0.1;
-      this.camera.updateProjectionMatrix();
-      this.render();
-    }
-  }
-
-  public handleMouseWheelZoom(event: WheelEvent): void {
-    event.preventDefault();
-    const zoomAmount = event.deltaY * -0.001;
-    const newZoom = this.camera.zoom + zoomAmount;
-
-    // Clamp the zoom level
-    if (newZoom >= 0.5 && newZoom <= 2) {
-      this.camera.zoom = newZoom;
-      this.camera.updateProjectionMatrix();
-      this.render();
-    }
   }
 
   public onResize(container: HTMLElement): void {
@@ -130,8 +99,8 @@ export class ThreeService implements OnDestroy {
   }
 
   private render(): void {
-    if(this.renderer){
-       this.renderer.render(this.scene, this.camera);
+    if (this.renderer) {
+      this.renderer.render(this.scene, this.camera);
     }
   }
 }
