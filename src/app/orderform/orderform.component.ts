@@ -335,28 +335,55 @@ private fetchInitialData(params: any): void {
   this.apiService.getProductData(params).pipe(
     takeUntil(this.destroy$),
     switchMap((productData: any) => {
-       console.log(productData);
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
-        console.log(data);
+
+        let productBgImages: string[] = [];
+        try {
+          productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
+        } catch (e) {
+          console.error('Error parsing pi_backgroundimage:', e);
+          productBgImages = [];
+        }
+
         let productDefaultImage: any = {};
         try {
           productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
         } catch (e) {
+          console.error('Error parsing pi_deafultimage:', e);
           productDefaultImage = {};
         }
 
-        const defaultImage = productDefaultImage?.defaultimage || {};
-        const framename      = defaultImage?.backgrounddefault  || '';
-        if( framename){
-              this.frame_default_url = this.img_file_path_url+'attachments/'+params.api_name+'/productbackgroundimages/'+params.product_id+'/'+framename;
+        const defaultImageSettings = productDefaultImage?.defaultimage || {};
+        const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
+
+        this.product_img_array = productBgImages.map(imgFilename => {
+          const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
+          const imageUrl = this.img_file_path_url + 'attachments/' + params.api_name + '/productbackgroundimages/' + data.pei_productid + '/' + imgFilename;
+
+          if (isDefault) {
+            this.frame_default_url = imageUrl;
+            this.mainframe = imageUrl;
+          }
+
+          return {
+            image_url: imageUrl,
+            is_default: isDefault
+          };
+        });
+
+        if (!this.mainframe && this.product_img_array.length > 0) {
+          // If no default was found, set the first image as the main frame
+          const firstImage = this.product_img_array[0];
+          this.frame_default_url = firstImage.image_url;
+          this.mainframe = firstImage.image_url;
+          firstImage.is_default = true; // Mark it as default in the array
         }
-        console.log(this.frame_default_url);
-        this.mainframe =  this.frame_default_url;
+
         this.background_color_image_url = 'https://curtainmatrix.co.uk/ecommfinal/api/public/storage/attachments/ECOMMERCE/optionImages/6806_option_290.png?v=1756471475872';
-         this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
-       // setTimeout(() => this.setupVisualizer(), 0);
+        this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
+        this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+        // setTimeout(() => this.setupVisualizer(), 0);
       }
       return this.apiService.getProductParameters(params);
     }),
@@ -1384,6 +1411,11 @@ onSubmit(): void {
 
   onFrameChange(newFrameUrl: string): void {
     this.mainframe = newFrameUrl;
+
+    this.product_img_array.forEach(img => {
+      img.is_default = (img.image_url === newFrameUrl);
+    });
+
     if (this.threeService) {
       this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
     }
