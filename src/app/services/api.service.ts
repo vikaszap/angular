@@ -96,8 +96,14 @@ export class ApiService {
     console.error('API Error:', error);
     return throwError(() => new Error('An error occurred. Please try again later.'));
   }
-
+  
   getProductData(params: ApiCommonParams): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, ...payload } = params;
+    const passData = `getproductsdetails/${product_id}`;
+    return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
+  }
+
+  getProductParameters(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, recipeid, ...payload } = params;
     if (!recipeid) {
       return throwError(() => new Error('recipeid is required'));

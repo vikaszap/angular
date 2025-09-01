@@ -12,7 +12,7 @@ export class ThreeService implements OnDestroy {
   private backgroundMesh!: THREE.Mesh;
   private textureLoader = new THREE.TextureLoader();
 
-  constructor() { }
+  constructor() {}
 
   ngOnDestroy(): void {
     if (this.renderer) {
@@ -27,7 +27,7 @@ export class ThreeService implements OnDestroy {
     // Scene
     this.scene = new THREE.Scene();
 
-    // Camera
+    // Camera (flat 2D view)
     this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     this.camera.position.z = 10;
 
@@ -53,7 +53,6 @@ export class ThreeService implements OnDestroy {
     // Frame plane
     const frameGeometry = new THREE.PlaneGeometry(width, height);
     const frameTexture = this.textureLoader.load(frameUrl, () => {
-      // Start rendering after the frame (the top layer) has loaded
       this.animate();
     });
     frameTexture.colorSpace = THREE.SRGBColorSpace;
@@ -71,11 +70,11 @@ export class ThreeService implements OnDestroy {
       (this.frameMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
     }
     if (this.backgroundMesh) {
-        (this.backgroundMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(backgroundUrl, () => {
-          this.render();
-        });
-        (this.backgroundMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
-      }
+      (this.backgroundMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(backgroundUrl, () => {
+        this.render();
+      });
+      (this.backgroundMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    }
   }
 
   public animate(): void {
@@ -100,8 +99,8 @@ export class ThreeService implements OnDestroy {
   }
 
   private render(): void {
-    if(this.renderer){
-       this.renderer.render(this.scene, this.camera);
+    if (this.renderer) {
+      this.renderer.render(this.scene, this.camera);
     }
   }
 }
