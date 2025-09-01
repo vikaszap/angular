@@ -296,7 +296,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     const apiUrl = this.route.snapshot.queryParams['api_url'];
-    this.img_file_path_url = apiUrl + '/api/public/storage/';
+    this.img_file_path_url = apiUrl + '/api/public/';
 
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
