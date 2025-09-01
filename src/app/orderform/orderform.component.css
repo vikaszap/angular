@@ -321,3 +321,22 @@ canvas {
   height: 100% !important;
   display: block;
 }
+.blindmatrix-v4-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.frame-item {
+  flex: 0 0 auto;
+  margin-right: 10px;
+}
+
+.frame-preview {
+  width: 200px;
+  height: 100px;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
