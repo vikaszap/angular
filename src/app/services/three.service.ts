@@ -84,7 +84,6 @@ export class ThreeService implements OnDestroy {
   }
 
   public zoomIn(): void {
-    if (!this.camera) return;
     if (this.camera.zoom < 2) { // Max zoom limit
       this.camera.zoom += 0.1;
       this.camera.updateProjectionMatrix();
@@ -93,7 +92,6 @@ export class ThreeService implements OnDestroy {
   }
 
   public zoomOut(): void {
-    if (!this.camera) return;
     if (this.camera.zoom > 0.5) { // Min zoom limit
       this.camera.zoom -= 0.1;
       this.camera.updateProjectionMatrix();
@@ -102,7 +100,6 @@ export class ThreeService implements OnDestroy {
   }
 
   public handleMouseWheelZoom(event: WheelEvent): void {
-    if (!this.camera) return;
     event.preventDefault();
     const zoomAmount = event.deltaY * -0.001;
     const newZoom = this.camera.zoom + zoomAmount;
