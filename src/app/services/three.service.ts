@@ -32,9 +32,15 @@ export class ThreeService implements OnDestroy {
     this.camera.position.z = 10;
 
     // Renderer
-    this.renderer = new THREE.WebGLRenderer({ canvas: canvas.nativeElement, alpha: true, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ 
+      canvas: canvas.nativeElement, 
+      alpha: true, 
+      antialias: true,
+      preserveDrawingBuffer: true // Helps with transparency
+    });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setClearColor(0x000000, 0); // Clear with transparent background
   }
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
@@ -45,7 +51,10 @@ export class ThreeService implements OnDestroy {
     const backgroundGeometry = new THREE.PlaneGeometry(width, height);
     const backgroundTexture = this.textureLoader.load(backgroundUrl);
     backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-    const backgroundMaterial = new THREE.MeshBasicMaterial({ map: backgroundTexture });
+    const backgroundMaterial = new THREE.MeshBasicMaterial({ 
+      map: backgroundTexture,
+      transparent: false // Background shouldn't be transparent
+    });
     this.backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
     this.backgroundMesh.position.z = -1;
     this.scene.add(this.backgroundMesh);
@@ -56,7 +65,12 @@ export class ThreeService implements OnDestroy {
       this.animate();
     });
     frameTexture.colorSpace = THREE.SRGBColorSpace;
-    const frameMaterial = new THREE.MeshBasicMaterial({ map: frameTexture, transparent: true });
+    const frameMaterial = new THREE.MeshBasicMaterial({ 
+      map: frameTexture, 
+      transparent: true,
+      alphaTest: 0.1, // Helps with transparency issues
+      depthWrite: false // Important for transparency
+    });
     this.frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
     this.frameMesh.position.z = 0;
     this.scene.add(this.frameMesh);
@@ -64,16 +78,55 @@ export class ThreeService implements OnDestroy {
 
   public updateTextures(frameUrl: string, backgroundUrl: string): void {
     if (this.frameMesh) {
-      (this.frameMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(frameUrl, () => {
+      const oldMaterial = this.frameMesh.material as THREE.MeshBasicMaterial;
+      
+      // Dispose of the old texture to prevent memory leaks
+      if (oldMaterial.map) {
+        oldMaterial.map.dispose();
+      }
+      
+      // Load new texture
+      const frameTexture = this.textureLoader.load(frameUrl, () => {
         this.render();
       });
-      (this.frameMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+      frameTexture.colorSpace = THREE.SRGBColorSpace;
+      
+      // Create new material with proper settings
+      const frameMaterial = new THREE.MeshBasicMaterial({ 
+        map: frameTexture, 
+        transparent: true,
+        alphaTest: 0.1,
+        depthWrite: false
+      });
+      
+      // Replace the material
+      this.frameMesh.material = frameMaterial;
+      oldMaterial.dispose(); // Dispose of the old material
     }
+    
     if (this.backgroundMesh) {
-      (this.backgroundMesh.material as THREE.MeshBasicMaterial).map = this.textureLoader.load(backgroundUrl, () => {
+      const oldMaterial = this.backgroundMesh.material as THREE.MeshBasicMaterial;
+      
+      // Dispose of the old texture to prevent memory leaks
+      if (oldMaterial.map) {
+        oldMaterial.map.dispose();
+      }
+      
+      // Load new texture
+      const backgroundTexture = this.textureLoader.load(backgroundUrl, () => {
         this.render();
       });
-      (this.backgroundMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+      backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+      
+      // Create new material with proper settings
+      const backgroundMaterial = new THREE.MeshBasicMaterial({ 
+        map: backgroundTexture,
+        transparent: false
+      });
+      
+      // Replace the material
+      this.backgroundMesh.material = backgroundMaterial;
+      oldMaterial.dispose(); // Dispose of the old material
     }
   }
 
@@ -93,6 +146,19 @@ export class ThreeService implements OnDestroy {
       this.camera.top = height / 2;
       this.camera.bottom = height / -2;
       this.camera.updateProjectionMatrix();
+
+      // Update geometries to match new size
+      if (this.frameMesh) {
+        const frameGeometry = new THREE.PlaneGeometry(width, height);
+        this.frameMesh.geometry.dispose();
+        this.frameMesh.geometry = frameGeometry;
+      }
+      
+      if (this.backgroundMesh) {
+        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+        this.backgroundMesh.geometry.dispose();
+        this.backgroundMesh.geometry = backgroundGeometry;
+      }
 
       this.render();
     }
