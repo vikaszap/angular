@@ -1342,6 +1342,18 @@ onSubmit(): void {
     return product_img?.image_url || '';
   }
 
+  zoomIn(): void {
+    this.threeService.zoomIn();
+  }
+
+  zoomOut(): void {
+    this.threeService.zoomOut();
+  }
+
+  onMouseWheel(event: WheelEvent): void {
+    this.threeService.handleMouseWheelZoom(event);
+  }
+
   onFrameChange(newFrameUrl: string): void {
     this.mainframe = newFrameUrl;
     if (this.threeService) {

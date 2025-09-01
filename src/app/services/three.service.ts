@@ -83,6 +83,38 @@ export class ThreeService implements OnDestroy {
     this.render();
   }
 
+  public zoomIn(): void {
+    if (!this.camera) return;
+    if (this.camera.zoom < 2) { // Max zoom limit
+      this.camera.zoom += 0.1;
+      this.camera.updateProjectionMatrix();
+      this.render();
+    }
+  }
+
+  public zoomOut(): void {
+    if (!this.camera) return;
+    if (this.camera.zoom > 0.5) { // Min zoom limit
+      this.camera.zoom -= 0.1;
+      this.camera.updateProjectionMatrix();
+      this.render();
+    }
+  }
+
+  public handleMouseWheelZoom(event: WheelEvent): void {
+    if (!this.camera) return;
+    event.preventDefault();
+    const zoomAmount = event.deltaY * -0.001;
+    const newZoom = this.camera.zoom + zoomAmount;
+
+    // Clamp the zoom level
+    if (newZoom >= 0.5 && newZoom <= 2) {
+      this.camera.zoom = newZoom;
+      this.camera.updateProjectionMatrix();
+      this.render();
+    }
+  }
+
   public onResize(container: HTMLElement): void {
     if (this.renderer && this.camera) {
       const width = container.clientWidth;
