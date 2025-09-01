@@ -8,8 +8,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';
-import { Subject, forkJoin, Observable, of, from, BehaviorSubject } from 'rxjs';
-import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, filter, take } from 'rxjs/operators';
+import { Subject, forkJoin, Observable, of, from } from 'rxjs';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -137,7 +137,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   mainframe!: string;
   background_color_image_url!: string;
 
-  private viewReady = new BehaviorSubject<boolean>(false);
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
   private priceGroupField?: ProductField;
@@ -284,8 +283,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.viewReady.next(true);
-    this.viewReady.complete();
+    // Intentionally left blank. Initialization is handled by setupVisualizer().
   }
 
   private setupVisualizer(): void {
@@ -316,14 +314,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             const productData = response.product_data[0];
             this.mainframe = productData.mainframe;
             this.background_color_image_url = productData.background_color_image_url;
-
-            // Wait until the view is ready before setting up the visualizer
-            this.viewReady.pipe(
-              filter(ready => ready),
-              take(1)
-            ).subscribe(() => {
-              this.setupVisualizer();
-            });
+            // Now that we have the URLs, set up the visualizer
+            setTimeout(() => this.setupVisualizer(), 0);
           }
 
           this.parameters_data = response.data || [];
