@@ -22,11 +22,7 @@
 
     <div id="configurator-root" class="product_visualizer_wrapper">
       <div class="visualizer-container">
-        <div class="visualizer-main" (wheel)="onMouseWheel($event)">
-          <div class="zoom-controls">
-            <button (click)="zoomIn()" class="zoom-btn">+</button>
-            <button (click)="zoomOut()" class="zoom-btn">-</button>
-          </div>
+        <div class="visualizer-main">
           <div class="sticky-container">
             <div class="product_preview" #visualizerContainer>
               <div id="main-img" class="configuratorpreviewimage">
