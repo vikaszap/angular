@@ -359,7 +359,14 @@ private fetchInitialData(params: any): void {
 
         this.product_img_array = productBgImages.map(imgFilename => {
           const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
-          const imageUrl = this.img_file_path_url + 'attachments/' + params.api_name + '/productbackgroundimages/' + data.pei_productid + '/' + imgFilename;
+
+          // The imgFilename can be a full path with spaces, so we need to encode only the filename part.
+          const pathParts = imgFilename.split('/');
+          const filename = pathParts.pop() || '';
+          const encodedFilename = encodeURIComponent(filename);
+          const encodedImgPath = [...pathParts, encodedFilename].join('/');
+
+          const imageUrl = this.img_file_path_url + encodedImgPath;
 
           if (isDefault) {
             this.frame_default_url = imageUrl;
