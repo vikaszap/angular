@@ -17,7 +17,7 @@ export class ThreeService implements OnDestroy {
   private isZooming = false;
   private mouseX = 0;
   private mouseY = 0;
-  private zoomFactor = 2;
+  private zoomFactor = 8;
   private lensRadius = 75;
 
   constructor() {}
@@ -28,38 +28,33 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-    // Scene
-    this.scene = new THREE.Scene();
+  this.scene = new THREE.Scene();
 
-    // Main Camera (flat 2D view)
-    this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    this.camera.position.z = 10;
+  this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+  this.camera.position.z = 10;
 
-    // Zoom Camera
-    this.zoomCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    this.zoomCamera.position.z = 10;
-    this.scene.add(this.zoomCamera); // Add to scene so it's part of the graph
+  this.zoomCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+  this.zoomCamera.position.z = 10;
 
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: canvas.nativeElement,
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true // Important for effects like this
-    });
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(0x000000, 0); // Clear with transparent background
-    this.renderer.autoClear = false; // We will handle clearing manually
-  }
+  this.renderer = new THREE.WebGLRenderer({
+    canvas: canvas.nativeElement,
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true
+  });
+
+  this.renderer.setPixelRatio(window.devicePixelRatio); // ✅ important
+  this.renderer.setSize(width, height, false); // false = don’t update canvas.style
+  this.renderer.autoClear = false;
+}
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
-    const width = this.renderer.domElement.width;
-    const height = this.renderer.domElement.height;
+    const width = this.renderer.domElement.clientWidth;
+    const height = this.renderer.domElement.clientHeight;
 
     // Background plane
     const backgroundGeometry = new THREE.PlaneGeometry(width, height);
@@ -197,8 +192,8 @@ export class ThreeService implements OnDestroy {
       return;
     }
 
-    const width = this.renderer.domElement.width;
-    const height = this.renderer.domElement.height;
+    const width = this.renderer.domElement.clientWidth;
+    const height = this.renderer.domElement.clientHeight;
 
     // 1. Clear the canvas
     this.renderer.clear();

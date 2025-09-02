@@ -412,10 +412,7 @@
             </div>
             <div class="product-details-container">
               <div class="product-details">
-                <h6><a [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6>
-                <span *ngIf="related_product.minprice" class="price-container">
-                  <span>From : {{ related_product.minprice | currency:'GBP' }}</span>
-                </span>
+                <h6><a [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6> 
               </div>
               <div>
                 <a [routerLink]="getRelatedProductLink(related_product)" 
