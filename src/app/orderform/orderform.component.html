@@ -24,9 +24,14 @@
       <div class="visualizer-container">
         <div class="visualizer-main">
           <div class="sticky-container">
-            <div class="product_preview" #visualizerContainer>
-              <div id="main-img" class="configuratorpreviewimage" style ="height:100%">
+            <div class="product_preview"
+                 #visualizerContainer
+                 (mousemove)="onMouseMove($event)"
+                 (mouseenter)="onMouseEnter()"
+                 (mouseleave)="onMouseLeave()">
+              <div id="main-img" class="configuratorpreviewimage" style="height:100%; position: relative;">
                 <canvas #visualizerCanvas></canvas>
+                <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
               </div>
             </div>
 

@@ -158,7 +158,9 @@ interface FractionOption {
 export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
+  @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
 
+  isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
@@ -311,7 +313,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Intentionally left blank. Initialization is handled by setupVisualizer().
+    // Initialization is handled by setupVisualizer() which is called after data fetch.
+    // We also need to ensure the animation loop in three.service is started.
+    // A better place for this might be after the first textures are loaded.
   }
 
   private setupVisualizer(): void {
@@ -390,7 +394,7 @@ private fetchInitialData(params: any): void {
         this.background_color_image_url = 'https://curtainmatrix.co.uk/ecommfinal/api/public/storage/attachments/ECOMMERCE/optionImages/6806_option_290.png?v=1756471475872';
         this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
-        // setTimeout(() => this.setupVisualizer(), 0);
+        this.threeService.animate(); // Start the render loop
       }
       return this.apiService.getProductParameters(params);
     }),
@@ -1449,6 +1453,39 @@ onSubmit(): void {
 
   public getRelatedProductName(related_product: any): string {
     return related_product?.name || '';
+  }
+
+  // Zoom Lens Methods
+  onMouseEnter(): void {
+    this.isZooming = true;
+    this.threeService.enableZoom(true);
+  }
+
+  onMouseLeave(): void {
+    this.isZooming = false;
+    this.threeService.enableZoom(false);
+  }
+
+  onMouseMove(event: MouseEvent): void {
+    if (!this.isZooming || !this.containerRef || !this.zoomLensRef) {
+      return;
+    }
+
+    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
+    const lensEl = this.zoomLensRef.nativeElement;
+
+    // Calculate mouse position relative to the container
+    const x = event.clientX - containerRect.left;
+    const y = event.clientY - containerRect.top;
+
+    // Update the Three.js service with the raw coordinates
+    this.threeService.setZoom(x, y);
+
+    // Position the lens div element, centering it on the cursor
+    const lensHalfWidth = lensEl.offsetWidth / 2;
+    const lensHalfHeight = lensEl.offsetHeight / 2;
+    lensEl.style.left = `${x - lensHalfWidth}px`;
+    lensEl.style.top = `${y - lensHalfHeight}px`;
   }
 
   trackByFieldId(index: number, field: ProductField): number {
