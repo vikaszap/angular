@@ -219,15 +219,15 @@ export class ThreeService implements OnDestroy {
       const worldX = this.camera.left + (lensX / width) * (this.camera.right - this.camera.left);
       const worldY = this.camera.top - (lensY / height) * (this.camera.top - this.camera.bottom);
 
-      // Calculate the dimensions of the zoom camera's view
-      const zoomWidth = (this.camera.right - this.camera.left) / this.zoomFactor;
-      const zoomHeight = (this.camera.top - this.camera.bottom) / this.zoomFactor;
+      // Calculate the dimensions of the zoom camera's view, ensuring a square aspect ratio
+      // to match the circular lens viewport. We base the size on the main camera's width.
+      const zoomSize = (this.camera.right - this.camera.left) / this.zoomFactor;
 
       // Center the zoom camera's frustum on the world coordinates
-      this.zoomCamera.left = worldX - (zoomWidth / 2);
-      this.zoomCamera.right = worldX + (zoomWidth / 2);
-      this.zoomCamera.top = worldY + (zoomHeight / 2);
-      this.zoomCamera.bottom = worldY - (zoomHeight / 2);
+      this.zoomCamera.left = worldX - (zoomSize / 2);
+      this.zoomCamera.right = worldX + (zoomSize / 2);
+      this.zoomCamera.top = worldY + (zoomSize / 2);
+      this.zoomCamera.bottom = worldY - (zoomSize / 2);
       this.zoomCamera.updateProjectionMatrix();
 
       // Set the renderer's viewport and scissor to the lens's position
