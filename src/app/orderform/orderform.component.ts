@@ -337,7 +337,7 @@ private fetchInitialData(params: any): void {
     switchMap((productData: any) => {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
-
+        console.log(data);
         let productBgImages: string[] = [];
         try {
           productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
