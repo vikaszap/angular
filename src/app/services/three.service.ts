@@ -215,17 +215,19 @@ export class ThreeService implements OnDestroy {
       const lensY = this.mouseY;
       const lensRadius = this.lensRadius;
 
-      // Calculate the portion of the texture to view through the lens
-      const viewX = (lensX / width) * 2 - 1; // -1 to 1
-      const viewY = -(lensY / height) * 2 + 1; // -1 to 1 (inverted)
+      // Correctly calculate the world coordinates under the mouse
+      const worldX = this.camera.left + (lensX / width) * (this.camera.right - this.camera.left);
+      const worldY = this.camera.top - (lensY / height) * (this.camera.top - this.camera.bottom);
 
-      // Update zoom camera's frustum to "zoom in"
+      // Calculate the dimensions of the zoom camera's view
       const zoomWidth = (this.camera.right - this.camera.left) / this.zoomFactor;
       const zoomHeight = (this.camera.top - this.camera.bottom) / this.zoomFactor;
-      this.zoomCamera.left = this.camera.left + (viewX * (this.camera.right - this.camera.left) / 2);
-      this.zoomCamera.right = this.zoomCamera.left + zoomWidth;
-      this.zoomCamera.top = this.camera.top + (viewY * (this.camera.top - this.camera.bottom) / 2);
-      this.zoomCamera.bottom = this.zoomCamera.top - zoomHeight;
+
+      // Center the zoom camera's frustum on the world coordinates
+      this.zoomCamera.left = worldX - (zoomWidth / 2);
+      this.zoomCamera.right = worldX + (zoomWidth / 2);
+      this.zoomCamera.top = worldY + (zoomHeight / 2);
+      this.zoomCamera.bottom = worldY - (zoomHeight / 2);
       this.zoomCamera.updateProjectionMatrix();
 
       // Set the renderer's viewport and scissor to the lens's position
