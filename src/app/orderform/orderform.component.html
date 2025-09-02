@@ -62,10 +62,6 @@
               <p [style.visibility]="visualizertagline ? 'visible' : 'hidden'">
                 {{ visualizertagline || 'Transform Your Windows With ' + productname }}
               </p>
-              <p class="price" [style.display]="fabricname !== 'single_view' ? 'block' : 'none'">
-                <span> From </span>
-                <span>{{ product_minimum_price | currency:'GBP' }}</span>
-              </p>
             </div>
           </div>
 

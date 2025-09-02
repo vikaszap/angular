@@ -223,11 +223,14 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ];
   color_arr: Record<string, any> = {};
-  product_minimum_price = 0;
   min_width = 0;
   max_width = 0;
   min_drop = 0;
   max_drop = 0;
+  width = 0;
+  drop = 0;
+  widthField: any = 0;
+  dropField: any = 0;
   ecomsampleprice = 0;
   ecomFreeSample = '0';
   delivery_duration = '';
@@ -409,6 +412,8 @@ private fetchInitialData(params: any): void {
         this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
         this.supplierField   = this.parameters_data.find(f => f.fieldtypeid === 17);
         this.qtyField        = this.parameters_data.find(f => f.fieldtypeid === 14);
+        this.widthField = this.parameters_data.find(f => [7, 11, 31].includes(f.fieldtypeid));
+        this.dropField  = this.parameters_data.find(f => [9, 12, 32].includes(f.fieldtypeid));
 
         return forkJoin([
           this.loadOptionData(params),
@@ -1200,7 +1205,20 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       this.previousFormValue = { ...values };
       return;
     }
-
+    if (values['widthfraction'] !== this.previousFormValue['widthfraction'] && this.widthField) {
+      let mainWidth = Number(this.orderForm.get('field_' + this.widthField.fieldid)?.value) || 0;
+      let fractionValue = Number(values['widthfraction']) || 0;
+      const totalWidth = mainWidth + fractionValue;
+      this.width = totalWidth;
+      this.updateFieldValues(this.widthField, totalWidth, 'Totalwidth');
+    }
+    if (values['dropfraction'] !== this.previousFormValue['dropfraction'] && this.dropField) {
+      let mainDrop = Number(this.orderForm.get('field_' + this.dropField.fieldid)?.value) || 0;
+      let fractionValue = Number(values['dropfraction']) || 0;
+      const totalDrop = mainDrop + fractionValue;
+      this.drop = totalDrop;
+      this.updateFieldValues(this.dropField, totalDrop, 'TotalDrop');
+    }
     for (const key in values) {
       if (!key.startsWith('field_')) continue;
 
@@ -1236,7 +1254,8 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
 
     const totalWidth = Number(value) + fractionValue;
-
+    this.width = totalWidth;
+    console.log( this.width);
     this.updateFieldValues(field, totalWidth,'Totalwidth');
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
@@ -1247,6 +1266,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
 
     const totalDrop = Number(value) + fractionValue;
+    this.drop = totalDrop;
     this.updateFieldValues(field, totalDrop,'TotalDrop');
   }
   

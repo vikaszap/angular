@@ -275,4 +275,66 @@ export class ApiService {
     
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  getPrice( params: ApiCommonParams ,
+    width:any ="",
+    drop:any = "",
+    unittype:any,
+    supplierid:any,
+    widthfieldtypeid:any,
+    dropfieldtypeid:any,
+    pricegroup:any,
+    vatprice:any,
+    optiondata:any,
+    colorid:any = "",
+    fabricid:any = "",
+    ) {
+    const { api_url, api_key, api_name, recipeid,product_id } = params;
+    const payload = {
+        blindopeningwidth: [],
+        productid: product_id,
+        supplierid: supplierid,
+        mode: "pricetableprice",
+        width: width,
+        drop: drop,
+        pricegroup: pricegroup,
+        customertype: 4,
+        optiondata: optiondata,
+        unittype: unittype,
+        orderitemqty: 1,
+        jobid: null,
+        overridetype: 1,
+        overrideprice: "",
+        overridevalue: null,
+        vatpercentage: vatprice,
+        costpriceoverride: 0,
+        costpriceoverrideprice: 0,
+        orderitemcostprice: 0,
+        productionmaterialcostprice: "",
+        materialFormulaPrice: 0,
+        productionmaterialnetprice: 0,
+        productionmaterialnetpricewithdiscount: 0,
+        overridepricevalue: 0,
+        getpricegroupprice: 0,
+        rulescostpricecomesfrom: "1",
+        rulesnetpricecomesfrom: "2",
+        fabricfieldtype: "",
+        widthfieldtypeid: widthfieldtypeid,
+        dropfieldtypeid: dropfieldtypeid,
+        colorid: colorid,
+        reportpriceresults: [],
+        fabricid: fabricid,
+        orderid: "",
+        customerid: "",
+        fabriciddual: [],
+        fabricmulticurtain: [],
+        coloriddual: [],
+        subfabricid: "",
+        subcolorid: "",
+        pricegroupdual: "",
+        pricegroupmulticurtain: []
+      };
+     const passData = `orderitems/calculate/option/price`;
+    
+     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
 }
