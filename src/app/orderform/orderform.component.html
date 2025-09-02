@@ -24,9 +24,14 @@
       <div class="visualizer-container">
         <div class="visualizer-main">
           <div class="sticky-container">
-            <div class="product_preview" #visualizerContainer>
-              <div id="main-img" class="configuratorpreviewimage" style ="height:100%">
+            <div class="product_preview"
+                 #visualizerContainer
+                 (mousemove)="onMouseMove($event)"
+                 (mouseenter)="onMouseEnter()"
+                 (mouseleave)="onMouseLeave()">
+              <div id="main-img" class="configuratorpreviewimage" style="height:100%; position: relative;">
                 <canvas #visualizerCanvas></canvas>
+                <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
               </div>
             </div>
 
@@ -407,10 +412,7 @@
             </div>
             <div class="product-details-container">
               <div class="product-details">
-                <h6><a [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6>
-                <span *ngIf="related_product.minprice" class="price-container">
-                  <span>From : {{ related_product.minprice | currency:'GBP' }}</span>
-                </span>
+                <h6><a [routerLink]="getRelatedProductLink(related_product)">{{ getRelatedProductName(related_product) }}</a></h6> 
               </div>
               <div>
                 <a [routerLink]="getRelatedProductLink(related_product)" 

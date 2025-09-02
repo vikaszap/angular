@@ -7,10 +7,18 @@ import * as THREE from 'three';
 export class ThreeService implements OnDestroy {
   private scene!: THREE.Scene;
   private camera!: THREE.OrthographicCamera;
+  private zoomCamera!: THREE.OrthographicCamera;
   private renderer!: THREE.WebGLRenderer;
   private frameMesh!: THREE.Mesh;
   private backgroundMesh!: THREE.Mesh;
   private textureLoader = new THREE.TextureLoader();
+
+  // Zoom properties
+  private isZooming = false;
+  private mouseX = 0;
+  private mouseY = 0;
+  private zoomFactor = 8;
+  private lensRadius = 75;
 
   constructor() {}
 
@@ -20,32 +28,33 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-    // Scene
-    this.scene = new THREE.Scene();
+  this.scene = new THREE.Scene();
 
-    // Camera (flat 2D view)
-    this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    this.camera.position.z = 10;
+  this.camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+  this.camera.position.z = 10;
 
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({ 
-      canvas: canvas.nativeElement, 
-      alpha: true, 
-      antialias: true,
-      preserveDrawingBuffer: true // Helps with transparency
-    });
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(0x000000, 0); // Clear with transparent background
-  }
+  this.zoomCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+  this.zoomCamera.position.z = 10;
+
+  this.renderer = new THREE.WebGLRenderer({
+    canvas: canvas.nativeElement,
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true
+  });
+
+  this.renderer.setPixelRatio(window.devicePixelRatio); // ✅ important
+  this.renderer.setSize(width, height, false); // false = don’t update canvas.style
+  this.renderer.autoClear = false;
+}
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
-    const width = this.renderer.domElement.width;
-    const height = this.renderer.domElement.height;
+    const width = this.renderer.domElement.clientWidth;
+    const height = this.renderer.domElement.clientHeight;
 
     // Background plane
     const backgroundGeometry = new THREE.PlaneGeometry(width, height);
@@ -131,7 +140,12 @@ export class ThreeService implements OnDestroy {
   }
 
   public animate(): void {
-    this.render();
+    // Continuous rendering loop
+    const loop = () => {
+      this.render();
+      requestAnimationFrame(loop);
+    };
+    loop();
   }
 
   public onResize(container: HTMLElement): void {
@@ -164,9 +178,63 @@ export class ThreeService implements OnDestroy {
     }
   }
 
+  public setZoom(x: number, y: number): void {
+    this.mouseX = x;
+    this.mouseY = y;
+  }
+
+  public enableZoom(enabled: boolean): void {
+    this.isZooming = enabled;
+  }
+
   private render(): void {
-    if (this.renderer) {
-      this.renderer.render(this.scene, this.camera);
+    if (!this.renderer || !this.scene || !this.camera) {
+      return;
     }
+
+    const width = this.renderer.domElement.clientWidth;
+    const height = this.renderer.domElement.clientHeight;
+
+    // 1. Clear the canvas
+    this.renderer.clear();
+
+    // 2. Render the main scene
+    this.renderer.setViewport(0, 0, width, height);
+    this.renderer.setScissor(0, 0, width, height);
+    this.renderer.setScissorTest(true); // Enable scissor test
+    this.renderer.render(this.scene, this.camera);
+
+    // 3. Render the zoomed-in lens view if active
+    if (this.isZooming) {
+      const lensX = this.mouseX;
+      const lensY = this.mouseY;
+      const lensRadius = this.lensRadius;
+
+      // Correctly calculate the world coordinates under the mouse
+      const worldX = this.camera.left + (lensX / width) * (this.camera.right - this.camera.left);
+      const worldY = this.camera.top - (lensY / height) * (this.camera.top - this.camera.bottom);
+
+      // Calculate the dimensions of the zoom camera's view, ensuring a square aspect ratio
+      // to match the circular lens viewport. We base the size on the main camera's width.
+      const zoomSize = (this.camera.right - this.camera.left) / this.zoomFactor;
+
+      // Center the zoom camera's frustum on the world coordinates
+      this.zoomCamera.left = worldX - (zoomSize / 2);
+      this.zoomCamera.right = worldX + (zoomSize / 2);
+      this.zoomCamera.top = worldY + (zoomSize / 2);
+      this.zoomCamera.bottom = worldY - (zoomSize / 2);
+      this.zoomCamera.updateProjectionMatrix();
+
+      // Set the renderer's viewport and scissor to the lens's position
+      this.renderer.setViewport(lensX - lensRadius, height - lensY - lensRadius, lensRadius * 2, lensRadius * 2);
+      this.renderer.setScissor(lensX - lensRadius, height - lensY - lensRadius, lensRadius * 2, lensRadius * 2);
+      this.renderer.setScissorTest(true);
+
+      // Render the scene through the zoom camera
+      this.renderer.render(this.scene, this.zoomCamera);
+    }
+
+    // Reset scissor test
+    this.renderer.setScissorTest(false);
   }
 }
