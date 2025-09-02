@@ -708,7 +708,7 @@ private fetchInitialData(params: any): void {
                control.setValue(this.pricegroup, { emitEvent: false});
              
               const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
-              this.updateFieldValues(field, selectedOption,'pricegrouponColor');
+              this.updateFieldValues(this.priceGroupField, selectedOption,'pricegrouponColor');
             }
           }
           this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup)
@@ -720,7 +720,7 @@ private fetchInitialData(params: any): void {
                 if (control) {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
                   const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
-                  this.updateFieldValues(field, selectedOption,'suppieronColor');
+                  this.updateFieldValues(this.supplierField, selectedOption,'suppieronColor');
                   
                 }
               }
@@ -730,6 +730,7 @@ private fetchInitialData(params: any): void {
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
+            this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
 

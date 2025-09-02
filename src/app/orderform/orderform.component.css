@@ -32,7 +32,6 @@
     flex: 0 0 50%;
     position: relative;
     overflow: visible;
-    box-shadow: 1px 0 5px #ccc;
     border-radius: 10px;
 }
 
