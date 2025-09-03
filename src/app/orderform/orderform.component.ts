@@ -9,7 +9,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -273,6 +273,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
+  public grossPrice: string | null = null;
+  private priceUpdate$ = new Subject<void>();
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -314,6 +316,25 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       takeUntil(this.destroy$)
     ).subscribe(params => {
       this.fetchInitialData(params);
+    });
+
+    this.priceUpdate$.pipe(
+      debounceTime(500),
+      switchMap(() => {
+        if (this.orderForm.valid && this.width > 0 && this.drop > 0 && this.unittype && this.supplier_id && this.widthField && this.dropField && this.pricegroup) {
+          return this.getPrice();
+        }
+        return of(null);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(res => {
+      if (res && res.fullpriceobject) {
+        const { grossprice } = res.fullpriceobject;
+        this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
+      } else {
+        this.grossPrice = null;
+      }
+      this.cd.markForCheck();
     });
   }
 
@@ -1281,6 +1302,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
+    this.priceUpdate$.next();
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -1588,5 +1610,19 @@ private getPrice(): Observable<any> {
   // Helper function for template
   objectKeys(obj: any): string[] {
     return Object.keys(obj || {});
+  }
+
+  incrementQty(): void {
+    const qtyControl = this.orderForm.get('qty');
+    if (qtyControl) {
+      qtyControl.setValue(qtyControl.value + 1);
+    }
+  }
+
+  decrementQty(): void {
+    const qtyControl = this.orderForm.get('qty');
+    if (qtyControl && qtyControl.value > 1) {
+      qtyControl.setValue(qtyControl.value - 1);
+    }
   }
 }
