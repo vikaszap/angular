@@ -430,6 +430,8 @@ canvas {
   display: flex;
   overflow-x: auto;
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) transparent;
 }
 
 .frame-item {
