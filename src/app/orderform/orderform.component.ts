@@ -127,8 +127,14 @@ interface ProductOption {
   optionid_pricegroupid:string;
   pricegroupid:string;
   optioncode?: string;
-  optionquantity?: number;
+  optionquantity?: any;
   forchildfieldoptionlinkid?: string;
+}
+interface SelectProductOption {
+  optionvalue: number;
+  fieldtypeid: number;
+  optionqty?: number;
+  fieldoptionlinkid?: number;
 }
 
 interface FractionOption {
@@ -263,7 +269,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   // Data arrays
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
-  selected_option_data: ProductOption[] = [];
+  selected_option_data: SelectProductOption[] = [];
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
@@ -683,6 +689,7 @@ private fetchInitialData(params: any): void {
         toArray(),
         takeUntil(this.destroy$)
       ).subscribe(() => {
+    
         this.updateFieldValues(field, selectedOptions,'Array.isArrayOptions');
         this.cd.markForCheck();
       });
@@ -726,12 +733,13 @@ private fetchInitialData(params: any): void {
               }
           });
         }else{
-           this.addOption(selectedOption);
+          if(field.fieldtypeid == 3){
+           //this.addOption(selectedOption);
+          }
            this.updateFieldValues(field, selectedOption,'restOption');
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
-          this.addOption(selectedOption);
           this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
@@ -1133,7 +1141,32 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
   };
 
   resetDefaults();
-  
+  if (targetField.fieldtypeid === 3 && selectedOption) {
+  const processOption = (opt: any) => {
+    const transformedOption = {
+      optionvalue: Number(opt.optionid),
+      fieldtypeid: 3,
+      optionqty: parseInt(opt.optionquantity) || 1,
+      fieldoptionlinkid: opt.fieldoptionlinkid
+    };
+
+    const index = this.selected_option_data.findIndex(
+      o => o.fieldoptionlinkid === transformedOption.fieldoptionlinkid
+    );
+
+    if (index > -1) {
+      this.selected_option_data[index] = transformedOption;
+    } else {
+      this.selected_option_data.push(transformedOption);
+    }
+  };
+
+  if (Array.isArray(selectedOption)) {
+    selectedOption.forEach(opt => processOption(opt)); 
+  } else {
+    processOption(selectedOption); 
+  }
+}
   if (Array.isArray(selectedOption)) {
     if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
       const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
@@ -1327,19 +1360,28 @@ private cleanSubchild(fields: any[]): any[] {
     }));
 }
 addOption(selectedOption: ProductOption) {
-  const index = this.selected_option_data.findIndex(
-    o => o.optionid === selectedOption.optionid
-  );
+  const transformedOption = {
+    fieldoptionlinkid: selectedOption.fieldoptionlinkid,
+    fieldtypeid: 3, 
+    optionqty: parseInt(selectedOption.optionquantity) || 1, 
+    optionvalue: Number(selectedOption.optionid)
+  };
 
+  const index = this.selected_option_data.findIndex(
+    o => o.fieldoptionlinkid === transformedOption.fieldoptionlinkid
+  );
+  
   if (index > -1) {
-    this.selected_option_data[index] = selectedOption;
+    this.selected_option_data[index] = transformedOption;
   } else {
-    this.selected_option_data.push(selectedOption);
+    this.selected_option_data.push(transformedOption);
   }
 }
 onSubmit(): void {
-  console.log(this.selected_option_data);
-  
+  this.getPrice().subscribe(res => {
+    const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
+    console.log("Result:", costprice, netprice, vatprice, grossprice);
+  });
   this.jsondata = this.parameters_data.map(field => {
 
     const mappedField = {
@@ -1384,7 +1426,22 @@ onSubmit(): void {
 
   console.log(this.jsondata);
 }
-
+private getPrice(): Observable<any> {
+  return this.apiService.getPrice(
+    this.routeParams,
+    this.width,
+    this.drop,
+    this.unittype,
+    this.supplier_id,
+    this.widthField.fieldtypeid,
+    this.dropField.fieldtypeid,
+    this.pricegroup,
+    "20.00",
+    this.selected_option_data,
+    "",
+    this.colorid
+  );
+}
   private markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();

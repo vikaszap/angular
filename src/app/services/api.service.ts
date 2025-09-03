@@ -285,8 +285,9 @@ export class ApiService {
     pricegroup:any,
     vatprice:any,
     optiondata:any,
-    colorid:any = "",
     fabricid:any = "",
+    colorid:any = "",
+  
     ) {
     const { api_url, api_key, api_name, recipeid,product_id } = params;
     const payload = {
@@ -296,7 +297,7 @@ export class ApiService {
         mode: "pricetableprice",
         width: width,
         drop: drop,
-        pricegroup: pricegroup,
+        pricegroup: [pricegroup],
         customertype: 4,
         optiondata: optiondata,
         unittype: unittype,
@@ -334,7 +335,8 @@ export class ApiService {
         pricegroupmulticurtain: []
       };
      const passData = `orderitems/calculate/option/price`;
-    
+    console.log(passData);
+    console.log(payload);
      return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }
