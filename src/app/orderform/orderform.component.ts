@@ -263,6 +263,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   // Data arrays
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
+  selected_option_data: ProductOption[] = [];
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
@@ -721,16 +722,17 @@ private fetchInitialData(params: any): void {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
                   const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
                   this.updateFieldValues(this.supplierField, selectedOption,'suppieronColor');
-                  
                 }
               }
           });
         }else{
+           this.addOption(selectedOption);
            this.updateFieldValues(field, selectedOption,'restOption');
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
-            this.updateFieldValues(field, selectedOption,'updatecolor');
+          this.addOption(selectedOption);
+          this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
 
@@ -1324,14 +1326,22 @@ private cleanSubchild(fields: any[]): any[] {
         : []
     }));
 }
+addOption(selectedOption: ProductOption) {
+  const index = this.selected_option_data.findIndex(
+    o => o.optionid === selectedOption.optionid
+  );
+
+  if (index > -1) {
+    this.selected_option_data[index] = selectedOption;
+  } else {
+    this.selected_option_data.push(selectedOption);
+  }
+}
 onSubmit(): void {
+  console.log(this.selected_option_data);
+  
   this.jsondata = this.parameters_data.map(field => {
-    /*
-     if ([14, 34, 17, 13,4].includes(field.fieldtypeid)){
-        field.value = field.valueid;
-        field.valueid = "";
-     }
-        */
+
     const mappedField = {
       id: +field.fieldid,
       labelname: field.fieldname,
