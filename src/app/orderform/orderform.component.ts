@@ -9,7 +9,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap } from 'rxjs/operators';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -183,6 +183,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   showFractions = false;
   product_details_arr: Record<string, string> = {};
   product_specs = '';
+  ecomproductname ='';
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
@@ -273,6 +274,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
+  public grossPrice: string | null = null;
+  private priceUpdate$ = new Subject<void>();
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -315,6 +318,22 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     ).subscribe(params => {
       this.fetchInitialData(params);
     });
+
+    this.priceUpdate$.pipe(
+      debounceTime(500),
+      switchMap(() => {
+          return this.getPrice();
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(res => {
+      if (res && res.fullpriceobject) {
+        const { grossprice } = res.fullpriceobject;
+        this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
+      } else {
+        this.grossPrice = null;
+      }
+      this.cd.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {
@@ -352,6 +371,7 @@ private fetchInitialData(params: any): void {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
         console.log(data);
+        this.ecomproductname = data.pei_ecomProductName;
         let productBgImages: string[] = [];
         try {
           productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -733,13 +753,11 @@ private fetchInitialData(params: any): void {
               }
           });
         }else{
-          if(field.fieldtypeid == 3){
-           //this.addOption(selectedOption);
-          }
            this.updateFieldValues(field, selectedOption,'restOption');
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
+          this.fabricname = selectedOption.optionname;
           this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
@@ -1281,6 +1299,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
+    this.priceUpdate$.next();
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -1588,5 +1607,19 @@ private getPrice(): Observable<any> {
   // Helper function for template
   objectKeys(obj: any): string[] {
     return Object.keys(obj || {});
+  }
+
+  incrementQty(): void {
+    const qtyControl = this.orderForm.get('qty');
+    if (qtyControl) {
+      qtyControl.setValue(qtyControl.value + 1);
+    }
+  }
+
+  decrementQty(): void {
+    const qtyControl = this.orderForm.get('qty');
+    if (qtyControl && qtyControl.value > 1) {
+      qtyControl.setValue(qtyControl.value - 1);
+    }
   }
 }

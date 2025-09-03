@@ -13,10 +13,10 @@
 
     <div class="productaname">
       <a [routerLink]="[product_list_page_link]" target="_self">
-        <i class="fa-solid fa-angle-left"></i> <span>Back to {{ productname }}</span>
+        <i class="fa-solid fa-angle-left"></i> <span>Back to {{ ecomproductname }}</span>
       </a>
       <h1 class="product-title">
-        <span>{{ productname }} - {{ fabricname }}</span>
+        <span>{{ ecomproductname }} - {{ fabricname }}</span>
       </h1>
     </div>
 
@@ -287,14 +287,16 @@
               </div>
             </div>
 
-            <div class="price_wrapper">
+            <div class="price_wrapper" *ngIf="grossPrice">
               <div class="price_text">Your Price</div>
-              <div class="showprice_wrapper"></div>
+              <div class="showprice_wrapper">
+                <span class="price">{{ grossPrice }}</span>
+              </div>
             </div>
 
             <div class="variations_button">
               <div class="quantity">
-                <button type="button" class="minus">-</button>
+                <button type="button" class="minus" (click)="decrementQty()">-</button>
                 <input type="number" 
                        formControlName="qty" 
                        title="Qty" 
@@ -302,12 +304,13 @@
                        inputmode="numeric"
                        min="1"
                        aria-label="Quantity">
-                <button type="button"  class="plus">+</button>
+                <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
               <button type="submit" 
                       name="submit-btn" 
                       value="Submit" 
-                      class="add_to_cart_button" >
+                      class="add_to_cart_button"
+                      [disabled]="!orderForm.valid || isSubmitting">
                 <i class="fa-solid fa-cart-shopping"></i> 
                 {{ isSubmitting ? 'Adding...' : 'Add to cart' }}
               </button>
