@@ -11,19 +11,30 @@
       {{ errorMessage }}
     </div>
 
-    <div class="productaname">
-      <a [routerLink]="[product_list_page_link]" target="_self">
-        <i class="fa-solid fa-angle-left"></i> <span>Back to {{ ecomproductname }}</span>
-      </a>
-      <h1 class="product-title">
-        <span>{{ ecomproductname }} - {{ fabricname }}</span>
-      </h1>
-    </div>
+
 
     <div id="configurator-root" class="product_visualizer_wrapper">
+      
       <div class="visualizer-container">
+        
         <div class="visualizer-main">
+       
           <div class="sticky-container">
+       <div class="product-header">
+          <div class="productaname">
+            <a [routerLink]="[product_list_page_link]" target="_self">
+              <i class="fa-solid fa-angle-left"></i>
+              <span>Back to {{ ecomproductname }}</span>
+            </a>
+            <h1 class="product-title">
+              <span>{{ ecomproductname }} - {{ fabricname }}</span>
+            </h1>
+          </div>
+            <div class="price-box">
+              <label class="price-label">Estimated Price:</label>
+              <span class="price">{{ grossPrice }}</span>
+            </div>
+        </div>
             <div class="product_preview"
                  #visualizerContainer
                  (mousemove)="onMouseMove($event)"

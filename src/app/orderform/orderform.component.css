@@ -170,7 +170,7 @@
 }
 
 .quantity {
-    display: flex;
+    display: none;
     align-items: center;
 }
 
@@ -446,4 +446,27 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.price-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.price-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.price {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
 }
