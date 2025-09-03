@@ -48,8 +48,7 @@
 
 .visualizer-container {
     display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .visualizer-main {
@@ -57,8 +56,6 @@
     min-width: 300px;
     position: relative;
     border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    overflow: hidden;
 }
 
 .sticky-container {
@@ -66,7 +63,10 @@
     top: 0;
     z-index: 0;
 }
-
+.blindmatrix-v4-slider button {
+    border: 0;
+    cursor: pointer;
+}
 .configurator-main-headertype {
     border-radius: 10px;
 }

@@ -183,6 +183,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   showFractions = false;
   product_details_arr: Record<string, string> = {};
   product_specs = '';
+  ecomproductname ='';
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
@@ -321,10 +322,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     this.priceUpdate$.pipe(
       debounceTime(500),
       switchMap(() => {
-        if (this.orderForm.valid && this.width > 0 && this.drop > 0 && this.unittype && this.supplier_id && this.widthField && this.dropField && this.pricegroup) {
           return this.getPrice();
-        }
-        return of(null);
       }),
       takeUntil(this.destroy$)
     ).subscribe(res => {
@@ -373,6 +371,7 @@ private fetchInitialData(params: any): void {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
         console.log(data);
+        this.ecomproductname = data.pei_ecomProductName;
         let productBgImages: string[] = [];
         try {
           productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -754,13 +753,11 @@ private fetchInitialData(params: any): void {
               }
           });
         }else{
-          if(field.fieldtypeid == 3){
-           //this.addOption(selectedOption);
-          }
            this.updateFieldValues(field, selectedOption,'restOption');
         }
         if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
+          this.fabricname = selectedOption.optionname;
           this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
