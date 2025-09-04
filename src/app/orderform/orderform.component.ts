@@ -692,6 +692,7 @@ private fetchInitialData(params: any): void {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
+      this.removeSelectedOptionData([field]);
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
@@ -1072,6 +1073,8 @@ private clearExistingSubfields(parentFieldId: number, parentPath?: string): void
 
   if (fieldsToRemove.length === 0) return;
 
+  this.removeSelectedOptionData(fieldsToRemove);
+
   // 4. Remove from flat list
   this.parameters_data = this.parameters_data.filter(f => 
     !fieldsToRemove.some(toRemove => 
@@ -1319,6 +1322,35 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
     this.previousFormValue = { ...values };
     this.priceUpdate$.next();
+  }
+  private removeSelectedOptionData(fields: ProductField[]): void {
+    const allLinkIdsToRemove = new Set<number>();
+
+    fields.forEach(field => {
+      if (field.fieldtypeid === 3) {
+        const controlName = `field_${field.fieldid}`;
+        const previousValue = this.previousFormValue ? this.previousFormValue[controlName] : undefined;
+
+        if (previousValue !== null && previousValue !== undefined && previousValue !== '') {
+          const options = this.option_data[field.fieldid];
+          if (options) {
+            const previousValues = Array.isArray(previousValue) ? previousValue : [previousValue];
+            previousValues.forEach(val => {
+              const selectedOption = options.find(opt => `${opt.optionid}` === `${val}`);
+              if (selectedOption && selectedOption.fieldoptionlinkid) {
+                allLinkIdsToRemove.add(selectedOption.fieldoptionlinkid);
+              }
+            });
+          }
+        }
+      }
+    });
+
+    if (allLinkIdsToRemove.size > 0) {
+      this.selected_option_data = this.selected_option_data.filter(
+        item => !item.fieldoptionlinkid || !allLinkIdsToRemove.has(item.fieldoptionlinkid)
+      );
+    }
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
