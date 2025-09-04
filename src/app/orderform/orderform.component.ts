@@ -88,6 +88,7 @@ interface ProductField {
   valueid?: string;
   optionid?: any;
   level?: number;
+  hasprice?:boolean;
   parentFieldId?: number;
   masterparentfieldid?: number;
   allparentFieldId?: string;
@@ -691,6 +692,7 @@ private fetchInitialData(params: any): void {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
+      this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
     }
@@ -1126,11 +1128,14 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
    */
 
 private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug: string = ""): void {
+  console.log('ccccc');
   const fieldInState = this.parameters_data.find(
     f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
   );
 
   const targetField = fieldInState || field;
+  const control = this.orderForm.get(`field_${targetField.fieldid}`);
+  const currentValue = control ? control.value : null;
 
   const resetDefaults = () => {
     targetField.id = targetField.fieldid ?? '';
@@ -1159,8 +1164,11 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
   };
 
   resetDefaults();
-  if (targetField.fieldtypeid === 3 && selectedOption) {
+  if (targetField.fieldtypeid === 3 && selectedOption ) {
   const processOption = (opt: any) => {
+    if (opt.hasprice !== 1) {
+      return;
+    }
     const transformedOption = {
       optionvalue: Number(opt.optionid),
       fieldtypeid: 3,
@@ -1185,39 +1193,51 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     processOption(selectedOption); 
   }
 }
-  if (Array.isArray(selectedOption)) {
-    if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
-      const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.value = ids;
-      targetField.optiondefault = ids;
-      targetField.optionquantity = '';
-      targetField.valueid =
-        field.fieldtypeid === 13
-          ? selectedOption.map(opt => String(opt.id)).join(',')
-          : field.fieldtypeid === 34
-          ? ids
-          : '';
-    } else {
-      targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.optionquantity = selectedOption.map(() => '1').join(',');
+  if (currentValue === null || currentValue === undefined || currentValue === '' || 
+      (Array.isArray(currentValue) && currentValue.length === 0)) {
+    
+    targetField.value = '';
+    targetField.valueid = '';
+    targetField.optionid = '';
+    targetField.optionvalue = [];
+    targetField.optionquantity = '';
+    
+    
+  }else if (selectedOption !== null) {
+    if (Array.isArray(selectedOption)) {
+      if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
+        const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.value = ids;
+        targetField.optiondefault = ids;
+        targetField.optionquantity = '';
+        targetField.valueid =
+          field.fieldtypeid === 13
+            ? selectedOption.map(opt => String(opt.id)).join(',')
+            : field.fieldtypeid === 34
+            ? ids
+            : '';
+      } else {
+        targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
+        targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.optionquantity = selectedOption.map(() => '1').join(',');
+      }
+
+      targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
+      targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
+      targetField.optionvalue = selectedOption;
     }
 
-    targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
-    targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-    targetField.optionvalue = selectedOption;
-  }
-
-  else if (selectedOption && selectedOption.optionname) {
-    targetField.labelname = targetField.fieldname ?? '';
-    targetField.value = String(selectedOption.optionname);
-    targetField.valueid = String(selectedOption.optionid);
-    targetField.optionid = String(selectedOption.optionid);
-    targetField.optionvalue = [selectedOption];
-    targetField.optionquantity = '1';
-  }
-  else {
-    targetField.value = String(selectedOption) ?? '';
+    else if (selectedOption && selectedOption.optionname) {
+      targetField.labelname = targetField.fieldname ?? '';
+      targetField.value = String(selectedOption.optionname);
+      targetField.valueid = String(selectedOption.optionid);
+      targetField.optionid = String(selectedOption.optionid);
+      targetField.optionvalue = [selectedOption];
+      targetField.optionquantity = '1';
+    }
+    else {
+      targetField.value = String(selectedOption) ?? '';
+    }
   }
     let fractionValue: any;
     if([ 7,11,31].includes(targetField.fieldtypeid) && this.showFractions  ){
@@ -1378,29 +1398,12 @@ private cleanSubchild(fields: any[]): any[] {
         : []
     }));
 }
-addOption(selectedOption: ProductOption) {
-  const transformedOption = {
-    fieldoptionlinkid: selectedOption.fieldoptionlinkid,
-    fieldtypeid: 3, 
-    optionqty: parseInt(selectedOption.optionquantity) || 1, 
-    optionvalue: Number(selectedOption.optionid)
-  };
-
-  const index = this.selected_option_data.findIndex(
-    o => o.fieldoptionlinkid === transformedOption.fieldoptionlinkid
-  );
-  
-  if (index > -1) {
-    this.selected_option_data[index] = transformedOption;
-  } else {
-    this.selected_option_data.push(transformedOption);
-  }
-}
 onSubmit(): void {
-  this.getPrice().subscribe(res => {
+/*  this.getPrice().subscribe(res => {
     const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
     console.log("Result:", costprice, netprice, vatprice, grossprice);
-  });
+  }); */
+  console.log('cc');
   this.jsondata = this.parameters_data.map(field => {
 
     const mappedField = {
