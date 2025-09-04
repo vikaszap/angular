@@ -1128,7 +1128,6 @@ private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField
    */
 
 private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug: string = ""): void {
-  console.log('ccccc');
   const fieldInState = this.parameters_data.find(
     f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
   );
