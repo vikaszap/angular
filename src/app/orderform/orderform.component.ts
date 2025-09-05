@@ -1434,7 +1434,7 @@ onSubmit(): void {
     const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
     console.log("Result:", costprice, netprice, vatprice, grossprice);
   }); */
-  console.log('cc');
+  console.log(this.selected_option_data);
   this.jsondata = this.parameters_data.map(field => {
 
     const mappedField = {
