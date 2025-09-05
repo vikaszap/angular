@@ -470,3 +470,30 @@ canvas {
   font-weight: bold;
   color: #222;
 }
+
+.parameter-wrapper mat-button-toggle.mat-button-toggle-checked {
+  background-color:var(--primary-color) !important; 
+  color: #fff !important;              
+  border-color: var(--primary-color) !important;     
+}
+
+
+.parameter-wrapper.inline-toggle .mat-label {
+    color: rgb(129 130 130);
+   font-size: 14px;
+}
+
+.parameter-wrapper mat-button-toggle {
+  padding: 0 12px !important;     
+}
+.parameter-wrapper.inline-toggle.radio {
+    flex-direction: row;
+    justify-content: space-between;
+   align-items: center;
+}
+.mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+    line-height: 35px!important;
+}
+::ng-deep .mat-button-toggle-label-content {
+  line-height: 35px !important;
+}

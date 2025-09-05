@@ -87,18 +87,27 @@
             <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldecomonjob == 1">
                 <!-- Unit Type -->
-                <div *ngSwitchCase="'unit_type'">
-                  <div class="parameter-wrapper">
-                    <label id="example-radio-group-label" class="mat-label">{{ field.fieldname }}</label>
-                    <mat-radio-group [formControlName]="'field_' + field.fieldid" aria-labelledby="example-radio-group-label">
-                      <mat-radio-button *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
-                                        [value]="option.optionid"
-                                        [id]="'unittype_'+option.optionid">
-                        {{ option.optionname }}
-                      </mat-radio-button>
-                    </mat-radio-group>
-                  </div>
-                </div>
+             <div *ngSwitchCase="'unit_type'">
+              <div class="parameter-wrapper inline-toggle radio">
+                <span class="mat-label" id="example-toggle-group-label">
+                  {{ field.fieldname }}
+                </span>
+
+                <mat-button-toggle-group
+                  [formControlName]="'field_' + field.fieldid"
+                  aria-labelledby="example-toggle-group-label"
+                  appearance="standard">
+
+                  <mat-button-toggle 
+                    *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                    [value]="option.optionid"
+                    [id]="'unittype_'+option.optionid">
+                    {{ option.optionname }}
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+            </div>
+
 
                 <!-- Text Input -->
                 <div *ngSwitchCase="'text'">
@@ -120,7 +129,7 @@
 
            <div *ngSwitchCase="'list'">
                 <div class="parameter-wrapper">
-                  <mat-form-field>
+                  <mat-form-field >
                     <mat-label>{{ field.fieldname }}</mat-label>
                     <mat-select
                       [formControlName]="'field_' + field.fieldid"

@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
 
@@ -158,7 +159,8 @@ interface FractionOption {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatRadioModule
+    MatRadioModule,
+    MatButtonToggleModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -371,7 +373,6 @@ private fetchInitialData(params: any): void {
     switchMap((productData: any) => {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
-        console.log(data);
         this.ecomproductname = data.pei_ecomProductName;
         let productBgImages: string[] = [];
         try {
@@ -422,7 +423,6 @@ private fetchInitialData(params: any): void {
           firstImage.is_default = true; // Mark it as default in the array
         }
 
-        this.background_color_image_url = 'https://curtainmatrix.co.uk/ecommfinal/api/public/storage/attachments/ECOMMERCE/optionImages/6806_option_290.png?v=1756471475872';
         this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
         this.threeService.animate(); // Start the render loop
