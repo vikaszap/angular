@@ -106,9 +106,9 @@ input[type=url],
 select,
 textarea {
     all: unset!important;
-    display: block; /* optional, to make sure inputs behave like inputs */
-    box-sizing: border-box; /* optional, to retain sizing */
-    width: 100%;
+    display: block!important;
+    box-sizing: border-box!important;
+    width: 100%!important;
 }
 
 .slider-container {
