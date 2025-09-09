@@ -63,6 +63,9 @@
     top: 0;
     z-index: 0;
 }
+.sticky-container.scrolled{
+    padding: 40px 0px;
+}
 .blindmatrix-v4-slider button {
     border: 0;
     cursor: pointer;

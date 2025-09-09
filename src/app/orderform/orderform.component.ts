@@ -168,6 +168,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
+  @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
+
 
   isZooming = false;
   mainframe!: string;
@@ -193,6 +195,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
+  isScrolled = false;
   inchfraction_array: FractionOption[] = [
   {
     "name": "1/32",
@@ -311,7 +314,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     this.previousFormValue = this.orderForm.value;
   }
-
+  
   ngOnInit(): void {
     const apiUrl = this.route.snapshot.queryParams['api_url'];
     this.img_file_path_url = apiUrl + '/api/public/';
@@ -1015,7 +1018,15 @@ private processSubfield(
 
     this.orderForm.addControl(controlName, formControl);
   }
-
+   @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.checkScroll();
+  }
+   private checkScroll() {
+    if (!this.stickyEl) return;
+    // true when the top of the element is at or above the viewport top
+    this.isScrolled = this.stickyEl.nativeElement.getBoundingClientRect().top <= 0;
+  }
   /**
    * Remove a field from parameters_data and the form safely.
    */

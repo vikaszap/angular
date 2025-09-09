@@ -19,7 +19,7 @@
         
         <div class="visualizer-main">
        
-          <div class="sticky-container">
+          <div #stickyEl class="sticky-container" [class.scrolled]="isScrolled">
        <div class="product-header">
           <div class="productaname">
             <a [routerLink]="[product_list_page_link]" target="_self">
