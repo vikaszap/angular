@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
 
@@ -158,7 +159,8 @@ interface FractionOption {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatRadioModule
+    MatRadioModule,
+    MatButtonToggleModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -166,6 +168,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
+  @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
+
 
   isZooming = false;
   mainframe!: string;
@@ -191,6 +195,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
+  isScrolled = false;
   inchfraction_array: FractionOption[] = [
   {
     "name": "1/32",
@@ -309,7 +314,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     this.previousFormValue = this.orderForm.value;
   }
-
+  
   ngOnInit(): void {
     const apiUrl = this.route.snapshot.queryParams['api_url'];
     this.img_file_path_url = apiUrl + '/api/public/';
@@ -371,7 +376,6 @@ private fetchInitialData(params: any): void {
     switchMap((productData: any) => {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
-        console.log(data);
         this.ecomproductname = data.pei_ecomProductName;
         let productBgImages: string[] = [];
         try {
@@ -422,7 +426,6 @@ private fetchInitialData(params: any): void {
           firstImage.is_default = true; // Mark it as default in the array
         }
 
-        this.background_color_image_url = 'https://curtainmatrix.co.uk/ecommfinal/api/public/storage/attachments/ECOMMERCE/optionImages/6806_option_290.png?v=1756471475872';
         this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
         this.threeService.animate(); // Start the render loop
@@ -692,6 +695,7 @@ private fetchInitialData(params: any): void {
     if (!field) return;
 
     if (value === null || value === undefined || value === '') {
+      this.removeSelectedOptionData([field]);
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
@@ -1014,7 +1018,15 @@ private processSubfield(
 
     this.orderForm.addControl(controlName, formControl);
   }
-
+   @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.checkScroll();
+  }
+   private checkScroll() {
+    if (!this.stickyEl) return;
+    // true when the top of the element is at or above the viewport top
+    this.isScrolled = this.stickyEl.nativeElement.getBoundingClientRect().top <= 0;
+  }
   /**
    * Remove a field from parameters_data and the form safely.
    */
@@ -1071,6 +1083,8 @@ private clearExistingSubfields(parentFieldId: number, parentPath?: string): void
   });
 
   if (fieldsToRemove.length === 0) return;
+
+  this.removeSelectedOptionData(fieldsToRemove);
 
   // 4. Remove from flat list
   this.parameters_data = this.parameters_data.filter(f => 
@@ -1320,6 +1334,35 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     this.previousFormValue = { ...values };
     this.priceUpdate$.next();
   }
+  private removeSelectedOptionData(fields: ProductField[]): void {
+    const allLinkIdsToRemove = new Set<number>();
+
+    fields.forEach(field => {
+      if (field.fieldtypeid === 3) {
+        const controlName = `field_${field.fieldid}`;
+        const previousValue = this.previousFormValue ? this.previousFormValue[controlName] : undefined;
+
+        if (previousValue !== null && previousValue !== undefined && previousValue !== '') {
+          const options = this.option_data[field.fieldid];
+          if (options) {
+            const previousValues = Array.isArray(previousValue) ? previousValue : [previousValue];
+            previousValues.forEach(val => {
+              const selectedOption = options.find(opt => `${opt.optionid}` === `${val}`);
+              if (selectedOption && selectedOption.fieldoptionlinkid) {
+                allLinkIdsToRemove.add(selectedOption.fieldoptionlinkid);
+              }
+            });
+          }
+        }
+      }
+    });
+
+    if (allLinkIdsToRemove.size > 0) {
+      this.selected_option_data = this.selected_option_data.filter(
+        item => !item.fieldoptionlinkid || !allLinkIdsToRemove.has(item.fieldoptionlinkid)
+      );
+    }
+  }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
 
@@ -1402,7 +1445,7 @@ onSubmit(): void {
     const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
     console.log("Result:", costprice, netprice, vatprice, grossprice);
   }); */
-  console.log('cc');
+  console.log(this.selected_option_data);
   this.jsondata = this.parameters_data.map(field => {
 
     const mappedField = {

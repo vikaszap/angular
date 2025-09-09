@@ -63,12 +63,55 @@
     top: 0;
     z-index: 0;
 }
+.sticky-container.scrolled{
+    padding: 40px 0px;
+}
 .blindmatrix-v4-slider button {
     border: 0;
     cursor: pointer;
+    padding: 0 10px;
+    background-color: unset;
 }
 .configurator-main-headertype {
     border-radius: 10px;
+}
+.product-info {
+    all: unset;
+}
+.woocommerce-js form .form-row textarea,
+.woocommerce-js input[type=email],
+.woocommerce-js input[type=number],
+.woocommerce-js input[type=password],
+.woocommerce-js input[type=reset],
+.woocommerce-js input[type=search],
+.woocommerce-js input[type=tel],
+.woocommerce-js input[type=text],
+.woocommerce-js input[type=url],
+.woocommerce-js textarea,
+.woocommerce-page form .form-row textarea,
+.woocommerce-page input[type=email],
+.woocommerce-page input[type=number],
+.woocommerce-page input[type=password],
+.woocommerce-page input[type=reset],
+.woocommerce-page input[type=search],
+.woocommerce-page input[type=tel],
+.woocommerce-page input[type=text],
+.woocommerce-page input[type=url],
+.woocommerce-page textarea,
+input[type=email],
+input[type=number],
+input[type=password],
+input[type=reset],
+input[type=search],
+input[type=tel],
+input[type=text],
+input[type=url],
+select,
+textarea {
+    all: unset!important;
+    display: block!important;
+    box-sizing: border-box!important;
+    width: 100%!important;
 }
 
 .slider-container {
@@ -212,6 +255,13 @@
 .add_to_cart_button:hover {
     background-color: #0056b3;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.elementor-location-footer {
+    background-color: #002746;
+}
+.angularbody button:hover {
+    color: unset!important;
+    background: unset!important;
 }
 
 .paramlable {
@@ -405,6 +455,7 @@
 .product_preview {
     position: relative;
     cursor: crosshair;
+    padding-bottom: unset!important;
 }
 
 .product_preview.zooming {
@@ -469,4 +520,31 @@ canvas {
   font-size: 1.3rem;
   font-weight: bold;
   color: #222;
+}
+
+.parameter-wrapper mat-button-toggle.mat-button-toggle-checked {
+  background-color:var(--primary-color) !important; 
+  color: #fff !important;              
+  border-color: var(--primary-color) !important;     
+}
+
+
+.parameter-wrapper.inline-toggle .mat-label {
+    color: rgb(129 130 130);
+   font-size: 14px;
+}
+
+.parameter-wrapper mat-button-toggle {
+  padding: 0 12px !important;     
+}
+.parameter-wrapper.inline-toggle.radio {
+    flex-direction: row;
+    justify-content: space-between;
+   align-items: center;
+}
+.mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
+    line-height: 35px!important;
+}
+::ng-deep .mat-button-toggle-label-content {
+  line-height: 35px !important;
 }
