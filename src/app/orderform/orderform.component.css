@@ -66,9 +66,49 @@
 .blindmatrix-v4-slider button {
     border: 0;
     cursor: pointer;
+    padding: 0 10px;
+    background-color: unset;
 }
 .configurator-main-headertype {
     border-radius: 10px;
+}
+.product-info {
+    all: unset;
+}
+.woocommerce-js form .form-row textarea,
+.woocommerce-js input[type=email],
+.woocommerce-js input[type=number],
+.woocommerce-js input[type=password],
+.woocommerce-js input[type=reset],
+.woocommerce-js input[type=search],
+.woocommerce-js input[type=tel],
+.woocommerce-js input[type=text],
+.woocommerce-js input[type=url],
+.woocommerce-js textarea,
+.woocommerce-page form .form-row textarea,
+.woocommerce-page input[type=email],
+.woocommerce-page input[type=number],
+.woocommerce-page input[type=password],
+.woocommerce-page input[type=reset],
+.woocommerce-page input[type=search],
+.woocommerce-page input[type=tel],
+.woocommerce-page input[type=text],
+.woocommerce-page input[type=url],
+.woocommerce-page textarea,
+input[type=email],
+input[type=number],
+input[type=password],
+input[type=reset],
+input[type=search],
+input[type=tel],
+input[type=text],
+input[type=url],
+select,
+textarea {
+    all: unset!important;
+    display: block; /* optional, to make sure inputs behave like inputs */
+    box-sizing: border-box; /* optional, to retain sizing */
+    width: 100%;
 }
 
 .slider-container {
@@ -212,6 +252,13 @@
 .add_to_cart_button:hover {
     background-color: #0056b3;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.elementor-location-footer {
+    background-color: #002746;
+}
+.angularbody button:hover {
+    color: unset!important;
+    background: unset!important;
 }
 
 .paramlable {
@@ -405,6 +452,7 @@
 .product_preview {
     position: relative;
     cursor: crosshair;
+    padding-bottom: unset!important;
 }
 
 .product_preview.zooming {

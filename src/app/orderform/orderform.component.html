@@ -1,4 +1,4 @@
-<form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart" [ngClass]="{'blinds-parameters-form': isBlinds}">
+<form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart angularbody" [ngClass]="{'blinds-parameters-form': isBlinds}">
   <div class="blinds container">
     <!-- Loading indicator -->
     <div *ngIf="isLoading" class="loading-overlay">
@@ -24,7 +24,7 @@
           <div class="productaname">
             <a [routerLink]="[product_list_page_link]" target="_self">
               <i class="fa-solid fa-angle-left"></i>
-              <span>Back to {{ ecomproductname }}</span>
+              <span> Back to {{ ecomproductname }}</span>
             </a>
             <h1 class="product-title">
               <span>{{ ecomproductname }} - {{ fabricname }}</span>
