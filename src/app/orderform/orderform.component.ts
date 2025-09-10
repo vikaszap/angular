@@ -1711,7 +1711,7 @@ private getPrice(): Observable<any> {
                     .join(', ');
                 } else {
                   const option = allOptions.find(opt => opt.optionid == value);
-                  displayValue = option ? option.optionname : val;
+              displayValue = option ? option.optionname : value;
                 }
               } else {
                 displayValue = value;
