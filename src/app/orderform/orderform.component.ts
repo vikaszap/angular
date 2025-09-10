@@ -4,6 +4,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
@@ -160,7 +161,8 @@ interface FractionOption {
     MatFormFieldModule,
     MatInputModule,
     MatRadioModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatExpansionModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -277,6 +279,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   selected_option_data: SelectProductOption[] = [];
+  accordionData: { label: string, value: any }[] = [];
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
@@ -1333,6 +1336,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
     this.previousFormValue = { ...values };
     this.priceUpdate$.next();
+    this.updateAccordionData();
   }
   private removeSelectedOptionData(fields: ProductField[]): void {
     const allLinkIdsToRemove = new Set<number>();
@@ -1427,6 +1431,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       } else {
         this.inchfraction_array = [];
       }
+      this.updateAccordionData();
       this.cd.markForCheck();
     });
   }
@@ -1666,5 +1671,60 @@ private getPrice(): Observable<any> {
     if (qtyControl && qtyControl.value > 1) {
       qtyControl.setValue(qtyControl.value - 1);
     }
+  }
+
+  private updateAccordionData(): void {
+    this.accordionData = [];
+    this.parameters_data.forEach(field => {
+      if (field.showfieldecomonjob == 1) {
+        const control = this.orderForm.get('field_' + field.fieldid);
+        if (control && control.value && (typeof control.value !== 'string' || control.value.trim() !== '') && (!Array.isArray(control.value) || control.value.length > 0)) {
+          const value = control.value;
+          let displayValue: any;
+
+          // Special handling for width and drop fields
+          if (field.fieldtypeid === 11 || field.fieldtypeid === 7 || field.fieldtypeid === 31) { // width types
+              const fractionControl = this.orderForm.get('widthfraction');
+              if (fractionControl && fractionControl.value) {
+                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+              } else {
+                  displayValue = value;
+              }
+          } else if (field.fieldtypeid === 12 || field.fieldtypeid === 9 || field.fieldtypeid === 32) { // drop types
+              const fractionControl = this.orderForm.get('dropfraction');
+              if (fractionControl && fractionControl.value) {
+                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+              } else {
+                  displayValue = value;
+              }
+          } else {
+              const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
+
+              if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
+                if (Array.isArray(value)) {
+                  displayValue = value
+                    .map(val => {
+                      const option = allOptions.find(opt => opt.optionid == val);
+                      return option ? option.optionname : val;
+                    })
+                    .join(', ');
+                } else {
+                  const option = allOptions.find(opt => opt.optionid == value);
+              displayValue = option ? option.optionname : value;
+                }
+              } else {
+                displayValue = value;
+              }
+          }
+
+          if (displayValue && (typeof displayValue !== 'string' || displayValue.trim() !== '')) {
+             this.accordionData.push({ label: field.fieldname, value: displayValue });
+          }
+        }
+      }
+    });
+    this.cd.markForCheck();
   }
 }

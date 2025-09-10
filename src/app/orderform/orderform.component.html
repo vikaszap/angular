@@ -340,39 +340,26 @@
               Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
             </p>
 
-            <div class='quote-section-wrapper'>
-              <div class="accordion" id="accordionExample">
-                <div class="accordion-item">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" 
-                            data-bs-toggle="collapse" 
-                            data-bs-target="#collapseOne" 
-                            aria-expanded="true" 
-                            aria-controls="collapseOne">
+              <mat-accordion>
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
                       Show Order Details
-                    </button>
-                  </h2>
-                  <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-                    <div class="accordion-body">
-                      <div id="allparametervalue">
-                        <table class="show-order-details-contents">
-                          <tbody></tbody>
-                        </table>
-                      </div>
-                    </div>
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+                  <div id="allparametervalue">
+                    <table class="show-order-details-contents">
+                      <tbody>
+                        <tr *ngFor="let item of accordionData">
+                          <td><strong>{{ item.label }}:</strong></td>
+                          <td>{{ item.value }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                </div>
-              </div>
-              <div class="quote-button-container">
-                <button type="submit" 
-                        name="quote-btn" 
-                        value="quote" 
-                        class="get_a_quote"
-                        [disabled]="isSubmitting">
-                  <i class="fas fa-envelope"></i>Submit an Enquiry
-                </button>
-              </div>
-            </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+           
 
             <div class="order-sample-container">
               <div *ngIf="ecomFreeSample === '1'" class="order-sample">
