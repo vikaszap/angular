@@ -696,9 +696,8 @@ private fetchInitialData(params: any): void {
    */
  private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
     if (!field) return;
-
-    if (value === null || value === undefined || value === '') {
       this.removeSelectedOptionData([field]);
+    if (value === null || value === undefined || value === '') {
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
