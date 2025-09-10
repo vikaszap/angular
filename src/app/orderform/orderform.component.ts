@@ -1674,23 +1674,32 @@ private getPrice(): Observable<any> {
     this.accordionData = [];
     this.parameters_data.forEach(field => {
       if (field.showfieldecomonjob == 1) {
-        let value = this.orderForm.get('field_' + field.fieldid)?.value;
-        if (value) {
+        const control = this.orderForm.get('field_' + field.fieldid);
+        if (control && control.value && (typeof control.value !== 'string' || control.value.trim() !== '') && (!Array.isArray(control.value) || control.value.length > 0)) {
+          const value = control.value;
           let displayValue: any;
-          if (Array.isArray(field.optionvalue) && field.optionvalue.length > 0) {
+
+          const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
+
+          if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
             if (Array.isArray(value)) {
-              displayValue = value.map(val => {
-                const option = field.optionvalue.find(opt => opt.optionid == val);
-                return option ? option.optionname : val;
-              }).join(', ');
+              displayValue = value
+                .map(val => {
+                  const option = allOptions.find(opt => opt.optionid == val);
+                  return option ? option.optionname : val;
+                })
+                .join(', ');
             } else {
-              const option = field.optionvalue.find(opt => opt.optionid == value);
+              const option = allOptions.find(opt => opt.optionid == value);
               displayValue = option ? option.optionname : value;
             }
           } else {
             displayValue = value;
           }
-          this.accordionData.push({ label: field.fieldname, value: displayValue });
+
+          if (displayValue && (typeof displayValue !== 'string' || displayValue.trim() !== '')) {
+             this.accordionData.push({ label: field.fieldname, value: displayValue });
+          }
         }
       }
     });
