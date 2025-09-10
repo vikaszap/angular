@@ -1431,6 +1431,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       } else {
         this.inchfraction_array = [];
       }
+      this.updateAccordionData();
       this.cd.markForCheck();
     });
   }
