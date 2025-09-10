@@ -1681,22 +1681,41 @@ private getPrice(): Observable<any> {
           const value = control.value;
           let displayValue: any;
 
-          const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
-
-          if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
-            if (Array.isArray(value)) {
-              displayValue = value
-                .map(val => {
-                  const option = allOptions.find(opt => opt.optionid == val);
-                  return option ? option.optionname : val;
-                })
-                .join(', ');
-            } else {
-              const option = allOptions.find(opt => opt.optionid == value);
-              displayValue = option ? option.optionname : value;
-            }
+          // Special handling for width and drop fields
+          if (field.fieldtypeid === 11 || field.fieldtypeid === 7 || field.fieldtypeid === 31) { // width types
+              const fractionControl = this.orderForm.get('widthfraction');
+              if (fractionControl && fractionControl.value) {
+                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+              } else {
+                  displayValue = value;
+              }
+          } else if (field.fieldtypeid === 12 || field.fieldtypeid === 9 || field.fieldtypeid === 32) { // drop types
+              const fractionControl = this.orderForm.get('dropfraction');
+              if (fractionControl && fractionControl.value) {
+                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+              } else {
+                  displayValue = value;
+              }
           } else {
-            displayValue = value;
+              const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
+
+              if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
+                if (Array.isArray(value)) {
+                  displayValue = value
+                    .map(val => {
+                      const option = allOptions.find(opt => opt.optionid == val);
+                      return option ? option.optionname : val;
+                    })
+                    .join(', ');
+                } else {
+                  const option = allOptions.find(opt => opt.optionid == value);
+                  displayValue = option ? option.optionname : val;
+                }
+              } else {
+                displayValue = value;
+              }
           }
 
           if (displayValue && (typeof displayValue !== 'string' || displayValue.trim() !== '')) {
