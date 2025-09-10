@@ -277,6 +277,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   selected_option_data: SelectProductOption[] = [];
+  accordionData: { label: string, value: any }[] = [];
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
@@ -1333,6 +1334,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
     this.previousFormValue = { ...values };
     this.priceUpdate$.next();
+    this.updateAccordionData();
   }
   private removeSelectedOptionData(fields: ProductField[]): void {
     const allLinkIdsToRemove = new Set<number>();
@@ -1666,5 +1668,32 @@ private getPrice(): Observable<any> {
     if (qtyControl && qtyControl.value > 1) {
       qtyControl.setValue(qtyControl.value - 1);
     }
+  }
+
+  private updateAccordionData(): void {
+    this.accordionData = [];
+    this.parameters_data.forEach(field => {
+      if (field.showfieldecomonjob == 1) {
+        let value = this.orderForm.get('field_' + field.fieldid)?.value;
+        if (value) {
+          let displayValue: any;
+          if (Array.isArray(field.optionvalue) && field.optionvalue.length > 0) {
+            if (Array.isArray(value)) {
+              displayValue = value.map(val => {
+                const option = field.optionvalue.find(opt => opt.optionid == val);
+                return option ? option.optionname : val;
+              }).join(', ');
+            } else {
+              const option = field.optionvalue.find(opt => opt.optionid == value);
+              displayValue = option ? option.optionname : value;
+            }
+          } else {
+            displayValue = value;
+          }
+          this.accordionData.push({ label: field.fieldname, value: displayValue });
+        }
+      }
+    });
+    this.cd.markForCheck();
   }
 }

@@ -356,7 +356,12 @@
                     <div class="accordion-body">
                       <div id="allparametervalue">
                         <table class="show-order-details-contents">
-                          <tbody></tbody>
+                          <tbody>
+                            <tr *ngFor="let item of accordionData">
+                              <td><strong>{{ item.label }}:</strong></td>
+                              <td>{{ item.value }}</td>
+                            </tr>
+                          </tbody>
                         </table>
                       </div>
                     </div>
