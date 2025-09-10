@@ -340,7 +340,6 @@
               Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
             </p>
 
-            <div class='quote-section-wrapper'>
               <mat-accordion>
                 <mat-expansion-panel>
                   <mat-expansion-panel-header>
@@ -360,16 +359,7 @@
                   </div>
                 </mat-expansion-panel>
               </mat-accordion>
-              <div class="quote-button-container">
-                <button type="submit" 
-                        name="quote-btn" 
-                        value="quote" 
-                        class="get_a_quote"
-                        [disabled]="isSubmitting">
-                  <i class="fas fa-envelope"></i>Submit an Enquiry
-                </button>
-              </div>
-            </div>
+           
 
             <div class="order-sample-container">
               <div *ngIf="ecomFreeSample === '1'" class="order-sample">
