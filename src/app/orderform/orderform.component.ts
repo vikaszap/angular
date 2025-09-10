@@ -4,6 +4,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
@@ -160,7 +161,8 @@ interface FractionOption {
     MatFormFieldModule,
     MatInputModule,
     MatRadioModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatExpansionModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
