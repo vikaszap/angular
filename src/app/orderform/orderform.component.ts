@@ -253,6 +253,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   productname = '';
   product_list_page_link = '';
   fabricname = '';
+  colorname ='';
   frame_default_url ="";
   hide_frame = false;
   product_img_array: any[] = [];
@@ -359,7 +360,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private setupVisualizer(): void {
     if (this.canvasRef && this.containerRef) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-      this.threeService.loadGltfModel('assets/ani.gltf');
+      this.threeService.loadGltfModel('assets/rollerdoor.gltf');
     }
   }
 
@@ -730,14 +731,22 @@ private fetchInitialData(params: any): void {
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
-
+      
       // Update background image URL if a color/fabric is selected
       if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-          //console.log(this.background_color_image_url);
+         
           this.threeService.updateTextures(this.background_color_image_url);
       }
-
+      
+      if ((field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
+            
+          this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      }
+      if ((field.fieldtypeid === 3 && field.fieldname == "Frame Colour" ) && selectedOption.optionimage) {
+            
+          this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      }
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
@@ -768,14 +777,16 @@ private fetchInitialData(params: any): void {
         }else{
            this.updateFieldValues(field, selectedOption,'restOption');
         }
-        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
-          this.colorid = value;
-          this.fabricname = selectedOption.optionname;
-          this.updateFieldValues(field, selectedOption,'updatecolor');
-          this.updateMinMaxValidators();
-        }
+       
         if(field.fieldtypeid === 5 && field.level == 1){
           this.fabricid  = value;
+          this.fabricname = selectedOption.optionname;
+        }
+       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+          this.colorid = value;
+          this.colorname = selectedOption.optionname;
+          this.updateFieldValues(field, selectedOption,'updatecolor');
+          this.updateMinMaxValidators();
         }
 
         this.cd.markForCheck();

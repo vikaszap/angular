@@ -27,7 +27,7 @@
               <span> Back to {{ ecomproductname }}</span>
             </a>
             <h1 class="product-title">
-              <span>{{ ecomproductname }} - {{ fabricname }}</span>
+              <span>{{ ecomproductname }} - {{ fabricname }} {{ colorname }}</span>
             </h1>
           </div>
             <div class="price-box">
@@ -43,7 +43,7 @@
               </div>
             </div>
 
-            <div *ngIf="!hide_frame" class="slider-container">
+            <div style="display:none;" *ngIf="!hide_frame" class="slider-container">
               <div class="blindmatrix-v4-slider">
                 <div *ngFor="let product_img of product_img_array">
                   <button type="button" class="multiple-frame-list-button"

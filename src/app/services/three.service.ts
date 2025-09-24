@@ -14,6 +14,9 @@ export class ThreeService implements OnDestroy {
   private textureLoader = new THREE.TextureLoader();
   private gltfLoader = new GLTFLoader();
   private cube2Mesh!: THREE.Mesh;
+  private cube4Mesh!: THREE.Mesh;
+  private cube3Mesh!: THREE.Mesh;
+  private cubeMesh!: THREE.Mesh;
 
   constructor() {}
 
@@ -60,8 +63,14 @@ export class ThreeService implements OnDestroy {
     this.gltfLoader.load(gltfUrl, (gltf) => {
       this.scene.add(gltf.scene);
       gltf.scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh && child.name === 'Cube_2') {
+        if ((child as THREE.Mesh).isMesh && child.name === 'Cube_4') {
+          this.cube4Mesh = child as THREE.Mesh;
+        }else if((child as THREE.Mesh).isMesh && child.name === 'Cube_3'){
+          this.cube3Mesh = child as THREE.Mesh;
+        }else if((child as THREE.Mesh).isMesh && child.name === 'Cube_2'){
           this.cube2Mesh = child as THREE.Mesh;
+        }else if((child as THREE.Mesh).isMesh && child.name === 'Cube'){
+          this.cubeMesh = child as THREE.Mesh;
         }
       });
       this.animate();
@@ -71,18 +80,34 @@ export class ThreeService implements OnDestroy {
   }
 
   public updateTextures(backgroundUrl: string): void {
-    if (this.cube2Mesh && backgroundUrl) {
+    if (this.cube4Mesh && backgroundUrl) {
       this.textureLoader.load(backgroundUrl, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
         const newMaterial = new THREE.MeshStandardMaterial({
           map: texture,
         });
-        this.cube2Mesh.material = newMaterial;
-        (this.cube2Mesh.material as THREE.Material).needsUpdate = true;
+        this.cube4Mesh.material = newMaterial;
+        (this.cube4Mesh.material as THREE.Material).needsUpdate = true;
       });
     }
   }
+    public updateFrame(backgroundUrl: string): void {
+      if (!backgroundUrl) return;
 
+      const meshes = [this.cubeMesh, this.cube2Mesh, this.cube3Mesh];
+
+      this.textureLoader.load(backgroundUrl, (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const newMaterial = new THREE.MeshStandardMaterial({ map: texture });
+
+        meshes.forEach((mesh) => {
+          if (mesh) {
+            mesh.material = newMaterial;
+            (mesh.material as THREE.Material).needsUpdate = true;
+          }
+        });
+      });
+    }
   public animate(): void {
     const loop = () => {
       requestAnimationFrame(loop);
