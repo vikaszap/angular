@@ -698,6 +698,13 @@ private fetchInitialData(params: any): void {
     if (!field) return;
       this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
+      if(field.fieldtypeid === 5 && field.level == 1){
+        this.fabricid  = 0;
+        this.colorid = 0;
+      }
+      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+        this.colorid = 0;
+      }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       return;
