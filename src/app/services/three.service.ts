@@ -2,6 +2,7 @@ import { Injectable, ElementRef, OnDestroy } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import * as TWEEN from '@tweenjs/tween.js';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,9 @@ export class ThreeService implements OnDestroy {
   private cube4Mesh!: THREE.Mesh;
   private cube3Mesh!: THREE.Mesh;
   private cubeMesh!: THREE.Mesh;
+  private initialCameraPosition!: THREE.Vector3;
+  private initialControlsTarget!: THREE.Vector3;
+  private isShutterOpen = false;
 
   constructor() {}
 
@@ -50,6 +54,14 @@ export class ThreeService implements OnDestroy {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
+
+    this.initialCameraPosition = this.camera.position.clone();
+    this.initialControlsTarget = this.controls.target.clone();
+
+    this.controls.addEventListener('change', () => {
+      // If you want to reset on every change, you can call this.resetCamera() here.
+      // However, it's better to provide a button for the user to reset the view.
+    });
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
@@ -108,9 +120,33 @@ export class ThreeService implements OnDestroy {
         });
       });
     }
+  public toggleShutter(): void {
+    if (!this.cube4Mesh) {
+      return;
+    }
+
+    this.isShutterOpen = !this.isShutterOpen;
+    const targetPosition = this.isShutterOpen ? new THREE.Vector3(0, 2, 0) : new THREE.Vector3(0, 0, 0);
+    const duration = 1000; // 1 second
+
+    new TWEEN.Tween(this.cube4Mesh.position)
+      .to(targetPosition, duration)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .start();
+  }
+
+  public resetCamera(): void {
+    if (this.camera && this.controls) {
+      this.camera.position.copy(this.initialCameraPosition);
+      this.controls.target.copy(this.initialControlsTarget);
+      this.controls.update();
+    }
+  }
+
   public animate(): void {
     const loop = () => {
       requestAnimationFrame(loop);
+      TWEEN.update();
       this.controls.update();
       this.render();
     };

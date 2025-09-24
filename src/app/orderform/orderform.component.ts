@@ -1658,6 +1658,14 @@ private getPrice(): Observable<any> {
     }
   }
 
+  toggleShutter(): void {
+    this.threeService.toggleShutter();
+  }
+
+  resetCamera(): void {
+    this.threeService.resetCamera();
+  }
+
   private updateAccordionData(): void {
     this.accordionData = [];
     this.parameters_data.forEach(field => {
