@@ -736,7 +736,7 @@ private fetchInitialData(params: any): void {
       // Update background image URL if a color/fabric is selected
       if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-          console.log(this.background_color_image_url);
+          //console.log(this.background_color_image_url);
           this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
       }
 
@@ -1385,7 +1385,6 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
-    console.log( this.width);
     this.updateFieldValues(field, totalWidth,'Totalwidth');
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
@@ -1459,7 +1458,6 @@ onSubmit(): void {
     const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
     console.log("Result:", costprice, netprice, vatprice, grossprice);
   }); */
-  console.log(this.selected_option_data);
   this.jsondata = this.parameters_data.map(field => {
 
     const mappedField = {
@@ -1505,7 +1503,6 @@ onSubmit(): void {
   console.log(this.jsondata);
 }
 private getPrice(): Observable<any> {
-  console.log(this.fabricid);
   
   return this.apiService.getPrice(
     this.routeParams,

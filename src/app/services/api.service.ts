@@ -335,8 +335,6 @@ export class ApiService {
         pricegroupmulticurtain: []
       };
      const passData = `orderitems/calculate/option/price`;
-    console.log(passData);
-    console.log(payload);
      return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }
