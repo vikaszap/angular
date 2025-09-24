@@ -769,6 +769,9 @@ private fetchInitialData(params: any): void {
           this.updateFieldValues(field, selectedOption,'updatecolor');
           this.updateMinMaxValidators();
         }
+        if(field.fieldtypeid === 5 && field.level == 1){
+          this.fabricid  = value;
+        }
 
         this.cd.markForCheck();
       });
@@ -1495,6 +1498,8 @@ onSubmit(): void {
   console.log(this.jsondata);
 }
 private getPrice(): Observable<any> {
+  console.log(this.fabricid);
+  
   return this.apiService.getPrice(
     this.routeParams,
     this.width,
@@ -1506,7 +1511,7 @@ private getPrice(): Observable<any> {
     this.pricegroup,
     "20.00",
     this.selected_option_data,
-    "",
+    this.fabricid,
     this.colorid
   );
 }
