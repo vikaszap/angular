@@ -357,9 +357,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupVisualizer(): void {
-    if (this.canvasRef && this.containerRef && this.mainframe && this.background_color_image_url) {
+    if (this.canvasRef && this.containerRef) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-      this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+      this.threeService.loadGltfModel('assets/ani.gltf');
     }
   }
 
@@ -429,9 +429,7 @@ private fetchInitialData(params: any): void {
           firstImage.is_default = true; // Mark it as default in the array
         }
 
-        this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-        this.threeService.createObjects(this.mainframe, this.background_color_image_url);
-        this.threeService.animate(); // Start the render loop
+        this.setupVisualizer();
       }
       return this.apiService.getProductParameters(params);
     }),
@@ -737,7 +735,7 @@ private fetchInitialData(params: any): void {
       if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
           //console.log(this.background_color_image_url);
-          this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+          this.threeService.updateTextures(this.background_color_image_url);
       }
 
       this.processSelectedOption(params, field, selectedOption).pipe(
@@ -1593,7 +1591,7 @@ private getPrice(): Observable<any> {
     });
 
     if (this.threeService) {
-      this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+      this.threeService.updateTextures(this.background_color_image_url);
     }
   }
 
@@ -1620,38 +1618,6 @@ private getPrice(): Observable<any> {
     return related_product?.name || '';
   }
 
-  // Zoom Lens Methods
-  onMouseEnter(): void {
-    this.isZooming = true;
-    this.threeService.enableZoom(true);
-  }
-
-  onMouseLeave(): void {
-    this.isZooming = false;
-    this.threeService.enableZoom(false);
-  }
-
-  onMouseMove(event: MouseEvent): void {
-    if (!this.isZooming || !this.containerRef || !this.zoomLensRef) {
-      return;
-    }
-
-    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
-    const lensEl = this.zoomLensRef.nativeElement;
-
-    // Calculate mouse position relative to the container
-    const x = event.clientX - containerRect.left;
-    const y = event.clientY - containerRect.top;
-
-    // Update the Three.js service with the raw coordinates
-    this.threeService.setZoom(x, y);
-
-    // Position the lens div element, centering it on the cursor
-    const lensHalfWidth = lensEl.offsetWidth / 2;
-    const lensHalfHeight = lensEl.offsetHeight / 2;
-    lensEl.style.left = `${x - lensHalfWidth}px`;
-    lensEl.style.top = `${y - lensHalfHeight}px`;
-  }
 
   trackByFieldId(index: number, field: ProductField): number {
     return field.fieldid;
