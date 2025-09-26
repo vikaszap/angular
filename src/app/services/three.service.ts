@@ -2,7 +2,6 @@ import { Injectable, ElementRef, OnDestroy } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as TWEEN from '@tweenjs/tween.js';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +15,10 @@ export class ThreeService implements OnDestroy {
   private gltfLoader = new GLTFLoader();
   private cube2Mesh!: THREE.Mesh;
   private cube4Mesh!: THREE.Mesh;
+  public cube5Meshes: THREE.Mesh[] = [];
   private cube3Mesh!: THREE.Mesh;
+  private blackMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+  private textureMaterial?: THREE.MeshStandardMaterial;
   private cubeMesh!: THREE.Mesh;
   private initialCameraPosition!: THREE.Vector3;
   private initialControlsTarget!: THREE.Vector3;
@@ -71,10 +73,31 @@ export class ThreeService implements OnDestroy {
     this.scene.add(directionalLight);
   }
 
-  public loadGltfModel(gltfUrl: string): void {
-    this.gltfLoader.load(gltfUrl, (gltf) => {
+ public loadGltfModel(gltfUrl: string): void {
+  this.gltfLoader.load(
+    gltfUrl,
+    (gltf) => {
       this.scene.add(gltf.scene);
+
       gltf.scene.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const parent = child.parent;
+          const grandParent = parent?.parent;
+          if (parent && grandParent && grandParent.name === "Cube_5") {
+            const index = parent.children.indexOf(child);
+
+            if (index === 1) {
+              this.cube5Meshes.push(child as THREE.Mesh);
+            } else {
+              if ((child as THREE.Mesh).isMesh) {
+                  (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+                    color: 0x000000,
+                  });
+                  ((child as THREE.Mesh).material as THREE.Material).needsUpdate = true;
+                }
+            }
+          }
+        }
         if ((child as THREE.Mesh).isMesh && child.name === 'Cube_4') {
           this.cube4Mesh = child as THREE.Mesh;
         }else if((child as THREE.Mesh).isMesh && child.name === 'Cube_3'){
@@ -84,24 +107,31 @@ export class ThreeService implements OnDestroy {
         }else if((child as THREE.Mesh).isMesh && child.name === 'Cube'){
           this.cubeMesh = child as THREE.Mesh;
         }
+        
       });
+
       this.animate();
-    }, undefined, (error) => {
+    },
+    undefined,
+    (error) => {
       console.error(error);
-    });
-  }
+    }
+  );
+}
 
   public updateTextures(backgroundUrl: string): void {
-    if (this.cube4Mesh && backgroundUrl) {
-      this.textureLoader.load(backgroundUrl, (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        const newMaterial = new THREE.MeshStandardMaterial({
-          map: texture,
-        });
-        this.cube4Mesh.material = newMaterial;
-        (this.cube4Mesh.material as THREE.Material).needsUpdate = true;
+    if (!backgroundUrl || !this.cube5Meshes.length) return;
+
+    this.textureLoader.load(backgroundUrl, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      this.textureMaterial = new THREE.MeshStandardMaterial({ map: texture });
+
+      this.cube5Meshes.forEach((mesh) => {
+        mesh.material = this.textureMaterial!;
+        (mesh.material as THREE.Material).needsUpdate = true;
       });
-    }
+    });
   }
     public updateFrame(backgroundUrl: string): void {
       if (!backgroundUrl) return;
@@ -120,20 +150,7 @@ export class ThreeService implements OnDestroy {
         });
       });
     }
-  public toggleShutter(): void {
-    if (!this.cube4Mesh) {
-      return;
-    }
-
-    this.isShutterOpen = !this.isShutterOpen;
-    const targetPosition = this.isShutterOpen ? new THREE.Vector3(0, 2, 0) : new THREE.Vector3(0, 0, 0);
-    const duration = 1000; // 1 second
-
-    new TWEEN.Tween(this.cube4Mesh.position)
-      .to(targetPosition, duration)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .start();
-  }
+ 
 
   public resetCamera(): void {
     if (this.camera && this.controls) {
@@ -146,7 +163,6 @@ export class ThreeService implements OnDestroy {
   public animate(): void {
     const loop = () => {
       requestAnimationFrame(loop);
-      TWEEN.update();
       this.controls.update();
       this.render();
     };

@@ -1658,10 +1658,6 @@ private getPrice(): Observable<any> {
     }
   }
 
-  toggleShutter(): void {
-    this.threeService.toggleShutter();
-  }
-
   resetCamera(): void {
     this.threeService.resetCamera();
   }
