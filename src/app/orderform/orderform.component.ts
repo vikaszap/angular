@@ -253,6 +253,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   productname = '';
   product_list_page_link = '';
   fabricname = '';
+  colorname ='';
   frame_default_url ="";
   hide_frame = false;
   product_img_array: any[] = [];
@@ -357,9 +358,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupVisualizer(): void {
-    if (this.canvasRef && this.containerRef && this.mainframe && this.background_color_image_url) {
+    if (this.canvasRef && this.containerRef) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-      this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+      this.threeService.loadGltfModel('assets/rollerdoor.gltf');
     }
   }
 
@@ -429,9 +430,7 @@ private fetchInitialData(params: any): void {
           firstImage.is_default = true; // Mark it as default in the array
         }
 
-        this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-        this.threeService.createObjects(this.mainframe, this.background_color_image_url);
-        this.threeService.animate(); // Start the render loop
+        this.setupVisualizer();
       }
       return this.apiService.getProductParameters(params);
     }),
@@ -732,14 +731,22 @@ private fetchInitialData(params: any): void {
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
-
+      
       // Update background image URL if a color/fabric is selected
       if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-          //console.log(this.background_color_image_url);
-          this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+         
+          this.threeService.updateTextures(this.background_color_image_url);
       }
-
+      
+      if ((field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
+            
+          this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      }
+      if ((field.fieldtypeid === 3 && field.fieldname == "Frame Colour" ) && selectedOption.optionimage) {
+            
+          this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      }
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
@@ -770,14 +777,16 @@ private fetchInitialData(params: any): void {
         }else{
            this.updateFieldValues(field, selectedOption,'restOption');
         }
-        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
-          this.colorid = value;
-          this.fabricname = selectedOption.optionname;
-          this.updateFieldValues(field, selectedOption,'updatecolor');
-          this.updateMinMaxValidators();
-        }
+       
         if(field.fieldtypeid === 5 && field.level == 1){
           this.fabricid  = value;
+          this.fabricname = selectedOption.optionname;
+        }
+       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+          this.colorid = value;
+          this.colorname = selectedOption.optionname;
+          this.updateFieldValues(field, selectedOption,'updatecolor');
+          this.updateMinMaxValidators();
         }
 
         this.cd.markForCheck();
@@ -1593,7 +1602,7 @@ private getPrice(): Observable<any> {
     });
 
     if (this.threeService) {
-      this.threeService.updateTextures(this.mainframe, this.background_color_image_url);
+      this.threeService.updateTextures(this.background_color_image_url);
     }
   }
 
@@ -1620,38 +1629,6 @@ private getPrice(): Observable<any> {
     return related_product?.name || '';
   }
 
-  // Zoom Lens Methods
-  onMouseEnter(): void {
-    this.isZooming = true;
-    this.threeService.enableZoom(true);
-  }
-
-  onMouseLeave(): void {
-    this.isZooming = false;
-    this.threeService.enableZoom(false);
-  }
-
-  onMouseMove(event: MouseEvent): void {
-    if (!this.isZooming || !this.containerRef || !this.zoomLensRef) {
-      return;
-    }
-
-    const containerRect = this.containerRef.nativeElement.getBoundingClientRect();
-    const lensEl = this.zoomLensRef.nativeElement;
-
-    // Calculate mouse position relative to the container
-    const x = event.clientX - containerRect.left;
-    const y = event.clientY - containerRect.top;
-
-    // Update the Three.js service with the raw coordinates
-    this.threeService.setZoom(x, y);
-
-    // Position the lens div element, centering it on the cursor
-    const lensHalfWidth = lensEl.offsetWidth / 2;
-    const lensHalfHeight = lensEl.offsetHeight / 2;
-    lensEl.style.left = `${x - lensHalfWidth}px`;
-    lensEl.style.top = `${y - lensHalfHeight}px`;
-  }
 
   trackByFieldId(index: number, field: ProductField): number {
     return field.fieldid;
@@ -1679,6 +1656,10 @@ private getPrice(): Observable<any> {
     if (qtyControl && qtyControl.value > 1) {
       qtyControl.setValue(qtyControl.value - 1);
     }
+  }
+
+  resetCamera(): void {
+    this.threeService.resetCamera();
   }
 
   private updateAccordionData(): void {
