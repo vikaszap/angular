@@ -518,6 +518,7 @@ canvas {
   background-color: var(--light-gray);
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
+  margin-bottom: 10px;
 }
 
 .price-box {
