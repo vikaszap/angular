@@ -32,46 +32,71 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+ public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xdddddd);
+  this.scene = new THREE.Scene();
+  this.scene.background = new THREE.Color(0xffffff);
 
-    this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    this.camera.position.z = 5;
+  this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  this.camera.position.z = 5;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: canvas.nativeElement,
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true
-    });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(width, height, false);
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const canvasEl = canvas.nativeElement; 
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
+  canvasEl.classList.add('grab');
 
-    this.initialCameraPosition = this.camera.position.clone();
-    this.initialControlsTarget = this.controls.target.clone();
+  canvasEl.addEventListener('mousedown', () => {
+    canvasEl.classList.remove('grab');
+    canvasEl.classList.add('grabbing');
+  });
 
-    this.controls.addEventListener('change', () => {
-      // If you want to reset on every change, you can call this.resetCamera() here.
-      // However, it's better to provide a button for the user to reset the view.
-    });
+  canvasEl.addEventListener('mouseup', () => {
+    canvasEl.classList.remove('grabbing');
+    canvasEl.classList.add('grab');
+  });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
+  canvasEl.addEventListener('mouseleave', () => {
+    canvasEl.classList.remove('grabbing');
+    canvasEl.classList.add('grab');
+  });
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(1, 1, 1).normalize();
-    this.scene.add(directionalLight);
-  }
+  this.renderer = new THREE.WebGLRenderer({
+    canvas: canvasEl,
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true
+  });
+  this.renderer.setPixelRatio(window.devicePixelRatio);
+  this.renderer.setSize(width, height, false);
+  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  this.renderer.toneMappingExposure = 1;
+  this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+  this.controls.enableDamping = true;
+
+  this.initialCameraPosition = this.camera.position.clone();
+  this.initialControlsTarget = this.controls.target.clone();
+
+  this.controls.addEventListener('start', () => {
+    canvasEl.classList.remove('grab');
+    canvasEl.classList.add('grabbing');
+  });
+
+  this.controls.addEventListener('end', () => {
+    canvasEl.classList.remove('grabbing');
+    canvasEl.classList.add('grab');
+  });
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  this.scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(1, 1, 1).normalize();
+  this.scene.add(directionalLight);
+}
+
 
  public loadGltfModel(gltfUrl: string): void {
   this.gltfLoader.load(

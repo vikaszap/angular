@@ -63,8 +63,8 @@
     top: 0;
     z-index: 0;
 }
-.sticky-container.scrolled{
-    padding: 40px 0px;
+.sticky-container{
+    padding: 30px 0px;
 }
 .blindmatrix-v4-slider button {
     border: 0;
@@ -78,6 +78,17 @@
 .product-info {
     all: unset;
 }
+ 
+#main-img canvas.grab {
+  cursor: -webkit-grab;
+  cursor: grab;
+}
+
+#main-img canvas.grabbing {
+  cursor: -webkit-grabbing;
+  cursor: grabbing;
+}
+
 .woocommerce-js form .form-row textarea,
 .woocommerce-js input[type=email],
 .woocommerce-js input[type=number],
@@ -503,6 +514,10 @@ canvas {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  padding: 0 10px;
+  background-color: var(--light-gray);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
 }
 
 .price-box {
