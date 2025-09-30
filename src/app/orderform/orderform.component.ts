@@ -1569,6 +1569,11 @@ public buildProductTitle(
 
   return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
 }
+private getVat(): Observable<any> {
+  return this.apiService.getVat(
+    this.routeParams
+  );
+}
 private getPrice(): Observable<any> {
   
   return this.apiService.getPrice(
