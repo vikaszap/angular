@@ -156,17 +156,17 @@ export class ApiService {
   }
 
   addToCart(formData: any, productId: string, apiUrl: string): Observable<ApiResponse> {
-    const payload = {
-      action: 'add_to_cart',
-      product_id: productId,
-      form_data: JSON.stringify(formData)
-    };
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    const endpoint = '/wp-content/plugins/blindmatrix-v4-api/api.php';
+    const body = new HttpParams()
+      .set('action', 'add_to_cart')
+      .set('product_id', productId)
+      .set('form_data', JSON.stringify(formData));
+
+    const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
-    return this.http.post<ApiResponse>(requestUrl, payload, { headers }).pipe(
+
+    return this.http.post<ApiResponse>(requestUrl, body.toString(), {
+      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
+    }).pipe(
       catchError(this.handleError)
     );
   }

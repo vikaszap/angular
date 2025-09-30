@@ -1528,6 +1528,7 @@ onSubmit(): void {
       })
     ).subscribe({
       next: (response) => {
+        console.log(response);
         if (response.success) {
           console.log('Product added to cart:', response);
           if (response.data && response.data.redirect_url) {
