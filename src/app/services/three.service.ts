@@ -238,4 +238,11 @@ export class ThreeService implements OnDestroy {
     }
     this.renderer.render(this.scene, this.camera);
   }
+  public getCanvasDataURL(): string | undefined {
+    if (!this.renderer) {
+      return undefined;
+    }
+    this.render(); // Ensure the scene is rendered before capturing
+    return this.renderer.domElement.toDataURL('image/png');
+  }
 }

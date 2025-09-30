@@ -155,14 +155,18 @@ export class ApiService {
     );
   }
 
-  addToCart(formData: any, productId: string, apiUrl: string, productName: string,priceData: any): Observable<ApiResponse> {
-    const body = new HttpParams()
+  addToCart(formData: any, productId: string, apiUrl: string, productName: string, priceData: any, visualizerImage?: string): Observable<ApiResponse> {
+    let body = new HttpParams()
       .set('action', 'add_to_cart')
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
       .set('product_name', productName)
       .set('pricedata', JSON.stringify(priceData));
-    console.log(JSON.stringify(priceData));
+
+    if (visualizerImage) {
+      body = body.set('visualizer_image', visualizerImage);
+    }
+
     const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
 
