@@ -280,6 +280,14 @@ export class ApiService {
     
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  getVat( params: ApiCommonParams) {
+      const { api_url, api_key, api_name, recipeid,product_id } = params;
+      const payload = {
+          productid: product_id,
+          };
+      const passData = `/job/get/vat/percentage/orderitem`;
+      return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+    }
   getPrice( params: ApiCommonParams ,
     width:any ="",
     drop:any = "",
