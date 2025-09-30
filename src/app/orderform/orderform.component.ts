@@ -1524,7 +1524,7 @@ onSubmit(): void {
 
     this.isSubmitting = true;
     this.errorMessage = null;
-
+    console.log(this.pricedata);
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
      this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata
     ).pipe(
@@ -1575,20 +1575,28 @@ private getVat(): Observable<any> {
   );
 }
 private getPrice(): Observable<any> {
-  
-  return this.apiService.getPrice(
-    this.routeParams,
-    this.width,
-    this.drop,
-    this.unittype,
-    this.supplier_id,
-    this.widthField.fieldtypeid,
-    this.dropField.fieldtypeid,
-    this.pricegroup,
-    "20.00",
-    this.selected_option_data,
-    this.fabricid,
-    this.colorid
+  return this.getVat().pipe(
+    switchMap(vatResponse => {
+      const vatPercentage = vatResponse?.data ?? '20.000';
+      return this.apiService.getPrice(
+        this.routeParams,
+        this.width,
+        this.drop,
+        this.unittype,
+        this.supplier_id,
+        this.widthField.fieldtypeid,
+        this.dropField.fieldtypeid,
+        this.pricegroup,
+        vatPercentage,
+        this.selected_option_data,
+        this.fabricid,
+        this.colorid
+      );
+    }),
+    catchError(error => {
+      console.error('Error getting VAT, falling back to default', error);
+      return of({ price: 0, vat: '20.00' });
+    })
   );
 }
   private markFormGroupTouched(formGroup: FormGroup) {

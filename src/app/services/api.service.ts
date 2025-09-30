@@ -161,8 +161,8 @@ export class ApiService {
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
       .set('product_name', productName)
-      .set('pricedata', priceData);
-
+      .set('pricedata', JSON.stringify(priceData));
+    console.log(JSON.stringify(priceData));
     const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
 
