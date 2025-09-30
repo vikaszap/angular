@@ -23,6 +23,7 @@ export class ThreeService implements OnDestroy {
   private initialCameraPosition!: THREE.Vector3;
   private initialControlsTarget!: THREE.Vector3;
   private isShutterOpen = false;
+  
 
   constructor() {}
 
@@ -31,7 +32,9 @@ export class ThreeService implements OnDestroy {
       this.renderer.dispose();
     }
   }
-
+  public toggleRotation(): void {
+    this.isShutterOpen = !this.isShutterOpen;
+  }
  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
   const width = container.clientWidth;
   const height = container.clientHeight;
@@ -98,31 +101,46 @@ export class ThreeService implements OnDestroy {
 }
 
 
- public loadGltfModel(gltfUrl: string): void {
+ public loadGltfModel(gltfUrl: string,type: string): void {
   this.gltfLoader.load(
     gltfUrl,
     (gltf) => {
       this.scene.add(gltf.scene);
 
       gltf.scene.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const parent = child.parent;
-          const grandParent = parent?.parent;
-          if (parent && grandParent && grandParent.name === "Cube_5") {
-            const index = parent.children.indexOf(child);
-
-            if (index === 1) {
-              this.cube5Meshes.push(child as THREE.Mesh);
-            } else {
-              if ((child as THREE.Mesh).isMesh) {
-                  (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-                    color: 0x000000,
-                  });
-                  ((child as THREE.Mesh).material as THREE.Material).needsUpdate = true;
-                }
+        if(type == 'venetian'){
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            if (mesh.name.startsWith("Cylinder") || mesh.name.startsWith("Cube")) {
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+              });
+              (mesh.material as THREE.Material).needsUpdate = true;
             }
+
+          else if (mesh.name.startsWith("mesh_12_instance_")) {
+            this.cube5Meshes.push(mesh);
           }
         }
+        }else{
+          if ((child as THREE.Mesh).isMesh) {
+            const parent = child.parent;
+            const grandParent = parent?.parent;
+            if (parent && grandParent && grandParent.name === "Cube_5") {
+              const index = parent.children.indexOf(child);
+
+              if (index === 1) {
+                this.cube5Meshes.push(child as THREE.Mesh);
+              } else {
+                if ((child as THREE.Mesh).isMesh) {
+                    (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+                      color: 0x000000,
+                    });
+                    ((child as THREE.Mesh).material as THREE.Material).needsUpdate = true;
+                  }
+              }
+            }
+          }
         if ((child as THREE.Mesh).isMesh && child.name === 'Cube_4') {
           this.cube4Mesh = child as THREE.Mesh;
         }else if((child as THREE.Mesh).isMesh && child.name === 'Cube_3'){
@@ -132,7 +150,7 @@ export class ThreeService implements OnDestroy {
         }else if((child as THREE.Mesh).isMesh && child.name === 'Cube'){
           this.cubeMesh = child as THREE.Mesh;
         }
-        
+      } 
       });
 
       this.animate();
@@ -188,9 +206,17 @@ export class ThreeService implements OnDestroy {
   public animate(): void {
     const loop = () => {
       requestAnimationFrame(loop);
+
+      if (this.isShutterOpen) {
+        this.cube5Meshes.forEach(mesh => {
+          mesh.rotation.x -= 0.01; 
+        });
+      }
+
       this.controls.update();
       this.render();
     };
+
     loop();
   }
 

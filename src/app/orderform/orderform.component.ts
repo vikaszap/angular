@@ -356,11 +356,18 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
   }
-
-  private setupVisualizer(): void {
+ toggleRotation(): void {
+    this.threeService.toggleRotation();
+  }
+  private setupVisualizer(productname: string): void {
     if (this.canvasRef && this.containerRef) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-      this.threeService.loadGltfModel('assets/rollerdoor.gltf');
+      if(productname.toLowerCase().includes("rd77 single")){
+        this.threeService.loadGltfModel('assets/venetianblinds.gltf','venetian');
+      }else{
+        this.threeService.loadGltfModel('assets/rollerdoor.gltf','rollerdoor');
+      }
+      
     }
   }
 
@@ -390,11 +397,14 @@ private fetchInitialData(params: any): void {
         }
 
         let productDefaultImage: any = {};
+        let ecomProductName = '';
         try {
           productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
+          ecomProductName = data.pei_ecomProductName
         } catch (e) {
           console.error('Error parsing pi_deafultimage:', e);
           productDefaultImage = {};
+          ecomProductName = "";
         }
 
         const defaultImageSettings = productDefaultImage?.defaultimage || {};
@@ -430,7 +440,7 @@ private fetchInitialData(params: any): void {
           firstImage.is_default = true; // Mark it as default in the array
         }
 
-        this.setupVisualizer();
+        this.setupVisualizer(ecomProductName);
       }
       return this.apiService.getProductParameters(params);
     }),
