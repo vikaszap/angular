@@ -155,15 +155,20 @@ export class ApiService {
     );
   }
 
-  addToCart(formData: any): Observable<ApiResponse> {
-    const payload = {
-      action: 'add_to_cart',
-      form_data: JSON.stringify(formData)
-    };
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
+  addToCart(formData: any, productId: string, apiUrl: string, productName: string,priceData: any): Observable<ApiResponse> {
+    const body = new HttpParams()
+      .set('action', 'add_to_cart')
+      .set('product_id', productId)
+      .set('form_data', JSON.stringify(formData))
+      .set('product_name', productName)
+      .set('pricedata', priceData);
+
+    const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
+    const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
+
+    return this.http.post<ApiResponse>(requestUrl, body.toString(), {
+      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
+    }).pipe(
       catchError(this.handleError)
     );
   }
@@ -275,6 +280,14 @@ export class ApiService {
     
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  getVat( params: ApiCommonParams) {
+      const { api_url, api_key, api_name, recipeid,product_id } = params;
+      const payload = {
+          productid: product_id,
+          };
+      const passData = `/job/get/vat/percentage/orderitem`;
+      return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+    }
   getPrice( params: ApiCommonParams ,
     width:any ="",
     drop:any = "",

@@ -182,6 +182,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private supplierField?: ProductField;
   private qtyField?: ProductField;
   // Form / UI state
+  public productTitle: string = '';
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
@@ -194,6 +195,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
+  pricedata:any[] = [];
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
@@ -338,12 +340,15 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     ).subscribe(res => {
       if (res && res.fullpriceobject) {
         const { grossprice } = res.fullpriceobject;
+        this.pricedata = res.fullpriceobject;
         this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
       } else {
         this.grossPrice = null;
+        this.pricedata = [];
       }
       this.cd.markForCheck();
     });
+   
   }
 
   ngOnDestroy(): void {
@@ -406,7 +411,7 @@ private fetchInitialData(params: any): void {
           productDefaultImage = {};
           ecomProductName = "";
         }
-
+        
         const defaultImageSettings = productDefaultImage?.defaultimage || {};
         const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
 
@@ -1473,53 +1478,101 @@ private cleanSubchild(fields: any[]): any[] {
     }));
 }
 onSubmit(): void {
-/*  this.getPrice().subscribe(res => {
-    const { costprice, netprice, vatprice, grossprice } = res.fullpriceobject;
-    console.log("Result:", costprice, netprice, vatprice, grossprice);
-  }); */
-  this.jsondata = this.parameters_data.map(field => {
+    this.jsondata = this.parameters_data.map(t=>{
+        const i={
+            id:+t.fieldid,
+            labelname:t.fieldname,
+            value:t.value||null,
+            valueid:t.valueid||null,
+            type:t.fieldtypeid,
+            optionid:t.optionid||null,
+            optionvalue:t.optionvalue||[],
+            optionquantity:t.optionquantity||null,
+            issubfabric:t.issubfabric??0,
+            labelnamecode:t.labelnamecode,
+            fabricorcolor:t.fabricorcolor||0,
+            widthfraction:t.widthfraction||null,
+            widthfractiontext:t.widthfractiontext||null,
+            dropfraction:t.dropfraction||null,
+            dropfractiontext:t.dropfractiontext||null,
+            showfieldonjob:t.showfieldonjob,
+            subchild:t.subchild||[],
+            showFieldOnCustomerPortal:t.showFieldOnCustomerPortal,
+            globaledit:!1,
+            numberfraction:t.numberfraction||null,
+            numberfractiontext:t.numberfractiontext||null,
+            fieldlevel:t.fieldlevel,
+            mandatory:t.mandatory,
+            fieldInformation:t.fieldInformation||null,
+            ruleoverride:t.ruleoverride,
+            optiondefault:t.optiondefault||t.optionid||null,
+            optionsvalue:t.optionvalue||[],
+            editruleoverride:1===t.editruleoverride?1:0,
+            fieldtypeid:t.fieldtypeid,
+            fieldid:t.fieldid,
+            fieldname:t.fieldname
+        };
+        return i.subchild=this.cleanSubchild(i.subchild),i
+    });
 
-    const mappedField = {
-      id: +field.fieldid,
-      labelname: field.fieldname,
-      value: field.value || null,
-      valueid: field.valueid || null,
-      type: field.fieldtypeid,
-      optionid: field.optionid || null,
-      optionvalue: field.optionvalue || [],
-      optionquantity: field.optionquantity || null,
-      issubfabric: field.issubfabric ?? 0,
-      labelnamecode: field.labelnamecode,
-      fabricorcolor: field.fabricorcolor|| 0,
-      widthfraction: field.widthfraction || null,
-      widthfractiontext: field.widthfractiontext || null,
-      dropfraction: field.dropfraction || null,
-      dropfractiontext: field.dropfractiontext || null,
-      showfieldonjob: field.showfieldonjob,
-      subchild: field.subchild || [],
-      showFieldOnCustomerPortal: field.showFieldOnCustomerPortal,
-      globaledit: false,
-      numberfraction: field.numberfraction || null,
-      numberfractiontext: field.numberfractiontext || null,
-      fieldlevel: field.fieldlevel,
-      mandatory: field.mandatory,
-      fieldInformation: field.fieldInformation || null,
-      ruleoverride: field.ruleoverride,
-      optiondefault: field.optiondefault || field.optionid || null,
-      optionsvalue:  field.optionvalue || [],
-      editruleoverride: field.editruleoverride === 1 ? 1 : 0,
-      fieldtypeid: field.fieldtypeid,
-      fieldid: field.fieldid,
-      fieldname: field.fieldname
-    };
+    if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
+      this.errorMessage = 'Missing required route parameters for cart submission.';
+      this.isSubmitting = false;
+      this.cd.markForCheck();
+      return;
+    }
 
-    // clean subchild recursively
-    mappedField.subchild = this.cleanSubchild(mappedField.subchild);
+    this.isSubmitting = true;
+    this.errorMessage = null;
 
-    return mappedField;
-  });
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
+     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata
+    ).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        this.isSubmitting = false;
+        this.cd.markForCheck();
+      })
+    ).subscribe({
+      next: (response) => {
+        console.log(response);
+        if (response.success) {
+          console.log('Product added to cart:', response);
+          if (response.data && response.data.redirect_url) {
+            window.location.href = response.data.redirect_url;
+          }
+        } else {
+          this.errorMessage = response.message || 'An unknown error occurred while adding to cart.';
+        }
+      },
+      error: (err) => {
+        this.errorMessage = err.message || 'Failed to add product to cart. Please try again.';
+        console.error('Add to cart error:', err);
+      }
+    });
+  }
 
-  console.log(this.jsondata);
+public buildProductTitle(
+  ecomproductname: string,
+  fabricname: string,
+  colorname: string
+): string {
+  let extras = '';
+
+  if (fabricname && colorname) {
+    extras = `${fabricname} ${colorname}`;
+  } else if (fabricname) {
+    extras = fabricname;
+  } else if (colorname) {
+    extras = colorname;
+  }
+
+  return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
+}
+private getVat(): Observable<any> {
+  return this.apiService.getVat(
+    this.routeParams
+  );
 }
 private getPrice(): Observable<any> {
   
