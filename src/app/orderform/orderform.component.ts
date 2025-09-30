@@ -182,6 +182,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private supplierField?: ProductField;
   private qtyField?: ProductField;
   // Form / UI state
+  public productTitle: string = '';
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
@@ -194,6 +195,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
+  pricedata:any[] = [];
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
@@ -338,12 +340,15 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     ).subscribe(res => {
       if (res && res.fullpriceobject) {
         const { grossprice } = res.fullpriceobject;
+        this.pricedata = res.fullpriceobject;
         this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
       } else {
         this.grossPrice = null;
+        this.pricedata = [];
       }
       this.cd.markForCheck();
     });
+   
   }
 
   ngOnDestroy(): void {
@@ -406,7 +411,7 @@ private fetchInitialData(params: any): void {
           productDefaultImage = {};
           ecomProductName = "";
         }
-
+        
         const defaultImageSettings = productDefaultImage?.defaultimage || {};
         const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
 
@@ -1520,7 +1525,9 @@ onSubmit(): void {
     this.isSubmitting = true;
     this.errorMessage = null;
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site).pipe(
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
+     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata
+    ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
         this.isSubmitting = false;
@@ -1544,6 +1551,24 @@ onSubmit(): void {
       }
     });
   }
+
+public buildProductTitle(
+  ecomproductname: string,
+  fabricname: string,
+  colorname: string
+): string {
+  let extras = '';
+
+  if (fabricname && colorname) {
+    extras = `${fabricname} ${colorname}`;
+  } else if (fabricname) {
+    extras = fabricname;
+  } else if (colorname) {
+    extras = colorname;
+  }
+
+  return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
+}
 private getPrice(): Observable<any> {
   
   return this.apiService.getPrice(
