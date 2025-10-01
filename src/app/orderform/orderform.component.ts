@@ -681,7 +681,7 @@ private fetchInitialData(params: any): void {
             }
             control.setValue(valueToSet, { emitEvent: false });
              if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
-              setTimeout(() => this.handleOptionSelectionChange(params, field, valueToSet), 0);
+              setTimeout(() => this.handleOptionSelectionChange(params, field, valueToSet, true), 0);
             }
           }
         });
@@ -708,7 +708,7 @@ private fetchInitialData(params: any): void {
    * Called whenever a field's option selection changes (top-level or subfield).
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
- private handleOptionSelectionChange(params: any, field: ProductField, value: any): void {
+ private handleOptionSelectionChange(params: any, field: ProductField, value: any, isInitial: boolean = false): void {
     if (!field) return;
       this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
@@ -747,18 +747,20 @@ private fetchInitialData(params: any): void {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
       
+      const canUpdate = !isInitial || (field.optiondefault && params.color_id);
+
       // Update background image URL if a color/fabric is selected
-      if ((field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
+      if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
           this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
          
           this.threeService.updateTextures(this.background_color_image_url);
       }
       
-      if ((field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
+      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
             
           this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
-      if ((field.fieldtypeid === 3 && field.fieldname == "Frame Colour" ) && selectedOption.optionimage) {
+      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Frame Colour" ) && selectedOption.optionimage) {
             
           this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
@@ -1012,7 +1014,7 @@ private processSubfield(
 
                 if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
                   // small microtask to avoid synchronous reentrancy issues
-                  setTimeout(() => this.handleOptionSelectionChange(params, subfield, valueToSet), 0);
+                  setTimeout(() => this.handleOptionSelectionChange(params, subfield, valueToSet, true), 0);
                 }
               }
 
@@ -1351,7 +1353,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
         if (field && [3, 5, 20].includes(field.fieldtypeid)) {
           // Trigger selection change handler
-          this.handleOptionSelectionChange(params, field, values[key]);
+          this.handleOptionSelectionChange(params, field, values[key], false);
         } else if (field && field.fieldtypeid === 34) {
           this.handleUnitTypeChange(values[key], params);
           this.handleRestOptionChange(params, field, values[key]);
