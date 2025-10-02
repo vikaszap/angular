@@ -162,6 +162,13 @@ export class ThreeService implements OnDestroy {
   );
 }
 
+public getCanvasDataURL(): string | undefined {
+    if (!this.renderer) {
+      return undefined;
+    }
+    this.render(); // Ensure the scene is rendered before capturing
+    return this.renderer.domElement.toDataURL('image/png');
+  }
   public updateTextures(backgroundUrl: string): void {
     if (!backgroundUrl || !this.cube5Meshes.length) return;
 

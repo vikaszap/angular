@@ -155,8 +155,8 @@ export class ApiService {
     );
   }
 
-  addToCart(formData: any, productId: string, apiUrl: string, productName: string,priceData: any,vatpercentage: number, vatname: string): Observable<ApiResponse> {
-    const body = new HttpParams()
+  addToCart(formData: any, productId: string, apiUrl: string, productName: string,priceData: any,vatpercentage: number, vatname: string,visualizerImage?: string): Observable<ApiResponse> {
+    let body = new HttpParams()
       .set('action', 'add_to_cart')
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
@@ -164,7 +164,9 @@ export class ApiService {
       .set('pricedata', JSON.stringify(priceData))
       .set('vatpercentage', vatpercentage)
       .set('vatname', vatname);
-    console.log(JSON.stringify(priceData));
+    if (visualizerImage) {
+      body = body.set('visualizer_image', visualizerImage);
+    }
     const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
 

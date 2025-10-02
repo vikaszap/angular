@@ -1529,8 +1529,14 @@ onSubmit(): void {
     this.isSubmitting = true;
     this.errorMessage = null;
     console.log(this.pricedata);
+    const visualizerImage = this.threeService.getCanvasDataURL();
+
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
-     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata,this.vatpercentage,this.vatname
+     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),
+     this.pricedata,
+     this.vatpercentage,
+     this.vatname,
+     visualizerImage
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
