@@ -246,6 +246,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   max_drop = 0;
   width = 0;
   drop = 0;
+  vatpercentage = 0;
+  vatname = "";
   widthField: any = 0;
   dropField: any = 0;
   ecomsampleprice = 0;
@@ -1528,7 +1530,7 @@ onSubmit(): void {
     this.errorMessage = null;
     console.log(this.pricedata);
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
-     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata
+     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),this.pricedata,this.vatpercentage,this.vatname
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
@@ -1537,7 +1539,6 @@ onSubmit(): void {
       })
     ).subscribe({
       next: (response) => {
-        console.log(response);
         if (response.success) {
           console.log('Product added to cart:', response);
           if (response.data && response.data.redirect_url) {
@@ -1580,6 +1581,14 @@ private getPrice(): Observable<any> {
   return this.getVat().pipe(
     switchMap(vatResponse => {
       const vatPercentage = vatResponse?.data ?? '20.000';
+      
+      const selectedTax = vatResponse?.taxlist?.find(
+        (tax: any) => tax.id === vatResponse.vatselected
+      );
+
+      this.vatpercentage = vatResponse?.data ?? '20.000';
+      this.vatname = selectedTax ? selectedTax.name : vatResponse?.defaultsalestaxlabel;
+
       return this.apiService.getPrice(
         this.routeParams,
         this.width,

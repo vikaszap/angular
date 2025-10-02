@@ -63,9 +63,7 @@
     top: 0;
     z-index: 0;
 }
-.sticky-container{
-    padding: 30px 0px;
-}
+
 .blindmatrix-v4-slider button {
     border: 0;
     cursor: pointer;
