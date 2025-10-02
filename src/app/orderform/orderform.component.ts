@@ -8,7 +8,8 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
-import { ThreeService } from '../services/three.service';
+import { ThreeService } from '../services/three.service';;
+import { HttpClient } from '@angular/common/http';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
@@ -296,6 +297,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     private route: ActivatedRoute,
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
+    private http: HttpClient,
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -323,35 +325,53 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     this.previousFormValue = this.orderForm.value;
   }
   
-  ngOnInit(): void {
-    const apiUrl = this.route.snapshot.queryParams['api_url'];
-    this.img_file_path_url = apiUrl + '/api/public/';
-
-    this.route.queryParams.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      this.fetchInitialData(params);
-    });
-
-    this.priceUpdate$.pipe(
-      debounceTime(500),
-      switchMap(() => {
-          return this.getPrice();
-      }),
-      takeUntil(this.destroy$)
-    ).subscribe(res => {
-      if (res && res.fullpriceobject) {
-        const { grossprice } = res.fullpriceobject;
-        this.pricedata = res.fullpriceobject;
-        this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
-      } else {
-        this.grossPrice = null;
-        this.pricedata = [];
-      }
-      this.cd.markForCheck();
-    });
-   
+ngOnInit(): void {
+  const token = this.route.snapshot.queryParams['token'];
+  if (!token) {
+    console.error('Visualizer token is missing');
+    return;
   }
+
+  const apiUrl = window.location.origin; 
+  this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (data: any) => {
+
+        this.img_file_path_url = data.api_url + '/api/public/';
+
+        this.fetchInitialData(data);
+
+      },
+      error: (err) => {
+        console.error('Invalid or expired visualizer token', err);
+      }
+    });
+
+  // Handle price updates as before
+  this.priceUpdate$.pipe(
+    debounceTime(500),
+    switchMap(() => this.getPrice()),
+    takeUntil(this.destroy$)
+  ).subscribe(res => {
+    if (res && res.fullpriceobject) {
+      const { grossprice } = res.fullpriceobject;
+      this.pricedata = res.fullpriceobject;
+      this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
+    } else {
+      this.grossPrice = null;
+      this.pricedata = [];
+    }
+    this.cd.markForCheck();
+  });
+}
+
+// Optional helper to trigger fetchInitialData logic with token data
+private updatePriceFromData(data: any) {
+  // If your fetchInitialData triggers price calculation, you can call it here
+  // or manually set default values from token data
+}
+
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -1536,7 +1556,8 @@ onSubmit(): void {
      this.pricedata,
      this.vatpercentage,
      this.vatname,
-     visualizerImage
+     window.location.href,
+     visualizerImage,
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
