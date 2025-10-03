@@ -326,29 +326,47 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
 ngOnInit(): void {
-  const token = this.route.snapshot.queryParams['token'];
-  if (!token) {
-    console.error('Visualizer token is missing');
-    return;
-  }
+  const queryParams = this.route.snapshot.queryParams;
 
-  const apiUrl = window.location.origin; 
-  this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (data: any) => {
+  // Check if running on localhost
+  const isLocalhost = window.location.hostname === 'localhost';
 
-        this.img_file_path_url = data.api_url + '/api/public/';
+  if (isLocalhost) {
+  
+    const apiUrl = this.route.snapshot.queryParams['api_url'];
+    this.img_file_path_url = apiUrl + '/api/public/';
 
-        this.fetchInitialData(data);
-
-      },
-      error: (err) => {
-        console.error('Invalid or expired visualizer token', err);
-      }
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      this.fetchInitialData(params);
     });
 
-  // Handle price updates as before
+ 
+  } else {
+    // Production: get token from query param and call API
+    const token = queryParams['token'];
+    if (!token) {
+      console.error('Visualizer token is missing');
+      return;
+    }
+
+    const apiUrl = window.location.origin;
+
+    this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data: any) => {
+          this.img_file_path_url = data.api_url + '/api/public/';
+          this.fetchInitialData(data);
+        },
+        error: (err) => {
+          console.error('Invalid or expired visualizer token', err);
+        }
+      });
+  }
+
+  // Price updates remain the same
   this.priceUpdate$.pipe(
     debounceTime(500),
     switchMap(() => this.getPrice()),
