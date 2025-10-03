@@ -7,10 +7,10 @@
 // or environment variables to manage these settings securely.
 export const environment = {
   production: false,
-  apiUrl: 'https://your-development-api-url.com',
-  apiKey: 'YOUR_DEV_API_KEY',
-  apiName: 'YOUR_DEV_API_NAME',
-  site: 'YOUR_DEV_SITE'
+  apiUrl: 'https://curtainmatrix.co.uk/ecommfinal',
+  apiKey: 'ECOMMERCE',
+  apiName: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
+  site: 'https://visualizer.blindssoftware.com/visualizer'
 };
 
 /*
