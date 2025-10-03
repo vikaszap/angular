@@ -2,8 +2,15 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+// For local development, you can use these placeholder values.
+// For a real development environment, consider using a local configuration
+// or environment variables to manage these settings securely.
 export const environment = {
-  production: false
+  production: false,
+  apiUrl: 'https://your-development-api-url.com',
+  apiKey: 'YOUR_DEV_API_KEY',
+  apiName: 'YOUR_DEV_API_NAME',
+  site: 'YOUR_DEV_SITE'
 };
 
 /*
