@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
@@ -333,13 +334,19 @@ ngOnInit(): void {
 
   if (isLocalhost) {
   
-    const apiUrl = this.route.snapshot.queryParams['api_url'];
-    this.img_file_path_url = apiUrl + '/api/public/';
+    this.img_file_path_url = environment.apiUrl + '/api/public/';
 
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
-    ).subscribe(params => {
-      this.fetchInitialData(params);
+    ).subscribe(queryParams => {
+        const params = {
+            ...queryParams,
+            api_url: environment.apiUrl,
+            api_key: environment.apiKey,
+            api_name: environment.apiName,
+            site: environment.site
+        };
+        this.fetchInitialData(params);
     });
 
  
@@ -1309,7 +1316,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
             : '';
       } else {
         targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-        targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.valueid = selectedOption.map(opt => String(opt.fieldoptionlinkid)).join(',');
         targetField.optionquantity = selectedOption.map(() => '1').join(',');
       }
 
@@ -1321,7 +1328,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     else if (selectedOption && selectedOption.optionname) {
       targetField.labelname = targetField.fieldname ?? '';
       targetField.value = String(selectedOption.optionname);
-      targetField.valueid = String(selectedOption.optionid);
+      targetField.valueid = String(selectedOption.fieldoptionlinkid);
       targetField.optionid = String(selectedOption.optionid);
       targetField.optionvalue = [selectedOption];
       targetField.optionquantity = '1';
